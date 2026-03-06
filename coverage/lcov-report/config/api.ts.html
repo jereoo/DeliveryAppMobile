@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/73</span>
+                <span class='fraction'>0/76</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/20</span>
+                <span class='fraction'>0/22</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/67</span>
+                <span class='fraction'>0/70</span>
             </div>
         
             
@@ -272,7 +272,12 @@
 <a name='L207'></a><a href='#L207'>207</a>
 <a name='L208'></a><a href='#L208'>208</a>
 <a name='L209'></a><a href='#L209'>209</a>
-<a name='L210'></a><a href='#L210'>210</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L210'></a><a href='#L210'>210</a>
+<a name='L211'></a><a href='#L211'>211</a>
+<a name='L212'></a><a href='#L212'>212</a>
+<a name='L213'></a><a href='#L213'>213</a>
+<a name='L214'></a><a href='#L214'>214</a>
+<a name='L215'></a><a href='#L215'>215</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -293,6 +298,13 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -322,8 +334,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -499,9 +509,16 @@ const getBackendUrl = <span class="cstat-no" title="statement not covered" ><spa
     expoConfig: Constants.expoConfig?.extra,
     hostUri: Constants.expoConfig?.hostUri,
     processEnv: process.env.BACKEND_URL,
+    backendUrlFromConfig: Constants.expoConfig?.extra?.BACKEND_URL,
   });
 &nbsp;
-  // 1. PRIMARY: Derive tunnel backend URL from Expo tunnel (works automatically with --tunnel)
+  // 1. PRIMARY: Use explicit BACKEND_URL from app.json extra config
+<span class="cstat-no" title="statement not covered" >  if (Constants.expoConfig?.extra?.BACKEND_URL) {</span>
+<span class="cstat-no" title="statement not covered" >    console.log('✅ Using Constants.expoConfig.extra.BACKEND_URL:', Constants.expoConfig.extra.BACKEND_URL);</span>
+<span class="cstat-no" title="statement not covered" >    return Constants.expoConfig.extra.BACKEND_URL;</span>
+  }
+&nbsp;
+  // 2. SECONDARY: Derive tunnel backend URL from Expo tunnel (works automatically with --tunnel)
 <span class="cstat-no" title="statement not covered" >  if (Constants.expoConfig?.hostUri) {</span>
     // hostUri format: exp://u.random-anonymous-8081.exp.direct
     // Extract the domain part after @
@@ -516,7 +533,7 @@ const getBackendUrl = <span class="cstat-no" title="statement not covered" ><spa
     }
   }
 &nbsp;
-  // 2. Fallback: Use explicit .env variable (if manually set)
+  // 3. Fallback: Use explicit .env variable (if manually set)
 <span class="cstat-no" title="statement not covered" >  if (process.env.BACKEND_URL) {</span>
 <span class="cstat-no" title="statement not covered" >    console.log('✅ Using process.env.BACKEND_URL');</span>
 <span class="cstat-no" title="statement not covered" >    return process.env.BACKEND_URL;</span>
@@ -529,11 +546,9 @@ const getBackendUrl = <span class="cstat-no" title="statement not covered" ><spa
       const localIp = <span class="cstat-no" title="statement not covered" >netInfo.details.ipAddress;</span>
 <span class="cstat-no" title="statement not covered" >      console.log('📡 LAN IP detected:', localIp);</span>
 &nbsp;
-      // Try common Django development ports
+      // Try current detected IP only
       const possibleUrls = <span class="cstat-no" title="statement not covered" >[</span>
         `http://${localIp}:8000/api`,
-        `http://192.168.1.79:8000/api`, // CIO-approved mobile test IP
-        `http://192.168.1.80:8000/api`, // Common LAN IP
       ];
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      for (const url of possibleUrls) {</span>
@@ -697,7 +712,7 @@ export const getApiDebugInfo = <span class="cstat-no" title="statement not cover
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-01-29T04:06:29.912Z
+                at 2026-02-26T17:48:30.344Z
             </div>
         <script src="../prettify.js"></script>
         <script>

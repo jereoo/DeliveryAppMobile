@@ -7,10 +7,9 @@
  * Now supports automatic tunnel backend routing via hostUri
  */
 
-import NetInfo from '@react-native-community/netinfo';
 import Constants from 'expo-constants';
 
-// CIO DIRECTIVE: Intelligent backend URL resolution with tunnel priority and LAN fallback
+// CIO DIRECTIVE: Tunnel-only mode - NO LAN fallback for public Wi-Fi compatibility
 const getBackendUrl = async (): Promise<string> => {
   console.log('🔧 API Config Debug:', {
     expoConfig: Constants.expoConfig?.extra,
@@ -46,51 +45,11 @@ const getBackendUrl = async (): Promise<string> => {
     return process.env.BACKEND_URL;
   }
 
-  // 3. LAN FALLBACK: Detect local network IP and try common ports
-  try {
-    const netInfo = await NetInfo.fetch();
-    if (netInfo.type === 'wifi' && netInfo.details?.ipAddress) {
-      const localIp = netInfo.details.ipAddress;
-      console.log('📡 LAN IP detected:', localIp);
-
-      // Try current detected IP only
-      const possibleUrls = [
-        `http://${localIp}:8000/api`,
-      ];
-
-      for (const url of possibleUrls) {
-        try {
-          console.log('🔍 Testing LAN URL:', url);
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 2000);
-
-          const response = await fetch(`${url.replace('/api', '')}/health/`, {
-            method: 'GET',
-            signal: controller.signal,
-          });
-
-          clearTimeout(timeoutId);
-
-          if (response.ok) {
-            console.log('✅ LAN backend found at:', url);
-            return url;
-          }
-        } catch (error) {
-          console.log('❌ LAN URL failed:', url, error.message);
-        }
-      }
-    }
-  } catch (error) {
-    console.log('❌ LAN detection failed:', error.message);
-  }
-
-  // 4. Final safety: Fail fast with clear message
-  console.log('❌ CRITICAL: No valid backend URL found');
-  // TEMP FIX: Return LAN fallback to allow app to load
-  return 'http://192.168.1.80:8000/api';
-  // throw new Error(
-  //   'Backend URL not available. Run via start-fullstack.bat with --tunnel for automatic tunnel routing.'
-  // );
+  // ❌ NO LAN FALLBACK - Force tunnel requirement for public Wi-Fi compatibility
+  console.log('❌ CRITICAL: No tunnel URL available - public Wi-Fi requires tunnel mode');
+  throw new Error(
+    'No tunnel URL available. Run start-fullstack.bat to establish tunnel connection, or set BACKEND_URL in .env for public Wi-Fi compatibility.'
+  );
 };
 
 
