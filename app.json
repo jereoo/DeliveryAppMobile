@@ -37,7 +37,7 @@
       "eas": {
         "projectId": "your-eas-project-id-if-any"
       },
-      "BACKEND_URL": "https://shakita-unlopped-colten.ngrok-free.dev/api"
+      "BACKEND_URL": "http://192.168.1.78:8000/api"
     }
   }
 }

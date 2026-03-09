@@ -12,8 +12,8 @@ do {
 } while ($health.StatusCode -ne 200)
 Write-Host "Django backend ready on http://localhost:8000" -ForegroundColor Green
 
-Write-Host "Starting Expo with tunnel..." -ForegroundColor Cyan
-Start-Process powershell -ArgumentList "-NoExit -Command `"npx.cmd expo start --tunnel --clear --port 8082`""
+Write-Host "Starting Expo (LAN only)..." -ForegroundColor Cyan
+Start-Process powershell -ArgumentList "-NoExit -Command `"cd 'C:\Users\360WEB\DeliveryAppMobile'; npx.cmd expo start --clear --port 8081`""
 
 Write-Host "`nFULL STACK RUNNING!" -ForegroundColor Green
 Write-Host "→ Django : http://localhost:8000" -ForegroundColor White

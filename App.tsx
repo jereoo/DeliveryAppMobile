@@ -145,8 +145,18 @@ const CustomerDeliveryHistory = ({ customerId }: { customerId: any }) => {
 };
 
 export default function App() {
-  // ====== STUBS FOR MISSING SCREENS ======
-
+  // North America: 10-digit phone (area code 1 assumed). Format: (XXX) XXX-XXXX
+  const formatPhone10 = (text: string) => {
+    const d = text.replace(/\D/g, '').slice(0, 10);
+    if (d.length >= 6) return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+    if (d.length >= 3) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
+    return d;
+  };
+  const getPhoneDigits = (value: string) => (value || '').replace(/\D/g, '').slice(0, 10);
+  const formatPhoneForDisplay = (value: string) => {
+    const d = (value || '').replace(/\D/g, '').slice(0, 10);
+    return d ? formatPhone10(d) : '';
+  };
 
   function AdminCustomersScreen({
     onBack,
@@ -197,6 +207,11 @@ export default function App() {
         errors.last_name = 'Last name is required';
       }
 
+      const phoneDigits = getPhoneDigits(form.phone_number);
+      if (phoneDigits.length !== 10) {
+        errors.phone_number = 'Phone must be exactly 10 digits (North America)';
+      }
+
       setFieldErrors(errors);
       return Object.keys(errors).length === 0;
     };
@@ -214,7 +229,7 @@ export default function App() {
         password: '',
         first_name: customer.first_name || '',
         last_name: customer.last_name || '',
-        phone_number: customer.phone_number || '',
+        phone_number: formatPhoneForDisplay(customer.phone_number || ''),
         address_unit: customer.address_unit || '',
         address_street: customer.address_street || '',
         address_city: customer.address_city || '',
@@ -256,7 +271,8 @@ export default function App() {
       setError(null);
       setFieldErrors({});
       try {
-        await createCustomer(form);
+        const payload = { ...form, phone_number: getPhoneDigits(form.phone_number) };
+        await createCustomer(payload);
         setMode('list');
         setForm({
           username: '', email: '', password: '', first_name: '', last_name: '', phone_number: '',
@@ -285,7 +301,7 @@ export default function App() {
 
       try {
         // For updates, if password is empty, don't include it in the payload
-        const updatePayload = { ...form };
+        const updatePayload = { ...form, phone_number: getPhoneDigits(form.phone_number) };
         if (!updatePayload.password || updatePayload.password.trim() === '') {
           delete updatePayload.password;
         }
@@ -353,7 +369,7 @@ export default function App() {
                 <View key={customer.id} style={styles.itemContainer}>
                   <Text style={styles.itemTitle}>{customer.first_name} {customer.last_name} ({customer.username})</Text>
                   <Text>Email: {customer.email}</Text>
-                  <Text>Phone: {customer.phone_number}</Text>
+                  <Text>Phone: {formatPhoneForDisplay(customer.phone_number)}</Text>
                   <Text>Business: {customer.is_business ? 'Yes' : 'No'}</Text>
                   {customer.is_business && <Text>Company: {customer.company_name}</Text>}
                   <Text>Address: {customer.address_unit} {customer.address_street}, {customer.address_city}, {customer.address_state} {customer.address_postal_code}</Text>
@@ -456,8 +472,16 @@ export default function App() {
             />
             {fieldErrors.last_name && <Text style={styles.fieldError}>{fieldErrors.last_name}</Text>}
 
-            <Text style={styles.label}>Phone Number</Text>
-            <TextInput style={styles.input} value={form.phone_number} onChangeText={t => setForm((f: typeof form) => ({ ...f, phone_number: t }))} placeholder="Phone Number" keyboardType="phone-pad" />
+            <Text style={styles.label}>Phone Number (10 digits, no area code)</Text>
+            <TextInput
+              style={styles.input}
+              value={form.phone_number}
+              onChangeText={(t) => setForm((f: typeof form) => ({ ...f, phone_number: formatPhone10(t) }))}
+              placeholder="(555) 555-5555"
+              keyboardType="phone-pad"
+              maxLength={14}
+            />
+            {fieldErrors.phone_number && <Text style={styles.fieldError}>{fieldErrors.phone_number}</Text>}
 
             <Text style={styles.label}>Unit/Apartment</Text>
             <TextInput style={styles.input} value={form.address_unit} onChangeText={t => setForm((f: typeof form) => ({ ...f, address_unit: t }))} placeholder="Unit/Apartment" />
@@ -521,7 +545,7 @@ export default function App() {
             <Text style={styles.title}>Customer Detail</Text>
             <Text style={styles.itemTitle}>{selected.first_name} {selected.last_name} ({selected.username})</Text>
             <Text>Email: {selected.email}</Text>
-            <Text>Phone: {selected.phone_number}</Text>
+            <Text>Phone: {formatPhoneForDisplay(selected.phone_number)}</Text>
             <Text>Business: {selected.is_business ? 'Yes' : 'No'}</Text>
             {selected.is_business && <Text>Company: {selected.company_name}</Text>}
             <Text>Address: {selected.address_unit} {selected.address_street}, {selected.address_city}, {selected.address_state} {selected.address_postal_code}</Text>
@@ -1258,10 +1282,16 @@ export default function App() {
         setError('First name, last name, and license number are required');
         return;
       }
+      const phoneDigits = getPhoneDigits(formData.phone_number);
+      if (phoneDigits.length !== 10) {
+        setError('Phone number must be exactly 10 digits');
+        return;
+      }
 
       setLocalLoading(true);
       try {
-        await createDriver(formData);
+        const payload = { ...formData, phone_number: getPhoneDigits(formData.phone_number) };
+        await createDriver(payload);
         await loadDrivers();
         setMode('list');
         resetForm();
@@ -1277,11 +1307,16 @@ export default function App() {
         setError('First name, last name, and license number are required');
         return;
       }
+      const phoneDigits = getPhoneDigits(formData.phone_number);
+      if (phoneDigits.length !== 10) {
+        setError('Phone number must be exactly 10 digits');
+        return;
+      }
 
       setLocalLoading(true);
       try {
-        await updateDriver(selectedDriver.id, formData);
-        await loadDrivers();
+        const payload = { ...formData, phone_number: getPhoneDigits(formData.phone_number) };
+        await updateDriver(selectedDriver.id, payload);
         setMode('list');
         resetForm();
         Alert.alert('Success', 'Driver updated successfully!');
@@ -1321,7 +1356,7 @@ export default function App() {
       setFormData({
         first_name: driver.first_name || '',
         last_name: driver.last_name || '',
-        phone_number: driver.phone_number || '',
+        phone_number: formatPhoneForDisplay(driver.phone_number || ''),
         license_number: driver.license_number || '',
         active: driver.active ?? true
       });
@@ -1381,13 +1416,14 @@ export default function App() {
               onChangeText={(text) => setFormData(prev => ({ ...prev, last_name: text }))}
             />
 
-            <Text style={styles.label}>Phone Number</Text>
+            <Text style={styles.label}>Phone Number (10 digits, no area code)</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter phone number"
+              placeholder="(555) 555-5555"
               value={formData.phone_number}
-              onChangeText={(text) => setFormData(prev => ({ ...prev, phone_number: text }))}
+              onChangeText={(text) => setFormData(prev => ({ ...prev, phone_number: formatPhone10(text) }))}
               keyboardType="phone-pad"
+              maxLength={14}
             />
 
             <Text style={styles.label}>License Number *</Text>
@@ -1436,7 +1472,7 @@ export default function App() {
 
             <Text style={styles.itemTitle}>{selectedDriver.first_name} {selectedDriver.last_name}</Text>
             <Text>License: {selectedDriver.license_number}</Text>
-            {selectedDriver.phone_number && <Text>Phone: {selectedDriver.phone_number}</Text>}
+            {selectedDriver.phone_number && <Text>Phone: {formatPhoneForDisplay(selectedDriver.phone_number)}</Text>}
             <Text>Status: {selectedDriver.active ? 'Active' : 'Inactive'}</Text>
 
             {selectedDriver.current_vehicle && (
@@ -1492,7 +1528,7 @@ export default function App() {
               <View key={driver.id} style={styles.itemContainer}>
                 <Text style={styles.itemTitle}>{driver.first_name} {driver.last_name}</Text>
                 <Text>License: {driver.license_number}</Text>
-                {driver.phone_number && <Text>Phone: {driver.phone_number}</Text>}
+                {driver.phone_number && <Text>Phone: {formatPhoneForDisplay(driver.phone_number)}</Text>}
                 <Text>Status: <Text style={{ color: driver.active ? 'green' : 'red' }}>
                   {driver.active ? 'Active' : 'Inactive'}
                 </Text></Text>
@@ -2145,12 +2181,9 @@ export default function App() {
   }
 
   // All constants, useState, useEffect, and helper functions at the top
-  // Dynamically detect local IP for API_BASE
-  // FIXED: Use Django backend IP directly (not phone's IP)
-  // CIO DIRECTIVE: Use dynamic tunnel URL from environment variables
+  // API base from env (LAN only – set by start-fullstack.bat or .env)
   const [API_BASE, setApiBase] = useState<string>('');  // Start empty, resolve async
-  const [currentNetwork, setCurrentNetwork] = useState('Expo Tunnel (Dynamic)');
-  // CIO DIRECTIVE: NO HARDCODED IPs - Use only tunnel URLs
+  const [currentNetwork, setCurrentNetwork] = useState('LAN');
   const [NETWORK_ENDPOINTS, setNetworkEndpoints] = useState([{ url: '', name: 'Unified API URL' }]);
   const [currentScreen, setCurrentScreen] = useState('main');
   const [backendStatus, setBackendStatus] = useState('Checking...');
@@ -2327,8 +2360,26 @@ export default function App() {
     setLoading(false);
   };
 
+  // CIO MARCH 2026: Role determination - customer -> driver -> admin heuristic (no backend changes)
+  const getUserIdFromToken = (t: string): number | null => {
+    try {
+      const parts = t.split('.');
+      if (parts.length < 2) return null;
+      const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      let decoded: string | null = null;
+      try {
+        decoded = typeof atob === 'function' ? atob(b64) : (globalThis as any)?.atob?.(b64) ?? null;
+      } catch { /* atob may be absent in some RN envs */ }
+      if (!decoded) return null;
+      const payload = JSON.parse(decoded);
+      return payload.user_id ?? null;
+    } catch {
+      return null;
+    }
+  };
+
   const determineUserType = async (token: string) => {
-    // Try customer profile first
+    // 1. Try customer profile first
     try {
       const customerResponse = await fetch(`${API_BASE}/customers/me/`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -2341,7 +2392,28 @@ export default function App() {
       console.log('Not a customer user');
     }
 
-    // Default to admin if customer check fails
+    // 2. Try driver profile via /drivers/ list + JWT user_id
+    try {
+      const userId = getUserIdFromToken(token);
+      if (userId != null) {
+        const driversResponse = await fetch(`${API_BASE}/drivers/`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (driversResponse.ok) {
+          const data = await driversResponse.json();
+          const drivers = data.results ?? data;
+          const isDriver = Array.isArray(drivers) && drivers.some((d: any) => d.user === userId || d.user_id === userId);
+          if (isDriver) {
+            setUserType('driver');
+            return;
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Not a driver user');
+    }
+
+    // 3. Default to admin (staff/superuser)
     setUserType('admin');
   };
 
@@ -2939,8 +3011,17 @@ export default function App() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to update driver');
+        let errorBody;
+        try {
+          errorBody = await response.json();
+        } catch {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        const msg = errorBody.detail || errorBody.message
+          || (typeof errorBody === 'object' && Object.keys(errorBody).length
+            ? Object.entries(errorBody).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join('; ') : v}`).join('\n')
+            : 'Failed to update driver');
+        throw new Error(msg);
       }
 
       Alert.alert('Success', 'Driver updated successfully!');
@@ -3274,7 +3355,7 @@ export default function App() {
         console.log('✅ API URL resolved:', url);
       } catch (error) {
         console.error('❌ Failed to resolve API URL:', error);
-        // Fallback to LAN IP if tunnel detection fails
+        // Fallback if BACKEND_URL not set (run start-fullstack.bat or set .env)
         const fallbackUrl = 'http://192.168.1.80:8000/api';
         setApiBase(fallbackUrl);
         setNetworkEndpoints([{ url: fallbackUrl, name: 'LAN Fallback' }]);
@@ -3298,35 +3379,43 @@ export default function App() {
     }
   }, [authToken, currentScreen, userType]);
 
+  // CIO MARCH 2026: Guard admin-only screens - redirect non-admins to dashboard
+  useEffect(() => {
+    const adminScreens = ['admin_customers', 'admin_vehicles', 'admin_deliveries', 'admin_drivers', 'admin_driver_vehicles'];
+    if (adminScreens.includes(currentScreen) && userType !== 'admin' && userType !== null) {
+      setCurrentScreen('dashboard');
+    }
+  }, [currentScreen, userType]);
+
   // ========================================
   // RENDER FUNCTIONS
 
   // Admin Customers Screen
-  if (currentScreen === 'admin_customers') {
+  if (currentScreen === 'admin_customers' && userType === 'admin') {
     return <AdminCustomersScreen onBack={() => setCurrentScreen('dashboard')} customers={customers} loadCustomers={loadCustomers} />;
   }
 
   // Admin Vehicles Screen
-  if (currentScreen === 'admin_vehicles') {
+  if (currentScreen === 'admin_vehicles' && userType === 'admin') {
     return <AdminVehiclesScreen onBack={() => setCurrentScreen('dashboard')} />;
   }
 
   // Admin Deliveries Screen
-  if (currentScreen === 'admin_deliveries') {
+  if (currentScreen === 'admin_deliveries' && userType === 'admin') {
     return <AdminDeliveriesScreen onBack={() => setCurrentScreen('dashboard')} />;
   }
 
   // Admin Drivers Screen
-  if (currentScreen === 'admin_drivers') {
+  if (currentScreen === 'admin_drivers' && userType === 'admin') {
     return <AdminDriversScreen onBack={() => setCurrentScreen('dashboard')} drivers={drivers} loadDrivers={loadDrivers} />;
   }
 
   // Admin Driver-Vehicles Screen
-  if (currentScreen === 'admin_driver_vehicles') {
+  if (currentScreen === 'admin_driver_vehicles' && userType === 'admin') {
     return <AdminDriverVehiclesScreen onBack={() => setCurrentScreen('dashboard')} />;
   }
 
-  // Delivery Request Screen
+  // Delivery Request Screen (customer + driver)
   if (currentScreen === 'delivery_request') {
     return <DeliveryRequestScreen onBack={() => setCurrentScreen('dashboard')} />;
   }
@@ -3787,6 +3876,26 @@ export default function App() {
               </View>
               <View style={styles.buttonContainer}>
                 <Button title="📋 My Deliveries" onPress={() => setCurrentScreen('my_deliveries')} />
+              </View>
+            </View>
+          )}
+
+          {/* Driver Dashboard - CIO MARCH 2026 */}
+          {userType === 'driver' && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>🚚 Driver Services</Text>
+              <View style={styles.buttonContainer}>
+                <Button title="📦 My Deliveries" onPress={() => setCurrentScreen('my_deliveries')} />
+              </View>
+              <View style={styles.buttonContainer}>
+                <Button title="🔄" onPress={loadData} />
+              </View>
+              <View style={styles.buttonContainer}>
+                <Button title="🚪 Logout" onPress={() => {
+                  setAuthToken(null);
+                  setUserType(null);
+                  setCurrentScreen('main');
+                }} />
               </View>
             </View>
           )}

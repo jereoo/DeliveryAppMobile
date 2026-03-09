@@ -6,9 +6,8 @@
     "start": "echo 'DEPRECATED: Use npm run start:full-stack instead' && exit 1",
     "start:full-stack": "bash scripts/start-mobile.sh",
     "start:full-stack:windows": "scripts\\start-mobile.bat",
-    "start:tunnel": "expo start --tunnel --clear",
-    "android": "expo start --android --tunnel",
-    "ios": "expo start --ios --tunnel",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
     "web": "expo start --web",
     "kill": "pkill -f 'python|node|expo' || taskkill /f /im python.exe /im node.exe",
     "health": "curl -f http://localhost:8000/api/health/ || echo 'Backend not running'",
@@ -25,7 +24,7 @@
     "precommit": "npm run cio-check:strict"
   },
   "dependencies": {
-    "@react-native-community/netinfo": "^11.4.1",
+    "@react-native-community/netinfo": "11.4.1",
     "@react-native-picker/picker": "2.11.1",
     "expo": "~54.0.33",
     "expo-constants": "~18.0.10",
