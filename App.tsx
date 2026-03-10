@@ -18,6 +18,7 @@ import {
   Alert,
   Button,
   KeyboardAvoidingView, Platform, ScrollView,
+  StatusBar,
   StyleSheet,
   Switch,
   Text,
@@ -332,7 +333,7 @@ export default function App() {
               <Text style={[styles.title, { flex: 1, textAlign: 'center' }]}>👥 Admin Customers</Text>
             </View>
 
-            {error && <Text style={{ color: 'red', marginBottom: 10 }}>{error}</Text>}
+            {error && <Text style={{ color: theme.error, marginBottom: 10 }}>{error}</Text>}
 
             <View style={styles.buttonContainer}>
               <Button
@@ -368,11 +369,11 @@ export default function App() {
               customers.map((customer: any) => (
                 <View key={customer.id} style={styles.itemContainer}>
                   <Text style={styles.itemTitle}>{customer.first_name} {customer.last_name} ({customer.username})</Text>
-                  <Text>Email: {customer.email}</Text>
-                  <Text>Phone: {formatPhoneForDisplay(customer.phone_number)}</Text>
-                  <Text>Business: {customer.is_business ? 'Yes' : 'No'}</Text>
-                  {customer.is_business && <Text>Company: {customer.company_name}</Text>}
-                  <Text>Address: {customer.address_unit} {customer.address_street}, {customer.address_city}, {customer.address_state} {customer.address_postal_code}</Text>
+                  <Text style={{ color: theme.text }}>Email: {customer.email}</Text>
+                  <Text style={{ color: theme.text }}>Phone: {formatPhoneForDisplay(customer.phone_number)}</Text>
+                  <Text style={{ color: theme.text }}>Business: {customer.is_business ? 'Yes' : 'No'}</Text>
+                  {customer.is_business && <Text style={{ color: theme.text }}>Company: {customer.company_name}</Text>}
+                  <Text style={{ color: theme.text }}>Address: {customer.address_unit} {customer.address_street}, {customer.address_city}, {customer.address_state} {customer.address_postal_code}</Text>
                   <View style={{ flexDirection: 'row', marginTop: 8 }}>
                     <View style={{ flex: 1, marginRight: 4 }}>
                       <Button title="View" onPress={() => handleSelect(customer)} />
@@ -396,7 +397,7 @@ export default function App() {
         <ScrollView style={styles.container}>
           <View style={styles.content}>
             <Text style={styles.title}>{mode === 'create' ? 'Add Customer' : 'Edit Customer'}</Text>
-            {error && <Text style={{ color: 'red', marginBottom: 10 }}>{error}</Text>}
+            {error && <Text style={{ color: theme.error, marginBottom: 10 }}>{error}</Text>}
 
             <Text style={styles.label}>Username *</Text>
             <TextInput
@@ -408,7 +409,7 @@ export default function App() {
                   setFieldErrors(prev => ({ ...prev, username: '' }));
                 }
               }}
-              placeholder="Username *"
+              placeholderTextColor={theme.placeholder} placeholder="Username *"
               autoCapitalize="none"
             />
             {fieldErrors.username && <Text style={styles.fieldError}>{fieldErrors.username}</Text>}
@@ -423,7 +424,7 @@ export default function App() {
                   setFieldErrors(prev => ({ ...prev, email: '' }));
                 }
               }}
-              placeholder="Email *"
+              placeholderTextColor={theme.placeholder} placeholder="Email *"
               autoCapitalize="none"
               keyboardType="email-address"
             />
@@ -439,7 +440,7 @@ export default function App() {
                   setFieldErrors(prev => ({ ...prev, password: '' }));
                 }
               }}
-              placeholder={mode === 'create' ? 'Password *' : 'Password (leave blank to keep current)'}
+              placeholderTextColor={theme.placeholder} placeholder={mode === 'create' ? 'Password *' : 'Password (leave blank to keep current)'}
               secureTextEntry
             />
             {fieldErrors.password && <Text style={styles.fieldError}>{fieldErrors.password}</Text>}
@@ -454,7 +455,7 @@ export default function App() {
                   setFieldErrors(prev => ({ ...prev, first_name: '' }));
                 }
               }}
-              placeholder="First Name *"
+              placeholderTextColor={theme.placeholder} placeholder="First Name *"
             />
             {fieldErrors.first_name && <Text style={styles.fieldError}>{fieldErrors.first_name}</Text>}
 
@@ -468,7 +469,7 @@ export default function App() {
                   setFieldErrors(prev => ({ ...prev, last_name: '' }));
                 }
               }}
-              placeholder="Last Name *"
+              placeholderTextColor={theme.placeholder} placeholder="Last Name *"
             />
             {fieldErrors.last_name && <Text style={styles.fieldError}>{fieldErrors.last_name}</Text>}
 
@@ -477,26 +478,26 @@ export default function App() {
               style={styles.input}
               value={form.phone_number}
               onChangeText={(t) => setForm((f: typeof form) => ({ ...f, phone_number: formatPhone10(t) }))}
-              placeholder="(555) 555-5555"
+              placeholderTextColor={theme.placeholder} placeholder="(555) 555-5555"
               keyboardType="phone-pad"
               maxLength={14}
             />
             {fieldErrors.phone_number && <Text style={styles.fieldError}>{fieldErrors.phone_number}</Text>}
 
             <Text style={styles.label}>Unit/Apartment</Text>
-            <TextInput style={styles.input} value={form.address_unit} onChangeText={t => setForm((f: typeof form) => ({ ...f, address_unit: t }))} placeholder="Unit/Apartment" />
+            <TextInput style={styles.input} value={form.address_unit} onChangeText={t => setForm((f: typeof form) => ({ ...f, address_unit: t }))} placeholderTextColor={theme.placeholder} placeholder="Unit/Apartment" />
 
             <Text style={styles.label}>Street Address</Text>
-            <TextInput style={styles.input} value={form.address_street} onChangeText={t => setForm((f: typeof form) => ({ ...f, address_street: t }))} placeholder="Street Address" />
+            <TextInput style={styles.input} value={form.address_street} onChangeText={t => setForm((f: typeof form) => ({ ...f, address_street: t }))} placeholderTextColor={theme.placeholder} placeholder="Street Address" />
 
             <Text style={styles.label}>City</Text>
-            <TextInput style={styles.input} value={form.address_city} onChangeText={t => setForm((f: typeof form) => ({ ...f, address_city: t }))} placeholder="City" />
+            <TextInput style={styles.input} value={form.address_city} onChangeText={t => setForm((f: typeof form) => ({ ...f, address_city: t }))} placeholderTextColor={theme.placeholder} placeholder="City" />
 
             <Text style={styles.label}>State/Province</Text>
-            <TextInput style={styles.input} value={form.address_state} onChangeText={t => setForm((f: typeof form) => ({ ...f, address_state: t }))} placeholder="State/Province" />
+            <TextInput style={styles.input} value={form.address_state} onChangeText={t => setForm((f: typeof form) => ({ ...f, address_state: t }))} placeholderTextColor={theme.placeholder} placeholder="State/Province" />
 
             <Text style={styles.label}>Postal/ZIP Code</Text>
-            <TextInput style={styles.input} value={form.address_postal_code} onChangeText={t => setForm((f: typeof form) => ({ ...f, address_postal_code: t }))} placeholder="Postal/ZIP Code" />
+            <TextInput style={styles.input} value={form.address_postal_code} onChangeText={t => setForm((f: typeof form) => ({ ...f, address_postal_code: t }))} placeholderTextColor={theme.placeholder} placeholder="Postal/ZIP Code" />
 
             <Text style={styles.label}>Country *</Text>
             <View style={{ flexDirection: 'row', marginBottom: 10 }}>
@@ -522,12 +523,12 @@ export default function App() {
             {form.is_business && (
               <>
                 <Text style={styles.label}>Company Name</Text>
-                <TextInput style={styles.input} value={form.company_name} onChangeText={t => setForm((f: typeof form) => ({ ...f, company_name: t }))} placeholder="Company Name" />
+                <TextInput style={styles.input} value={form.company_name} onChangeText={t => setForm((f: typeof form) => ({ ...f, company_name: t }))} placeholderTextColor={theme.placeholder} placeholder="Company Name" />
               </>
             )}
 
             <Text style={styles.label}>Preferred Pickup Address</Text>
-            <TextInput style={[styles.input, styles.multilineInput]} value={form.preferred_pickup_address} onChangeText={t => setForm((f: typeof form) => ({ ...f, preferred_pickup_address: t }))} placeholder="Preferred Pickup Address" multiline numberOfLines={2} />
+            <TextInput style={[styles.input, styles.multilineInput]} value={form.preferred_pickup_address} onChangeText={t => setForm((f: typeof form) => ({ ...f, preferred_pickup_address: t }))} placeholderTextColor={theme.placeholder} placeholder="Preferred Pickup Address" multiline numberOfLines={2} />
             <View style={styles.buttonContainer}>
               <Button title={mode === 'create' ? 'Create' : 'Update'} onPress={mode === 'create' ? handleCreate : handleUpdate} disabled={localLoading} />
             </View>
@@ -544,12 +545,12 @@ export default function App() {
           <View style={styles.content}>
             <Text style={styles.title}>Customer Detail</Text>
             <Text style={styles.itemTitle}>{selected.first_name} {selected.last_name} ({selected.username})</Text>
-            <Text>Email: {selected.email}</Text>
-            <Text>Phone: {formatPhoneForDisplay(selected.phone_number)}</Text>
-            <Text>Business: {selected.is_business ? 'Yes' : 'No'}</Text>
-            {selected.is_business && <Text>Company: {selected.company_name}</Text>}
-            <Text>Address: {selected.address_unit} {selected.address_street}, {selected.address_city}, {selected.address_state} {selected.address_postal_code}</Text>
-            <Text>Preferred Pickup: {selected.preferred_pickup_address}</Text>
+            <Text style={{ color: theme.text }}>Email: {selected.email}</Text>
+            <Text style={{ color: theme.text }}>Phone: {formatPhoneForDisplay(selected.phone_number)}</Text>
+            <Text style={{ color: theme.text }}>Business: {selected.is_business ? 'Yes' : 'No'}</Text>
+            {selected.is_business && <Text style={{ color: theme.text }}>Company: {selected.company_name}</Text>}
+            <Text style={{ color: theme.text }}>Address: {selected.address_unit} {selected.address_street}, {selected.address_city}, {selected.address_state} {selected.address_postal_code}</Text>
+            <Text style={{ color: theme.text }}>Preferred Pickup: {selected.preferred_pickup_address}</Text>
             <View style={styles.buttonContainer}>
               <Button title="Edit" onPress={() => handleEdit(selected)} />
             </View>
@@ -565,7 +566,7 @@ export default function App() {
     }
     // fallback
     return (
-      <View style={styles.container}><Text>Invalid state</Text></View>
+      <View style={styles.container}><Text style={{ color: theme.text }}>Invalid state</Text></View>
     );
   }
 
@@ -664,7 +665,7 @@ export default function App() {
               <Button title="← Back" onPress={onBack} />
               <Text style={[styles.title, { flex: 1, textAlign: 'center' }]}>🚛 Admin Vehicles</Text>
             </View>
-            {error && <Text style={{ color: 'red', marginBottom: 10 }}>{error}</Text>}
+            {error && <Text style={{ color: theme.error, marginBottom: 10 }}>{error}</Text>}
             <View style={styles.buttonContainer}>
               <Button title="Add Vehicle" onPress={() => { setMode('create'); setForm({ license_plate: '', make: '', model: '', year: 0, vin: '', capacity: 0, active: true }); }} />
             </View>
@@ -674,9 +675,9 @@ export default function App() {
               vehicles.map((vehicle: any) => (
                 <View key={vehicle.id} style={styles.itemContainer}>
                   <Text style={styles.itemTitle}>{vehicle.make} {vehicle.model} ({vehicle.license_plate})</Text>
-                  <Text>Year: {vehicle.year}</Text>
-                  <Text>Capacity: {vehicle.capacity} kg</Text>
-                  <Text>Status: {vehicle.active ? 'Active' : 'Inactive'}</Text>
+                  <Text style={{ color: theme.text }}>Year: {vehicle.year}</Text>
+                  <Text style={{ color: theme.text }}>Capacity: {vehicle.capacity} kg</Text>
+                  <Text style={{ color: theme.text }}>Status: {vehicle.active ? 'Active' : 'Inactive'}</Text>
                   <View style={{ flexDirection: 'row', marginTop: 8 }}>
                     <View style={{ flex: 1, marginRight: 4 }}>
                       <Button title="View" onPress={() => handleSelect(vehicle)} />
@@ -700,16 +701,16 @@ export default function App() {
         <ScrollView style={styles.container}>
           <View style={styles.content}>
             <Text style={styles.title}>{mode === 'create' ? 'Add Vehicle' : 'Edit Vehicle'}</Text>
-            {error && <Text style={{ color: 'red', marginBottom: 10 }}>{error}</Text>}
+            {error && <Text style={{ color: theme.error, marginBottom: 10 }}>{error}</Text>}
 
             <Text style={styles.label}>License Plate *</Text>
-            <TextInput style={styles.input} value={form.license_plate} onChangeText={t => setForm((f: typeof form) => ({ ...f, license_plate: t.toUpperCase() }))} placeholder="Enter license plate" autoCapitalize="characters" />
+            <TextInput style={styles.input} value={form.license_plate} onChangeText={t => setForm((f: typeof form) => ({ ...f, license_plate: t.toUpperCase() }))} placeholderTextColor={theme.placeholder} placeholder="Enter license plate" autoCapitalize="characters" />
 
             <Text style={styles.label}>Make *</Text>
-            <TextInput style={styles.input} value={form.make} onChangeText={t => setForm((f: typeof form) => ({ ...f, make: t }))} placeholder="e.g., Ford, Toyota" />
+            <TextInput style={styles.input} value={form.make} onChangeText={t => setForm((f: typeof form) => ({ ...f, make: t }))} placeholderTextColor={theme.placeholder} placeholder="e.g., Ford, Toyota" />
 
             <Text style={styles.label}>Model *</Text>
-            <TextInput style={styles.input} value={form.model} onChangeText={t => setForm((f: typeof form) => ({ ...f, model: t }))} placeholder="e.g., Transit, Hiace" />
+            <TextInput style={styles.input} value={form.model} onChangeText={t => setForm((f: typeof form) => ({ ...f, model: t }))} placeholderTextColor={theme.placeholder} placeholder="e.g., Transit, Hiace" />
 
             <Text style={styles.label}>Year *</Text>
             <TextInput
@@ -737,13 +738,13 @@ export default function App() {
                   }
                 }
               }}
-              placeholder="Enter year"
+              placeholderTextColor={theme.placeholder} placeholder="Enter year"
               keyboardType="numeric"
               maxLength={4}
             />
 
             <Text style={styles.label}>VIN *</Text>
-            <TextInput style={styles.input} value={form.vin} onChangeText={t => setForm((f: typeof form) => ({ ...f, vin: t.toUpperCase() }))} placeholder="17 characters" autoCapitalize="characters" maxLength={17} />
+            <TextInput style={styles.input} value={form.vin} onChangeText={t => setForm((f: typeof form) => ({ ...f, vin: t.toUpperCase() }))} placeholderTextColor={theme.placeholder} placeholder="17 characters" autoCapitalize="characters" maxLength={17} />
 
             <Text style={styles.label}>Capacity (kg) *</Text>
             <TextInput
@@ -771,7 +772,7 @@ export default function App() {
                   }
                 }
               }}
-              placeholder="Enter capacity in kg"
+              placeholderTextColor={theme.placeholder} placeholder="Enter capacity in kg"
               keyboardType="numeric"
             />
             <View style={styles.switchContainer}>
@@ -794,11 +795,11 @@ export default function App() {
           <View style={styles.content}>
             <Text style={styles.title}>Vehicle Detail</Text>
             <Text style={styles.itemTitle}>{selected.make} {selected.model}</Text>
-            <Text>License Plate: {selected.license_plate}</Text>
-            <Text>Year: {selected.year}</Text>
-            <Text>VIN: {selected.vin}</Text>
-            <Text>Capacity: {selected.capacity} kg</Text>
-            <Text>Status: {selected.active ? 'Active' : 'Inactive'}</Text>
+            <Text style={{ color: theme.text }}>License Plate: {selected.license_plate}</Text>
+            <Text style={{ color: theme.text }}>Year: {selected.year}</Text>
+            <Text style={{ color: theme.text }}>VIN: {selected.vin}</Text>
+            <Text style={{ color: theme.text }}>Capacity: {selected.capacity} kg</Text>
+            <Text style={{ color: theme.text }}>Status: {selected.active ? 'Active' : 'Inactive'}</Text>
             <View style={styles.buttonContainer}>
               <Button title="Edit" onPress={() => handleEdit(selected)} />
             </View>
@@ -814,7 +815,7 @@ export default function App() {
     }
     // fallback
     return (
-      <View style={styles.container}><Text>Invalid state</Text></View>
+      <View style={styles.container}><Text style={{ color: theme.text }}>Invalid state</Text></View>
     );
   }
 
@@ -906,7 +907,7 @@ export default function App() {
               <Button title="← Back" onPress={onBack} />
               <Text style={[styles.title, { flex: 1, textAlign: 'center' }]}>📦 Admin Deliveries</Text>
             </View>
-            {error && <Text style={{ color: 'red', marginBottom: 10 }}>{error}</Text>}
+            {error && <Text style={{ color: theme.error, marginBottom: 10 }}>{error}</Text>}
             <View style={styles.buttonContainer}>
               <Button title="Add Delivery" onPress={() => { setMode('create'); setForm({ customer_name: '', customer_address: '', pickup_location: '', dropoff_location: '', item_description: '', status: 'Pending', same_pickup_as_customer: false, use_preferred_pickup: false }); }} />
             </View>
@@ -916,9 +917,9 @@ export default function App() {
               deliveries.map((delivery: any) => (
                 <View key={delivery.id} style={styles.itemContainer}>
                   <Text style={styles.itemTitle}>{delivery.customer_name}</Text>
-                  <Text>From: {delivery.pickup_location}</Text>
-                  <Text>To: {delivery.dropoff_location}</Text>
-                  <Text>Status: {delivery.status}</Text>
+                  <Text style={{ color: theme.text }}>From: {delivery.pickup_location}</Text>
+                  <Text style={{ color: theme.text }}>To: {delivery.dropoff_location}</Text>
+                  <Text style={{ color: theme.text }}>Status: {delivery.status}</Text>
                   <View style={{ flexDirection: 'row', marginTop: 8 }}>
                     <View style={{ flex: 1, marginRight: 4 }}>
                       <Button title="View" onPress={() => handleSelect(delivery)} />
@@ -943,16 +944,16 @@ export default function App() {
         <ScrollView style={styles.container}>
           <View style={styles.content}>
             <Text style={styles.title}>{mode === 'create' ? 'Add Delivery' : 'Edit Delivery'}</Text>
-            {error && <Text style={{ color: 'red', marginBottom: 10 }}>{error}</Text>}
-            <TextInput style={styles.input} value={form.customer_name} onChangeText={t => setForm((f: typeof form) => ({ ...f, customer_name: t }))} placeholder="Customer Name *" />
-            <TextInput style={styles.input} value={form.customer_address} onChangeText={t => setForm((f: typeof form) => ({ ...f, customer_address: t }))} placeholder="Customer Address *" />
-            <TextInput style={styles.input} value={form.pickup_location} onChangeText={t => setForm((f: typeof form) => ({ ...f, pickup_location: t }))} placeholder="Pickup Location *" />
-            <TextInput style={styles.input} value={form.dropoff_location} onChangeText={t => setForm((f: typeof form) => ({ ...f, dropoff_location: t }))} placeholder="Dropoff Location *" />
-            <TextInput style={[styles.input, styles.multilineInput]} value={form.item_description} onChangeText={t => setForm((f: typeof form) => ({ ...f, item_description: t }))} placeholder="Item Description" multiline numberOfLines={3} />
+            {error && <Text style={{ color: theme.error, marginBottom: 10 }}>{error}</Text>}
+            <TextInput style={styles.input} value={form.customer_name} onChangeText={t => setForm((f: typeof form) => ({ ...f, customer_name: t }))} placeholderTextColor={theme.placeholder} placeholder="Customer Name *" />
+            <TextInput style={styles.input} value={form.customer_address} onChangeText={t => setForm((f: typeof form) => ({ ...f, customer_address: t }))} placeholderTextColor={theme.placeholder} placeholder="Customer Address *" />
+            <TextInput style={styles.input} value={form.pickup_location} onChangeText={t => setForm((f: typeof form) => ({ ...f, pickup_location: t }))} placeholderTextColor={theme.placeholder} placeholder="Pickup Location *" />
+            <TextInput style={styles.input} value={form.dropoff_location} onChangeText={t => setForm((f: typeof form) => ({ ...f, dropoff_location: t }))} placeholderTextColor={theme.placeholder} placeholder="Dropoff Location *" />
+            <TextInput style={[styles.input, styles.multilineInput]} value={form.item_description} onChangeText={t => setForm((f: typeof form) => ({ ...f, item_description: t }))} placeholderTextColor={theme.placeholder} placeholder="Item Description" multiline numberOfLines={3} />
             <Text style={styles.sectionTitle}>Status</Text>
             {statusOptions.map(status => (
               <View key={status} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
-                <Text style={{ flex: 1 }}>{status}</Text>
+                <Text style={{ flex: 1, color: theme.text }}>{status}</Text>
                 <Switch value={form.status === status} onValueChange={() => setForm((f: typeof form) => ({ ...f, status }))} />
               </View>
             ))}
@@ -980,12 +981,12 @@ export default function App() {
           <View style={styles.content}>
             <Text style={styles.title}>Delivery Detail</Text>
             <Text style={styles.itemTitle}>{selected.customer_name}</Text>
-            <Text>Customer Address: {selected.customer_address}</Text>
-            <Text>Pickup: {selected.pickup_location}</Text>
-            <Text>Dropoff: {selected.dropoff_location}</Text>
-            <Text>Item: {selected.item_description}</Text>
-            <Text>Status: {selected.status}</Text>
-            <Text>Created: {selected.created_at ? new Date(selected.created_at).toLocaleDateString() : 'N/A'}</Text>
+            <Text style={{ color: theme.text }}>Customer Address: {selected.customer_address}</Text>
+            <Text style={{ color: theme.text }}>Pickup: {selected.pickup_location}</Text>
+            <Text style={{ color: theme.text }}>Dropoff: {selected.dropoff_location}</Text>
+            <Text style={{ color: theme.text }}>Item: {selected.item_description}</Text>
+            <Text style={{ color: theme.text }}>Status: {selected.status}</Text>
+            <Text style={{ color: theme.text }}>Created: {selected.created_at ? new Date(selected.created_at).toLocaleDateString() : 'N/A'}</Text>
             <View style={styles.buttonContainer}>
               <Button title="Edit" onPress={() => handleEdit(selected)} />
             </View>
@@ -1001,7 +1002,7 @@ export default function App() {
     }
     // fallback
     return (
-      <View style={styles.container}><Text>Invalid state</Text></View>
+      <View style={styles.container}><Text style={{ color: theme.text }}>Invalid state</Text></View>
     );
   }
 
@@ -1099,7 +1100,7 @@ export default function App() {
                 style={styles.input}
                 value={form.pickup_location}
                 onChangeText={(text) => setForm({ ...form, pickup_location: text })}
-                placeholder="Pickup Location"
+                placeholderTextColor={theme.placeholder} placeholder="Pickup Location"
               />
             )}
 
@@ -1107,14 +1108,14 @@ export default function App() {
               style={styles.input}
               value={form.dropoff_location}
               onChangeText={(text) => setForm({ ...form, dropoff_location: text })}
-              placeholder="Dropoff Location *"
+              placeholderTextColor={theme.placeholder} placeholder="Dropoff Location *"
             />
 
             <TextInput
               style={[styles.input, styles.multilineInput]}
               value={form.item_description}
               onChangeText={(text) => setForm({ ...form, item_description: text })}
-              placeholder="Item Description (Optional)"
+              placeholderTextColor={theme.placeholder} placeholder="Item Description (Optional)"
               multiline
               numberOfLines={3}
             />
@@ -1403,7 +1404,7 @@ export default function App() {
             <Text style={styles.label}>First Name *</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter first name"
+              placeholderTextColor={theme.placeholder} placeholder="Enter first name"
               value={formData.first_name}
               onChangeText={(text) => setFormData(prev => ({ ...prev, first_name: text }))}
             />
@@ -1411,7 +1412,7 @@ export default function App() {
             <Text style={styles.label}>Last Name *</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter last name"
+              placeholderTextColor={theme.placeholder} placeholder="Enter last name"
               value={formData.last_name}
               onChangeText={(text) => setFormData(prev => ({ ...prev, last_name: text }))}
             />
@@ -1419,7 +1420,7 @@ export default function App() {
             <Text style={styles.label}>Phone Number (10 digits, no area code)</Text>
             <TextInput
               style={styles.input}
-              placeholder="(555) 555-5555"
+              placeholderTextColor={theme.placeholder} placeholder="(555) 555-5555"
               value={formData.phone_number}
               onChangeText={(text) => setFormData(prev => ({ ...prev, phone_number: formatPhone10(text) }))}
               keyboardType="phone-pad"
@@ -1429,7 +1430,7 @@ export default function App() {
             <Text style={styles.label}>License Number *</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter license number"
+              placeholderTextColor={theme.placeholder} placeholder="Enter license number"
               value={formData.license_number}
               onChangeText={(text) => setFormData(prev => ({ ...prev, license_number: text }))}
             />
@@ -1471,15 +1472,15 @@ export default function App() {
             </View>
 
             <Text style={styles.itemTitle}>{selectedDriver.first_name} {selectedDriver.last_name}</Text>
-            <Text>License: {selectedDriver.license_number}</Text>
-            {selectedDriver.phone_number && <Text>Phone: {formatPhoneForDisplay(selectedDriver.phone_number)}</Text>}
-            <Text>Status: {selectedDriver.active ? 'Active' : 'Inactive'}</Text>
+            <Text style={{ color: theme.text }}>License: {selectedDriver.license_number}</Text>
+            {selectedDriver.phone_number && <Text style={{ color: theme.text }}>Phone: {formatPhoneForDisplay(selectedDriver.phone_number)}</Text>}
+            <Text style={{ color: theme.text }}>Status: {selectedDriver.active ? 'Active' : 'Inactive'}</Text>
 
             {selectedDriver.current_vehicle && (
               <View style={{ marginTop: 15 }}>
                 <Text style={styles.sectionTitle}>Current Vehicle</Text>
-                <Text>Plate: {selectedDriver.current_vehicle_plate}</Text>
-                <Text>Vehicle: {selectedDriver.current_vehicle}</Text>
+                <Text style={{ color: theme.text }}>Plate: {selectedDriver.current_vehicle_plate}</Text>
+                <Text style={{ color: theme.text }}>Vehicle: {selectedDriver.current_vehicle}</Text>
               </View>
             )}
 
@@ -1527,16 +1528,16 @@ export default function App() {
             drivers.map((driver: any) => (
               <View key={driver.id} style={styles.itemContainer}>
                 <Text style={styles.itemTitle}>{driver.first_name} {driver.last_name}</Text>
-                <Text>License: {driver.license_number}</Text>
-                {driver.phone_number && <Text>Phone: {formatPhoneForDisplay(driver.phone_number)}</Text>}
-                <Text>Status: <Text style={{ color: driver.active ? 'green' : 'red' }}>
+                <Text style={{ color: theme.text }}>License: {driver.license_number}</Text>
+                {driver.phone_number && <Text style={{ color: theme.text }}>Phone: {formatPhoneForDisplay(driver.phone_number)}</Text>}
+                <Text style={{ color: theme.text }}>Status: <Text style={{ color: driver.active ? 'green' : 'red' }}>
                   {driver.active ? 'Active' : 'Inactive'}
                 </Text></Text>
                 {driver.current_vehicle_plate && (
-                  <Text>Vehicle: {driver.current_vehicle_plate}</Text>
+                  <Text style={{ color: theme.text }}>Vehicle: {driver.current_vehicle_plate}</Text>
                 )}
                 {driver.current_vehicle_model && (
-                  <Text>Model: {driver.current_vehicle_model}</Text>
+                  <Text style={{ color: theme.text }}>Model: {driver.current_vehicle_model}</Text>
                 )}
 
                 <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 8 }}>
@@ -1676,20 +1677,20 @@ export default function App() {
               </Text>
             </View>
 
-            {error && <Text style={{ color: 'red', marginBottom: 10 }}>{error}</Text>}
+            {error && <Text style={{ color: theme.error, marginBottom: 10 }}>{error}</Text>}
 
             {mode === 'edit' ? (
               <>
                 <Text style={styles.label}>Driver (Selected)</Text>
-                <View style={{ backgroundColor: '#e9ecef', borderRadius: 5, padding: 10, marginBottom: 10 }}>
+                <View style={{ backgroundColor: theme.surface, borderRadius: 5, padding: 10, marginBottom: 10 }}>
                   {(() => {
                     const selectedDriver = drivers.find((d: any) => d.id.toString() === formData.driver_id);
                     return selectedDriver ? (
-                      <Text style={{ fontWeight: 'bold' }}>
+                      <Text style={{ fontWeight: 'bold', color: theme.text }}>
                         {selectedDriver.first_name} {selectedDriver.last_name} ({selectedDriver.license_number})
                       </Text>
                     ) : (
-                      <Text>Driver ID: {formData.driver_id}</Text>
+                      <Text style={{ color: theme.text }}>Driver ID: {formData.driver_id}</Text>
                     );
                   })()}
                 </View>
@@ -1697,14 +1698,14 @@ export default function App() {
             ) : (
               <>
                 <Text style={styles.label}>Driver *</Text>
-                <View style={{ backgroundColor: '#f5f5f5', borderRadius: 5, marginBottom: 10 }}>
+                <View style={{ backgroundColor: theme.surface, borderRadius: 5, marginBottom: 10 }}>
                   {drivers.map((driver: any) => (
                     <View key={driver.id} style={{ flexDirection: 'row', alignItems: 'center', padding: 5 }}>
                       <Button
                         title={formData.driver_id === driver.id.toString() ? '●' : '○'}
                         onPress={() => setFormData(prev => ({ ...prev, driver_id: driver.id.toString() }))}
                       />
-                      <Text style={{ marginLeft: 10 }}>{driver.first_name} {driver.last_name} ({driver.license_number})</Text>
+                      <Text style={{ marginLeft: 10, color: theme.text }}>{driver.first_name} {driver.last_name} ({driver.license_number})</Text>
                     </View>
                   ))}
                 </View>
@@ -1712,7 +1713,7 @@ export default function App() {
             )}
 
             <Text style={styles.label}>Vehicle * {mode === 'edit' ? '(Change Assignment)' : ''}</Text>
-            <View style={{ backgroundColor: '#f5f5f5', borderRadius: 5, marginBottom: 10 }}>
+            <View style={{ backgroundColor: theme.surface, borderRadius: 5, marginBottom: 10 }}>
               {vehicles.map((vehicle: any) => {
                 const isSelected = formData.vehicle_id === vehicle.id.toString();
                 return (
@@ -1720,14 +1721,14 @@ export default function App() {
                     flexDirection: 'row',
                     alignItems: 'center',
                     padding: 5,
-                    backgroundColor: isSelected ? '#d4edda' : 'transparent',
+                    backgroundColor: isSelected ? theme.inputBg : 'transparent',
                     borderRadius: 3
                   }}>
                     <Button
                       title={isSelected ? '●' : '○'}
                       onPress={() => setFormData(prev => ({ ...prev, vehicle_id: vehicle.id.toString() }))}
                     />
-                    <Text style={{ marginLeft: 10, fontWeight: isSelected ? 'bold' : 'normal' }}>
+                    <Text style={{ marginLeft: 10, fontWeight: isSelected ? 'bold' : 'normal', color: theme.text }}>
                       {vehicle.license_plate} - {vehicle.model}
                       {isSelected && mode === 'edit' ? ' (Currently Assigned)' : ''}
                     </Text>
@@ -1739,7 +1740,7 @@ export default function App() {
             <Text style={styles.label}>Assigned From *</Text>
             <TextInput
               style={styles.input}
-              placeholder="YYYY-MM-DD"
+              placeholderTextColor={theme.placeholder} placeholder="YYYY-MM-DD"
               value={formData.assigned_from}
               onChangeText={(text) => setFormData(prev => ({ ...prev, assigned_from: text }))}
             />
@@ -1747,14 +1748,14 @@ export default function App() {
             <Text style={styles.label}>Assigned To (optional)</Text>
             <TextInput
               style={styles.input}
-              placeholder="YYYY-MM-DD (leave empty for ongoing)"
+              placeholderTextColor={theme.placeholder} placeholder="YYYY-MM-DD (leave empty for ongoing)"
               value={formData.assigned_to}
               onChangeText={(text) => setFormData(prev => ({ ...prev, assigned_to: text }))}
             />
 
             <View style={styles.buttonContainer}>
               {localLoading ? (
-                <ActivityIndicator size="large" color="#0066CC" />
+                <ActivityIndicator size="large" color={theme.text} />
               ) : (
                 <>
                   <Button
@@ -1781,11 +1782,11 @@ export default function App() {
             </View>
 
             <Text style={styles.itemTitle}>Driver-Vehicle Assignment</Text>
-            <Text>Driver: {selectedAssignment.driver_name || 'Unknown Driver'}</Text>
-            <Text>Vehicle: {selectedAssignment.vehicle_license_plate || 'Unknown Vehicle'} - {selectedAssignment.vehicle_model || ''}</Text>
-            <Text>Assigned From: {selectedAssignment.assigned_from}</Text>
-            <Text>Assigned To: {selectedAssignment.assigned_to || 'Ongoing'}</Text>
-            <Text>Status: {selectedAssignment.assigned_to ? 'Completed' : 'Active'}</Text>
+            <Text style={{ color: theme.text }}>Driver: {selectedAssignment.driver_name || 'Unknown Driver'}</Text>
+            <Text style={{ color: theme.text }}>Vehicle: {selectedAssignment.vehicle_license_plate || 'Unknown Vehicle'} - {selectedAssignment.vehicle_model || ''}</Text>
+            <Text style={{ color: theme.text }}>Assigned From: {selectedAssignment.assigned_from}</Text>
+            <Text style={{ color: theme.text }}>Assigned To: {selectedAssignment.assigned_to || 'Ongoing'}</Text>
+            <Text style={{ color: theme.text }}>Status: {selectedAssignment.assigned_to ? 'Completed' : 'Active'}</Text>
 
             <View style={styles.buttonContainer}>
               <Button title="Edit Assignment" onPress={() => handleEdit(selectedAssignment)} />
@@ -1812,10 +1813,10 @@ export default function App() {
 
           <Button title="🔄 Refresh" onPress={refreshAssignments} />
 
-          {error && <Text style={{ color: 'red', marginBottom: 10 }}>{error}</Text>}
+          {error && <Text style={{ color: theme.error, marginBottom: 10 }}>{error}</Text>}
 
           {localLoading ? (
-            <ActivityIndicator size="large" color="#0066CC" />
+            <ActivityIndicator size="large" color={theme.text} />
           ) : driverVehicles.length === 0 ? (
             <View style={{ alignItems: 'center', marginTop: 50 }}>
               <Text style={styles.emptyText}>No driver-vehicle assignments found.</Text>
@@ -1825,11 +1826,11 @@ export default function App() {
             driverVehicles.map((assignment: any) => (
               <View key={assignment.id} style={styles.itemContainer}>
                 <Text style={styles.itemTitle}>Assignment #{assignment.id}</Text>
-                <Text>Driver: {assignment.driver_name || 'Unknown Driver'}</Text>
-                <Text>Vehicle: {assignment.vehicle_license_plate || 'Unknown Vehicle'}</Text>
-                <Text>From: {assignment.assigned_from}</Text>
-                <Text>To: {assignment.assigned_to || 'Ongoing'}</Text>
-                <Text>Status: <Text style={{ color: assignment.assigned_to ? 'orange' : 'green' }}>
+                <Text style={{ color: theme.text }}>Driver: {assignment.driver_name || 'Unknown Driver'}</Text>
+                <Text style={{ color: theme.text }}>Vehicle: {assignment.vehicle_license_plate || 'Unknown Vehicle'}</Text>
+                <Text style={{ color: theme.text }}>From: {assignment.assigned_from}</Text>
+                <Text style={{ color: theme.text }}>To: {assignment.assigned_to || 'Ongoing'}</Text>
+                <Text style={{ color: theme.text }}>Status: <Text style={{ color: assignment.assigned_to ? theme.textMuted : theme.text }}>
                   {assignment.assigned_to ? 'Completed' : 'Active'}
                 </Text></Text>
 
@@ -2009,7 +2010,7 @@ export default function App() {
           <Text style={styles.label}>Username *</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter username"
+            placeholderTextColor={theme.placeholder} placeholder="Enter username"
             value={formData.username}
             onChangeText={(text) => setFormData(prev => ({ ...prev, username: text }))}
             autoCapitalize="none"
@@ -2018,7 +2019,7 @@ export default function App() {
           <Text style={styles.label}>Email</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter email"
+            placeholderTextColor={theme.placeholder} placeholder="Enter email"
             value={formData.email}
             onChangeText={(text) => setFormData(prev => ({ ...prev, email: text }))}
             keyboardType="email-address"
@@ -2028,7 +2029,7 @@ export default function App() {
           <Text style={styles.label}>Password *</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter password"
+            placeholderTextColor={theme.placeholder} placeholder="Enter password"
             value={formData.password}
             onChangeText={(text) => setFormData(prev => ({ ...prev, password: text }))}
             secureTextEntry
@@ -2037,7 +2038,7 @@ export default function App() {
           <Text style={styles.label}>Confirm Password *</Text>
           <TextInput
             style={styles.input}
-            placeholder="Confirm password"
+            placeholderTextColor={theme.placeholder} placeholder="Confirm password"
             value={formData.confirm_password}
             onChangeText={(text) => setFormData(prev => ({ ...prev, confirm_password: text }))}
             secureTextEntry
@@ -2048,7 +2049,7 @@ export default function App() {
           <Text style={styles.label}>First Name *</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter first name"
+            placeholderTextColor={theme.placeholder} placeholder="Enter first name"
             value={formData.first_name}
             onChangeText={(text) => setFormData(prev => ({ ...prev, first_name: text }))}
           />
@@ -2056,7 +2057,7 @@ export default function App() {
           <Text style={styles.label}>Last Name *</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter last name"
+            placeholderTextColor={theme.placeholder} placeholder="Enter last name"
             value={formData.last_name}
             onChangeText={(text) => setFormData(prev => ({ ...prev, last_name: text }))}
           />
@@ -2064,7 +2065,7 @@ export default function App() {
           <Text style={styles.label}>Phone Number</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter phone number"
+            placeholderTextColor={theme.placeholder} placeholder="Enter phone number"
             value={formData.phone_number}
             onChangeText={(text) => setFormData(prev => ({ ...prev, phone_number: text }))}
             keyboardType="phone-pad"
@@ -2073,7 +2074,7 @@ export default function App() {
           <Text style={styles.label}>License Number *</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter driver's license number"
+            placeholderTextColor={theme.placeholder} placeholder="Enter driver's license number"
             value={formData.license_number}
             onChangeText={(text) => {
               console.log('[DEBUG] RegisterAsDriverScreen: License number changing to:', `"${text}"`);
@@ -2091,7 +2092,7 @@ export default function App() {
           <Text style={styles.label}>Vehicle License Plate *</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter vehicle license plate"
+            placeholderTextColor={theme.placeholder} placeholder="Enter vehicle license plate"
             value={formData.vehicle_license_plate}
             onChangeText={(text) => setFormData(prev => ({ ...prev, vehicle_license_plate: text.toUpperCase() }))}
             autoCapitalize="characters"
@@ -2100,7 +2101,7 @@ export default function App() {
           <Text style={styles.label}>Vehicle Make *</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter vehicle make (e.g., Ford, Toyota)"
+            placeholderTextColor={theme.placeholder} placeholder="Enter vehicle make (e.g., Ford, Toyota)"
             value={formData.vehicle_make}
             onChangeText={(text) => setFormData(prev => ({ ...prev, vehicle_make: text }))}
           />
@@ -2108,7 +2109,7 @@ export default function App() {
           <Text style={styles.label}>Vehicle Model *</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter vehicle model (e.g., Transit, Hiace)"
+            placeholderTextColor={theme.placeholder} placeholder="Enter vehicle model (e.g., Transit, Hiace)"
             value={formData.vehicle_model}
             onChangeText={(text) => setFormData(prev => ({ ...prev, vehicle_model: text }))}
           />
@@ -2116,7 +2117,7 @@ export default function App() {
           <Text style={styles.label}>Vehicle Year *</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter vehicle year"
+            placeholderTextColor={theme.placeholder} placeholder="Enter vehicle year"
             value={formData.vehicle_year === 2000 ? '' : formData.vehicle_year.toString()}
             onChangeText={(text) => {
               // Allow empty input while typing
@@ -2144,7 +2145,7 @@ export default function App() {
           <Text style={styles.label}>Vehicle VIN *</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter vehicle VIN (17 characters)"
+            placeholderTextColor={theme.placeholder} placeholder="Enter vehicle VIN (17 characters)"
             value={formData.vehicle_vin}
             onChangeText={(text) => setFormData(prev => ({ ...prev, vehicle_vin: text.toUpperCase() }))}
             autoCapitalize="characters"
@@ -2154,7 +2155,7 @@ export default function App() {
           <Text style={styles.label}>Vehicle Capacity (kg) *</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter vehicle capacity in kg"
+            placeholderTextColor={theme.placeholder} placeholder="Enter vehicle capacity in kg"
             value={formData.vehicle_capacity.toString()}
             onChangeText={(text) => {
               const capacity = parseInt(text) || 1000;
@@ -3435,7 +3436,8 @@ export default function App() {
   if (loading) {
     return (
       <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#0066CC" />
+        <StatusBar barStyle="light-content" backgroundColor="#000000" />
+        <ActivityIndicator size="large" color={theme.border} />
         <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
@@ -3445,6 +3447,7 @@ export default function App() {
   if (currentScreen === 'main') {
     return (
       <ScrollView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#000000" />
         <View style={styles.content}>
           <Text style={styles.title}>🚚 DeliveryApp Mobile</Text>
           <Text style={styles.subtitle}>Complete Delivery Management System</Text>
@@ -3505,7 +3508,7 @@ export default function App() {
             style={styles.input}
             value={loginForm.username}
             onChangeText={(text) => setLoginForm({ ...loginForm, username: text })}
-            placeholder="Username"
+            placeholderTextColor={theme.placeholder} placeholder="Username"
             autoCapitalize="none"
           />
 
@@ -3513,7 +3516,7 @@ export default function App() {
             style={styles.input}
             value={loginForm.password}
             onChangeText={(text) => setLoginForm({ ...loginForm, password: text })}
-            placeholder="Password"
+            placeholderTextColor={theme.placeholder} placeholder="Password"
             secureTextEntry
           />
 
@@ -3557,7 +3560,7 @@ export default function App() {
               style={styles.input}
               value={customerForm.username}
               onChangeText={(text) => setCustomerForm({ ...customerForm, username: text })}
-              placeholder="Username *"
+              placeholderTextColor={theme.placeholder} placeholder="Username *"
               autoCapitalize="none"
             />
 
@@ -3565,7 +3568,7 @@ export default function App() {
               style={styles.input}
               value={customerForm.email}
               onChangeText={(text) => setCustomerForm({ ...customerForm, email: text })}
-              placeholder="Email *"
+              placeholderTextColor={theme.placeholder} placeholder="Email *"
               keyboardType="email-address"
               autoCapitalize="none"
             />
@@ -3574,7 +3577,7 @@ export default function App() {
               style={styles.input}
               value={customerForm.password}
               onChangeText={(text) => setCustomerForm({ ...customerForm, password: text })}
-              placeholder="Password *"
+              placeholderTextColor={theme.placeholder} placeholder="Password *"
               secureTextEntry
             />
 
@@ -3583,21 +3586,21 @@ export default function App() {
               style={styles.input}
               value={customerForm.first_name}
               onChangeText={(text) => setCustomerForm({ ...customerForm, first_name: text })}
-              placeholder="First Name"
+              placeholderTextColor={theme.placeholder} placeholder="First Name"
             />
 
             <TextInput
               style={styles.input}
               value={customerForm.last_name}
               onChangeText={(text) => setCustomerForm({ ...customerForm, last_name: text })}
-              placeholder="Last Name"
+              placeholderTextColor={theme.placeholder} placeholder="Last Name"
             />
 
             <TextInput
               style={styles.input}
               value={customerForm.phone_number}
               onChangeText={(text) => setCustomerForm({ ...customerForm, phone_number: text })}
-              placeholder="Phone Number"
+              placeholderTextColor={theme.placeholder} placeholder="Phone Number"
               keyboardType="phone-pad"
             />
 
@@ -3607,35 +3610,35 @@ export default function App() {
               style={styles.input}
               value={customerForm.address_unit}
               onChangeText={(text) => setCustomerForm({ ...customerForm, address_unit: text })}
-              placeholder="Unit/Apartment (Optional)"
+              placeholderTextColor={theme.placeholder} placeholder="Unit/Apartment (Optional)"
             />
 
             <TextInput
               style={styles.input}
               value={customerForm.address_street}
               onChangeText={(text) => setCustomerForm({ ...customerForm, address_street: text })}
-              placeholder="Street Address"
+              placeholderTextColor={theme.placeholder} placeholder="Street Address"
             />
 
             <TextInput
               style={styles.input}
               value={customerForm.address_city}
               onChangeText={(text) => setCustomerForm({ ...customerForm, address_city: text })}
-              placeholder="City"
+              placeholderTextColor={theme.placeholder} placeholder="City"
             />
 
             <TextInput
               style={styles.input}
               value={customerForm.address_state}
               onChangeText={(text) => setCustomerForm({ ...customerForm, address_state: text })}
-              placeholder="State/Province"
+              placeholderTextColor={theme.placeholder} placeholder="State/Province"
             />
 
             <TextInput
               style={styles.input}
               value={customerForm.address_postal_code}
               onChangeText={(text) => setCustomerForm({ ...customerForm, address_postal_code: text })}
-              placeholder="Postal/ZIP Code"
+              placeholderTextColor={theme.placeholder} placeholder="Postal/ZIP Code"
             />
 
             <Text style={styles.label}>Country *</Text>
@@ -3655,7 +3658,7 @@ export default function App() {
                 />
               </View>
             </View>
-            <Text style={{ fontSize: 12, color: '#666', marginBottom: 10 }}>
+            <Text style={{ fontSize: 12, color: theme.textMuted, marginBottom: 10 }}>
               Selected: {customerForm.address_country === 'CA' ? 'Canada' : customerForm.address_country === 'US' ? 'United States' : 'Please select a country'}
             </Text>
 
@@ -3673,7 +3676,7 @@ export default function App() {
                 style={styles.input}
                 value={customerForm.company_name}
                 onChangeText={(text) => setCustomerForm({ ...customerForm, company_name: text })}
-                placeholder="Company Name"
+                placeholderTextColor={theme.placeholder} placeholder="Company Name"
               />
             )}
 
@@ -3681,7 +3684,7 @@ export default function App() {
               style={[styles.input, styles.multilineInput]}
               value={customerForm.preferred_pickup_address}
               onChangeText={(text) => setCustomerForm({ ...customerForm, preferred_pickup_address: text })}
-              placeholder="Preferred Pickup Address (Optional)"
+              placeholderTextColor={theme.placeholder} placeholder="Preferred Pickup Address (Optional)"
               multiline
               numberOfLines={2}
             />
@@ -3723,7 +3726,7 @@ export default function App() {
               style={styles.input}
               value={driverForm.username}
               onChangeText={(text) => setDriverForm({ ...driverForm, username: text })}
-              placeholder="Username *"
+              placeholderTextColor={theme.placeholder} placeholder="Username *"
               autoCapitalize="none"
             />
 
@@ -3731,7 +3734,7 @@ export default function App() {
               style={styles.input}
               value={driverForm.email}
               onChangeText={(text) => setDriverForm({ ...driverForm, email: text })}
-              placeholder="Email *"
+              placeholderTextColor={theme.placeholder} placeholder="Email *"
               keyboardType="email-address"
               autoCapitalize="none"
             />
@@ -3740,7 +3743,7 @@ export default function App() {
               style={styles.input}
               value={driverForm.password}
               onChangeText={(text) => setDriverForm({ ...driverForm, password: text })}
-              placeholder="Password *"
+              placeholderTextColor={theme.placeholder} placeholder="Password *"
               secureTextEntry
             />
 
@@ -3748,7 +3751,7 @@ export default function App() {
               style={styles.input}
               value={driverForm.first_name}
               onChangeText={(text) => setDriverForm({ ...driverForm, first_name: text })}
-              placeholder="First Name *"
+              placeholderTextColor={theme.placeholder} placeholder="First Name *"
               autoCapitalize="words"
             />
 
@@ -3756,7 +3759,7 @@ export default function App() {
               style={styles.input}
               value={driverForm.last_name}
               onChangeText={(text) => setDriverForm({ ...driverForm, last_name: text })}
-              placeholder="Last Name *"
+              placeholderTextColor={theme.placeholder} placeholder="Last Name *"
               autoCapitalize="words"
             />
 
@@ -3764,7 +3767,7 @@ export default function App() {
               style={styles.input}
               value={driverForm.phone_number}
               onChangeText={(text) => setDriverForm({ ...driverForm, phone_number: text })}
-              placeholder="Phone Number *"
+              placeholderTextColor={theme.placeholder} placeholder="Phone Number *"
               keyboardType="phone-pad"
             />
 
@@ -3772,7 +3775,7 @@ export default function App() {
               style={styles.input}
               value={driverForm.license_number}
               onChangeText={(text) => setDriverForm({ ...driverForm, license_number: text })}
-              placeholder="Driver License Number *"
+              placeholderTextColor={theme.placeholder} placeholder="Driver License Number *"
             />
 
             <Text style={styles.sectionTitle}>Vehicle Information</Text>
@@ -3780,7 +3783,7 @@ export default function App() {
               style={styles.input}
               value={driverForm.vehicle_license_plate}
               onChangeText={(text) => setDriverForm({ ...driverForm, vehicle_license_plate: text.toUpperCase() })}
-              placeholder="Vehicle License Plate *"
+              placeholderTextColor={theme.placeholder} placeholder="Vehicle License Plate *"
               autoCapitalize="characters"
             />
 
@@ -3788,14 +3791,14 @@ export default function App() {
               style={styles.input}
               value={driverForm.vehicle_make}
               onChangeText={(text) => setDriverForm({ ...driverForm, vehicle_make: text })}
-              placeholder="Vehicle Make (e.g., Ford, Toyota) *"
+              placeholderTextColor={theme.placeholder} placeholder="Vehicle Make (e.g., Ford, Toyota) *"
             />
 
             <TextInput
               style={styles.input}
               value={driverForm.vehicle_model}
               onChangeText={(text) => setDriverForm({ ...driverForm, vehicle_model: text })}
-              placeholder="Vehicle Model (e.g., Transit, Hiace) *"
+              placeholderTextColor={theme.placeholder} placeholder="Vehicle Model (e.g., Transit, Hiace) *"
             />
 
             <TextInput
@@ -3811,7 +3814,7 @@ export default function App() {
                   }
                 }
               }}
-              placeholder="Vehicle Year (e.g., 2024) *"
+              placeholderTextColor={theme.placeholder} placeholder="Vehicle Year (e.g., 2024) *"
               keyboardType="numeric"
               maxLength={4}
             />
@@ -3820,7 +3823,7 @@ export default function App() {
               style={styles.input}
               value={driverForm.vehicle_vin}
               onChangeText={(text) => setDriverForm({ ...driverForm, vehicle_vin: text.toUpperCase() })}
-              placeholder="VIN (17 characters) *"
+              placeholderTextColor={theme.placeholder} placeholder="VIN (17 characters) *"
               autoCapitalize="characters"
               maxLength={17}
             />
@@ -3834,7 +3837,7 @@ export default function App() {
                   setDriverForm({ ...driverForm, vehicle_capacity: capacity });
                 }
               }}
-              placeholder="Vehicle Capacity (kg) *"
+              placeholderTextColor={theme.placeholder} placeholder="Vehicle Capacity (kg) *"
               keyboardType="numeric"
             />
 
@@ -3974,10 +3977,22 @@ export default function App() {
   );
 }
 
+// Black/grey dark theme: black background, dark grey textboxes, off-white borders
+const theme = {
+  background: '#000000',
+  surface: '#1a1a1a',
+  inputBg: '#2a2a2a',
+  border: '#e8e8e8',
+  text: '#f0f0f0',
+  textMuted: '#b0b0b0',
+  error: '#ff6b6b',
+  placeholder: '#888888',
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: theme.background,
   },
   content: {
     padding: 20,
@@ -3991,13 +4006,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 10,
-    color: '#333',
+    color: theme.text,
   },
   subtitle: {
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 20,
-    color: '#666',
+    color: theme.textMuted,
   },
   section: {
     marginVertical: 15,
@@ -4006,56 +4021,50 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
-    color: '#333',
+    color: theme.text,
   },
   label: {
     fontSize: 16,
     fontWeight: '500',
     marginBottom: 5,
     marginTop: 10,
-    color: '#333',
+    color: theme.textMuted,
   },
   itemContainer: {
     padding: 15,
-    backgroundColor: 'white',
+    backgroundColor: theme.surface,
     borderRadius: 8,
     marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: theme.border,
   },
   itemTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 5,
-    color: '#333',
+    color: theme.text,
   },
   statusContainer: {
     padding: 15,
-    backgroundColor: 'white',
+    backgroundColor: theme.surface,
     borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: theme.border,
   },
   statusLabel: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 5,
-    color: '#333',
+    color: theme.text,
   },
   status: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#333',
+    color: theme.text,
   },
   networkLabel: {
     fontSize: 14,
-    color: '#666',
+    color: theme.textMuted,
     marginTop: 5,
   },
   loadingContainer: {
@@ -4065,31 +4074,33 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: '#666',
+    color: theme.textMuted,
   },
   buttonContainer: {
     marginVertical: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: theme.border,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: theme.inputBg,
+    color: theme.text,
     marginBottom: 10,
   },
   inputError: {
     borderWidth: 1,
-    borderColor: '#ff4444',
+    borderColor: theme.error,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    backgroundColor: '#fff5f5',
+    backgroundColor: '#3a2020',
+    color: theme.text,
     marginBottom: 10,
   },
   fieldError: {
-    color: '#ff4444',
+    color: theme.error,
     fontSize: 12,
     marginTop: -8,
     marginBottom: 10,
@@ -4100,54 +4111,51 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   detailCard: {
-    backgroundColor: 'white',
+    backgroundColor: theme.surface,
     borderRadius: 8,
     padding: 15,
     marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: theme.border,
   },
   detailCardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 15,
-    color: '#333',
+    color: theme.text,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: theme.border,
     paddingBottom: 10,
   },
   emptyText: {
     fontSize: 14,
-    color: '#666',
+    color: theme.textMuted,
     textAlign: 'center',
     fontStyle: 'italic',
     marginVertical: 20,
   },
   deliveryItem: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: theme.surface,
     padding: 12,
     borderRadius: 8,
     marginBottom: 10,
     borderLeftWidth: 4,
-    borderLeftColor: '#007AFF',
+    borderLeftColor: theme.border,
   },
   deliveryTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 5,
-    color: '#333',
+    color: theme.text,
   },
   deliveryDetail: {
     fontSize: 14,
-    color: '#666',
+    color: theme.textMuted,
     marginBottom: 2,
   },
   infoText: {
     fontSize: 14,
-    color: '#666',
+    color: theme.textMuted,
     textAlign: 'center',
     fontStyle: 'italic',
     marginVertical: 10,
@@ -4165,13 +4173,12 @@ const styles = StyleSheet.create({
   },
   switchLabel: {
     fontSize: 16,
-    color: '#333',
+    color: theme.text,
     flex: 1,
   },
   keyboardPadding: {
     height: 200,
   },
-  // Health Banner Styles - CIO DIRECTIVE
   healthBanner: {
     padding: 12,
     borderRadius: 8,
@@ -4182,52 +4189,53 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   healthChecking: {
-    backgroundColor: '#F3F4F6',
-    borderColor: '#D1D5DB',
+    backgroundColor: theme.surface,
+    borderColor: theme.border,
     borderWidth: 1,
   },
   healthSuccess: {
-    backgroundColor: '#ECFDF5',
-    borderColor: '#10B981',
+    backgroundColor: '#1a2e1a',
+    borderColor: '#4ade80',
     borderWidth: 1,
   },
   healthError: {
-    backgroundColor: '#FEF2F2',
-    borderColor: '#EF4444',
+    backgroundColor: '#2e1a1a',
+    borderColor: theme.error,
     borderWidth: 2,
     flexDirection: 'column',
     alignItems: 'stretch',
   },
   healthText: {
     fontSize: 14,
-    color: '#374151',
+    color: theme.text,
     marginLeft: 8,
     fontWeight: '500',
   },
   healthErrorText: {
     fontSize: 16,
-    color: '#EF4444',
+    color: theme.error,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 4,
   },
   healthErrorSubtext: {
     fontSize: 12,
-    color: '#6B7280',
+    color: theme.textMuted,
     textAlign: 'center',
     marginBottom: 8,
     fontFamily: 'monospace',
   },
   debugInfo: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: theme.surface,
     padding: 8,
     borderRadius: 4,
     marginTop: 8,
+    borderWidth: 1,
+    borderColor: theme.border,
   },
   debugText: {
     fontSize: 10,
-    color: '#374151',
+    color: theme.textMuted,
     fontFamily: 'monospace',
   },
-  // ...add any other styles used in your JSX...
 });
