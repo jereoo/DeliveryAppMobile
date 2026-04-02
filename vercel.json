@@ -1,0 +1,11 @@
+{
+  "buildCommand": "npx expo export -p web",
+  "outputDirectory": "dist",
+  "framework": null,
+  "env": {
+    "EXPO_PUBLIC_BACKEND_URL": "https://truck-buddy-f14f250ae8b3.herokuapp.com/api"
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

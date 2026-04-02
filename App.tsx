@@ -2466,11 +2466,22 @@ export default function App() {
 
     setLoading(true);
     try {
-      // Combine first and last name for the API
+      // Must match DriverRegistrationSerializer (vehicle_year, not year)
       const registrationData = {
-        ...driverForm,
-        year: driverForm.year ? Number(driverForm.year) : new Date().getFullYear(),
-        name: `${driverForm.first_name} ${driverForm.last_name}`
+        username: driverForm.username,
+        email: driverForm.email,
+        password: driverForm.password,
+        first_name: driverForm.first_name,
+        last_name: driverForm.last_name,
+        phone_number: driverForm.phone_number,
+        license_number: driverForm.license_number,
+        vehicle_license_plate: driverForm.vehicle_license_plate,
+        vehicle_make: driverForm.vehicle_make,
+        vehicle_model: driverForm.vehicle_model,
+        vehicle_year: driverForm.year ? Number(driverForm.year) : new Date().getFullYear(),
+        vehicle_vin: driverForm.vehicle_vin,
+        vehicle_capacity: driverForm.vehicle_capacity,
+        vehicle_capacity_unit: 'kg',
       };
 
       const response = await fetch(`${API_BASE}/drivers/register/`, {

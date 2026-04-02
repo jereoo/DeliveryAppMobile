@@ -8,8 +8,8 @@ import Constants from 'expo-constants';
 const getBackendUrl = async (): Promise<string> => {
   // 1. Production build (Vercel etc.)
   const publicUrl = typeof process !== 'undefined' && (process as any).env?.EXPO_PUBLIC_BACKEND_URL;
-  if (publicUrl && publicUrl.startsWith('http')) {
-    return publicUrl.replace(/\/+$/, '');
+  if (publicUrl && typeof publicUrl === 'string' && publicUrl.trim().startsWith('http')) {
+    return publicUrl.trim().replace(/\/+$/, '');
   }
 
   // 2. app.json extra (LAN URL – avoids Metro .env cache issues)
