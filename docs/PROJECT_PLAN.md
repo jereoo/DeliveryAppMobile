@@ -1,8 +1,10 @@
 # DeliveryApp — Project Plan
 
-**Last updated:** April 2026  
+**Last updated:** May 15, 2026  
 **Team size:** 1–3  
-**Tracking:** Use [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).
+**Overall status:** 🟢 Phase 1 **complete** — close-out done May 15, 2026; backend test debt remains  
+**Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
+**Latest status report:** `DeliveryApp/project-docs/PROJECT_STATUS_20260515.md`
 
 ---
 
@@ -12,7 +14,7 @@ Full-stack delivery management: Django API on Heroku, Expo web on Vercel, React 
 
 ---
 
-## Phase 1 — MVP stabilization *(~85–90% complete)*
+## Phase 1 — MVP stabilization *(complete)*
 
 | # | Task | Status | Owner |
 |---|------|--------|--------|
@@ -22,33 +24,42 @@ Full-stack delivery management: Django API on Heroku, Expo web on Vercel, React 
 | 4 | Dependencies: `googlemaps`, `usaddress`, `pycountry` | Done | — |
 | 5 | Admin bootstrap (`ensure_admin`) for first login | Done | — |
 | 6 | Driver registration payload (`vehicle_year`, etc.) | Done | — |
-| 7 | Remove deprecated `runtime.txt`; rely on `.python-version` only | Todo | |
-| 8 | Confirm Vercel Git integration → **DeliveryAppMobile** repo (not backend monorepo) | Todo | |
-| 9 | Rotate default `admin` password + document process | Todo | |
-| 10 | Production smoke test checklist (login, register, CRUD) | Todo | |
+| 7 | Remove deprecated `runtime.txt`; rely on `.python-version` only | Done | `runtime.txt` removed; `.python-version` = `3.12.7` |
+| 8 | Confirm Vercel Git integration → **DeliveryAppMobile** repo (not backend monorepo) | Done | Verified May 2026: `origin` → `jereoo/DeliveryAppMobile` |
+| 9 | Rotate default `admin` password + document process | Done | `docs/ADMIN_BOOTSTRAP.md`; `ensure_admin` uses `ADMIN_PASSWORD` env only |
+| 10 | Production smoke test checklist (login, register, CRUD) | Done | `project-docs/PRODUCTION_SMOKE_TEST.md` + `scripts/production-smoke-test.ps1` |
 
 **Exit criteria:** All Phase 1 rows Done; no critical bugs on prod URLs.
 
----
+**Post-close-out:** Run `heroku config:set ADMIN_PASSWORD=...` and `heroku run python manage.py ensure_admin -a truck-buddy` if production still accepts the old default password.
 
-## Phase 2 — Data & workflow reliability *(target: weeks 2–3)*
-
-- Seed / demo data strategy for staging/production
-- Clear API validation messages for duplicate registration fields
-- Logging for auth and registration failures
-- Optional: staging Heroku app
+**Prod check (May 15, 2026):** API health ✅ 200 · Vercel web ✅ 200
 
 ---
 
-## Phase 3 — CI/CD & release safety *(target: week 4+)*
+## Phase 2 — Data & workflow reliability *(not started)*
 
-- CI: backend tests + frontend build on PR
-- Branch strategy: `main` = production deploys
-- Document rollback (Heroku releases, Vercel deployments)
+| Item | Status |
+|------|--------|
+| Seed / demo data strategy for staging/production | Todo |
+| Clear API validation messages for duplicate registration fields | Todo |
+| Logging for auth and registration failures | Todo |
+| Optional: staging Heroku app | Todo |
 
 ---
 
-## Phase 4 — Product (from roadmap) *(later)*
+## Phase 3 — CI/CD & release safety *(partial)*
+
+| Item | Status |
+|------|--------|
+| CI: backend tests + frontend build on PR (`phase1-ci.yml`) | Partial — workflows exist; tests use `continue-on-error` |
+| Branch strategy: `main` = production deploys | Done |
+| Document rollback (Heroku releases, Vercel deployments) | Todo |
+| Align mobile CI `EXPO_PUBLIC_BACKEND_URL` with `truck-buddy` Heroku app | Done |
+
+---
+
+## Phase 4 — Product (from roadmap) *(not started)*
 
 - Large-item domain (dimensions, capacity matching, estimates) — see workspace `project-docs/AUTOMATED_BUILD_PLAN.md`
 - Payments (Stripe), notifications, EAS / store prep
@@ -68,10 +79,10 @@ Full-stack delivery management: Django API on Heroku, Expo web on Vercel, React 
 
 | Repo | Role |
 |------|------|
-| `jereoo/DeliveryAppBackend` | Django API only — clone with `main` as default branch |
-| `jereoo/DeliveryAppMobile` | Expo app — **create** this empty repo on GitHub, then run `scripts/migrate-to-mobile-repo.ps1` once |
+| `jereoo/DeliveryAppBackend` | Django API — `main` → Heroku `truck-buddy` |
+| `jereoo/DeliveryAppMobile` | Expo app — `main` → Vercel |
 
-Local folders: `C:\Users\360WEB\DeliveryAppBackend` tracks **backend** (`main`). `C:\Users\360WEB\DeliveryAppMobile` should track **mobile** (`main` after migration), not the monorepo.
+Local: `C:\Users\360WEB\DeliveryAppBackend` (backend), `C:\Users\360WEB\DeliveryAppMobile` (mobile).
 
 ---
 

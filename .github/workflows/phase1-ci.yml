@@ -38,7 +38,7 @@ jobs:
         working-directory: .
 
     env:
-      EXPO_PUBLIC_BACKEND_URL: https://deliveryapp-api.herokuapp.com/api
+      EXPO_PUBLIC_BACKEND_URL: https://truck-buddy-f14f250ae8b3.herokuapp.com/api
 
     steps:
       - uses: actions/checkout@v4
