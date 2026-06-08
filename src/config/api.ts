@@ -54,6 +54,8 @@ export const getApiEndpoints = async () => {
     CUSTOMER_DELIVERIES: `${apiUrl}/customers/my_deliveries/`,
     DRIVERS: `${apiUrl}/drivers/`,
     DRIVER_REGISTER: `${apiUrl}/drivers/register/`,
+    DRIVER_ME: `${apiUrl}/drivers/me/`,
+    DRIVER_ME_VEHICLE: `${apiUrl}/drivers/me/vehicle/`,
     VEHICLES: `${apiUrl}/vehicles/`,
   };
 };

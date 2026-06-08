@@ -1553,6 +1553,260 @@ export default function App() {
     );
   }
 
+  function DriverProfileEditScreen({ onBack }: { onBack: () => void }) {
+    const [formData, setFormData] = useState({
+      first_name: '',
+      last_name: '',
+      phone_number: '',
+      license_number: '',
+    });
+    const [error, setError] = useState<string | null>(null);
+    const [localLoading, setLocalLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+      const loadProfile = async () => {
+        setLocalLoading(true);
+        setError(null);
+        try {
+          const response = await makeAuthenticatedRequest('/drivers/me/');
+          if (!response.ok) {
+            const body = await response.json().catch(() => ({}));
+            throw new Error(body.error || body.detail || 'Failed to load profile');
+          }
+          const data = await response.json();
+          setFormData({
+            first_name: data.first_name || '',
+            last_name: data.last_name || '',
+            phone_number: data.phone_number || '',
+            license_number: data.license_number || '',
+          });
+        } catch (e) {
+          setError(e instanceof Error ? e.message : 'Failed to load profile');
+        }
+        setLocalLoading(false);
+      };
+      loadProfile();
+    }, []);
+
+    const handleSave = async () => {
+      if (!formData.first_name.trim() || !formData.last_name.trim() || !formData.license_number.trim()) {
+        setError('First name, last name, and license number are required');
+        return;
+      }
+      const phoneDigits = getPhoneDigits(formData.phone_number);
+      if (phoneDigits.length !== 10) {
+        setError('Phone number must be exactly 10 digits');
+        return;
+      }
+      setSaving(true);
+      setError(null);
+      try {
+        const response = await makeAuthenticatedRequest('/drivers/me/', {
+          method: 'PATCH',
+          body: JSON.stringify({
+            ...formData,
+            phone_number: phoneDigits,
+          }),
+        });
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          const msg = body.error || body.detail
+            || (typeof body === 'object' && Object.keys(body).length
+              ? Object.entries(body).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join('; ') : v}`).join('\n')
+              : 'Failed to update profile');
+          throw new Error(msg);
+        }
+        Alert.alert('Success', 'Profile updated successfully!');
+        onBack();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to update profile');
+      }
+      setSaving(false);
+    };
+
+    return (
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+          <View style={styles.content}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+              <Button title="← Back" onPress={onBack} />
+              <Text style={[styles.title, { flex: 1, textAlign: 'center' }]}>Edit My Profile</Text>
+            </View>
+            {error && <Text style={{ color: theme.error, marginBottom: 10 }}>{error}</Text>}
+            {localLoading ? (
+              <ActivityIndicator size="large" color={theme.border} />
+            ) : (
+              <>
+                <TextInput style={styles.input} value={formData.first_name}
+                  onChangeText={(t) => setFormData({ ...formData, first_name: t })}
+                  placeholderTextColor={theme.placeholder} placeholder="First Name *" />
+                <TextInput style={styles.input} value={formData.last_name}
+                  onChangeText={(t) => setFormData({ ...formData, last_name: t })}
+                  placeholderTextColor={theme.placeholder} placeholder="Last Name *" />
+                <TextInput style={styles.input} value={formData.phone_number}
+                  onChangeText={(t) => setFormData({ ...formData, phone_number: t })}
+                  placeholderTextColor={theme.placeholder} placeholder="Phone (10 digits) *" keyboardType="phone-pad" />
+                <TextInput style={styles.input} value={formData.license_number}
+                  onChangeText={(t) => setFormData({ ...formData, license_number: t })}
+                  placeholderTextColor={theme.placeholder} placeholder="License Number *" autoCapitalize="characters" />
+                <View style={styles.buttonContainer}>
+                  <Button title={saving ? 'Saving...' : 'Save Profile'} onPress={handleSave} disabled={saving} />
+                </View>
+              </>
+            )}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
+
+  function DriverVehicleEditScreen({ onBack }: { onBack: () => void }) {
+    const [formData, setFormData] = useState({
+      license_plate: '',
+      make: '',
+      model: '',
+      year: new Date().getFullYear(),
+      vin: '',
+      capacity: 1000,
+      capacity_unit: 'kg',
+    });
+    const [error, setError] = useState<string | null>(null);
+    const [localLoading, setLocalLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+      const loadVehicle = async () => {
+        setLocalLoading(true);
+        setError(null);
+        try {
+          const response = await makeAuthenticatedRequest('/drivers/me/vehicle/');
+          if (!response.ok) {
+            const body = await response.json().catch(() => ({}));
+            throw new Error(body.error || body.detail || 'Failed to load vehicle');
+          }
+          const data = await response.json();
+          setFormData({
+            license_plate: data.license_plate || '',
+            make: data.make || '',
+            model: data.model || '',
+            year: data.year || new Date().getFullYear(),
+            vin: data.vin || '',
+            capacity: data.capacity || 1000,
+            capacity_unit: data.capacity_unit || 'kg',
+          });
+        } catch (e) {
+          setError(e instanceof Error ? e.message : 'Failed to load vehicle');
+        }
+        setLocalLoading(false);
+      };
+      loadVehicle();
+    }, []);
+
+    const handleSave = async () => {
+      if (!formData.license_plate.trim() || !formData.make.trim() || !formData.model.trim() || !formData.vin.trim()) {
+        setError('License plate, make, model, and VIN are required');
+        return;
+      }
+      if (formData.vin.length !== 17) {
+        setError('VIN must be exactly 17 characters');
+        return;
+      }
+      setSaving(true);
+      setError(null);
+      try {
+        const response = await makeAuthenticatedRequest('/drivers/me/vehicle/', {
+          method: 'PATCH',
+          body: JSON.stringify({
+            ...formData,
+            vin: formData.vin.toUpperCase(),
+            year: Number(formData.year),
+            capacity: Number(formData.capacity),
+          }),
+        });
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          const msg = body.error || body.detail
+            || (typeof body === 'object' && Object.keys(body).length
+              ? Object.entries(body).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join('; ') : v}`).join('\n')
+              : 'Failed to update vehicle');
+          throw new Error(msg);
+        }
+        Alert.alert('Success', 'Vehicle updated successfully!');
+        onBack();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to update vehicle');
+      }
+      setSaving(false);
+    };
+
+    return (
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+          <View style={styles.content}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+              <Button title="← Back" onPress={onBack} />
+              <Text style={[styles.title, { flex: 1, textAlign: 'center' }]}>Edit My Vehicle</Text>
+            </View>
+            {error && <Text style={{ color: theme.error, marginBottom: 10 }}>{error}</Text>}
+            {localLoading ? (
+              <ActivityIndicator size="large" color={theme.border} />
+            ) : (
+              <>
+                <TextInput style={styles.input} value={formData.license_plate}
+                  onChangeText={(t) => setFormData({ ...formData, license_plate: t.toUpperCase() })}
+                  placeholderTextColor={theme.placeholder} placeholder="License Plate *" autoCapitalize="characters" />
+                <TextInput style={styles.input} value={formData.make}
+                  onChangeText={(t) => setFormData({ ...formData, make: t })}
+                  placeholderTextColor={theme.placeholder} placeholder="Make *" />
+                <TextInput style={styles.input} value={formData.model}
+                  onChangeText={(t) => setFormData({ ...formData, model: t })}
+                  placeholderTextColor={theme.placeholder} placeholder="Model *" />
+                <TextInput style={styles.input} value={String(formData.year)}
+                  onChangeText={(t) => {
+                    const year = parseInt(t, 10);
+                    if (!isNaN(year)) setFormData({ ...formData, year });
+                  }}
+                  placeholderTextColor={theme.placeholder} placeholder="Year *" keyboardType="numeric" maxLength={4} />
+                <TextInput style={styles.input} value={formData.vin}
+                  onChangeText={(t) => setFormData({ ...formData, vin: t.toUpperCase().slice(0, 17) })}
+                  placeholderTextColor={theme.placeholder} placeholder="VIN (17 chars) *" autoCapitalize="characters" maxLength={17} />
+                <TextInput style={styles.input} value={String(formData.capacity)}
+                  onChangeText={(t) => {
+                    const cap = parseInt(t, 10);
+                    if (!isNaN(cap)) setFormData({ ...formData, capacity: cap });
+                  }}
+                  placeholderTextColor={theme.placeholder} placeholder="Capacity *" keyboardType="numeric" />
+                <Text style={styles.label}>Capacity unit</Text>
+                <View style={{ flexDirection: 'row', marginBottom: 10 }}>
+                  <View style={{ flex: 1, marginRight: 5 }}>
+                    <Button title={formData.capacity_unit === 'kg' ? 'kg (selected)' : 'kg'}
+                      onPress={() => setFormData({ ...formData, capacity_unit: 'kg' })}
+                      color={formData.capacity_unit === 'kg' ? '#007AFF' : '#8E8E93'} />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 5 }}>
+                    <Button title={formData.capacity_unit === 'lb' ? 'lb (selected)' : 'lb'}
+                      onPress={() => setFormData({ ...formData, capacity_unit: 'lb' })}
+                      color={formData.capacity_unit === 'lb' ? '#007AFF' : '#8E8E93'} />
+                  </View>
+                </View>
+                <View style={styles.buttonContainer}>
+                  <Button title={saving ? 'Saving...' : 'Save Vehicle'} onPress={handleSave} disabled={saving} />
+                </View>
+              </>
+            )}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
+
   function AdminDriverVehiclesScreen({ onBack }: { onBack: () => void }) {
     const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
     const [mode, setMode] = useState<'list' | 'create' | 'edit' | 'detail'>('list');
@@ -3437,6 +3691,14 @@ export default function App() {
     return <MyDeliveriesScreen onBack={() => setCurrentScreen('dashboard')} />;
   }
 
+  if (currentScreen === 'driver_profile_edit' && userType === 'driver') {
+    return <DriverProfileEditScreen onBack={() => setCurrentScreen('dashboard')} />;
+  }
+
+  if (currentScreen === 'driver_vehicle_edit' && userType === 'driver') {
+    return <DriverVehicleEditScreen onBack={() => setCurrentScreen('dashboard')} />;
+  }
+
   // Register as Driver Screen
   if (currentScreen === 'register_driver') {
     return <RegisterAsDriverScreen onBack={() => setCurrentScreen('main')} />;
@@ -3898,6 +4160,12 @@ export default function App() {
           {userType === 'driver' && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>🚚 Driver Services</Text>
+              <View style={styles.buttonContainer}>
+                <Button title="👤 Edit My Profile" onPress={() => setCurrentScreen('driver_profile_edit')} />
+              </View>
+              <View style={styles.buttonContainer}>
+                <Button title="🚛 Edit My Vehicle" onPress={() => setCurrentScreen('driver_vehicle_edit')} />
+              </View>
               <View style={styles.buttonContainer}>
                 <Button title="📦 My Deliveries" onPress={() => setCurrentScreen('my_deliveries')} />
               </View>
