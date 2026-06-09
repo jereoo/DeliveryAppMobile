@@ -1,10 +1,10 @@
 # DeliveryApp — Project Plan
 
-**Last updated:** May 15, 2026  
+**Last updated:** June 3, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟢 Phase 1 **complete** — close-out done May 15, 2026; backend test debt remains  
+**Overall status:** 🟢 Phase 1 **complete**; **driver self-service CRUD** shipped June 3, 2026  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
-**Latest status report:** `DeliveryApp/project-docs/PROJECT_STATUS_20260515.md`
+**Latest status report:** `DeliveryApp/project-docs/PROJECT_STATUS_20260603.md`
 
 ---
 
@@ -34,6 +34,8 @@ Full-stack delivery management: Django API on Heroku, Expo web on Vercel, React 
 **Post-close-out:** Run `heroku config:set ADMIN_PASSWORD=...` and `heroku run python manage.py ensure_admin -a truck-buddy` if production still accepts the old default password.
 
 **Prod check (May 15, 2026):** API health ✅ 200 · Vercel web ✅ 200
+
+**June 3, 2026 — Driver CRUD (Phase 1C partial):** Driver self-edit profile + vehicle ✅ prod verified. Admin vehicle update bug fixed in mobile `6b30a2c` (await Vercel retest). See `PROJECT_STATUS_20260603.md`.
 
 ---
 
