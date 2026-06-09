@@ -575,7 +575,7 @@ export default function App() {
     const [selected, setSelected] = useState<any>(null);
     const [form, setForm] = useState<any>({
       license_plate: '', make: '', model: '', year: 0,
-      vin: '', capacity: 0, active: true
+      vin: '', capacity: 0, capacity_unit: 'kg', active: true
     });
     const [error, setError] = useState<string | null>(null);
     const [localLoading, setLocalLoading] = useState(false);
@@ -594,6 +594,7 @@ export default function App() {
         year: vehicle.year || 0,
         vin: vehicle.vin || '',
         capacity: vehicle.capacity || 0,
+        capacity_unit: vehicle.capacity_unit || 'kg',
         active: vehicle.active !== undefined ? vehicle.active : true
       });
       setMode('edit');
@@ -629,7 +630,7 @@ export default function App() {
         setMode('list');
         setForm({
           license_plate: '', make: '', model: '', year: 0,
-          vin: '', capacity: 0, active: true
+          vin: '', capacity: 0, capacity_unit: 'kg', active: true
         });
         await loadVehicles();
       } catch (e) {
@@ -667,7 +668,7 @@ export default function App() {
             </View>
             {error && <Text style={{ color: theme.error, marginBottom: 10 }}>{error}</Text>}
             <View style={styles.buttonContainer}>
-              <Button title="Add Vehicle" onPress={() => { setMode('create'); setForm({ license_plate: '', make: '', model: '', year: 0, vin: '', capacity: 0, active: true }); }} />
+              <Button title="Add Vehicle" onPress={() => { setMode('create'); setForm({ license_plate: '', make: '', model: '', year: 0, vin: '', capacity: 0, capacity_unit: 'kg', active: true }); }} />
             </View>
             {localLoading ? <ActivityIndicator /> : vehicles.length === 0 ? (
               <Text style={styles.emptyText}>No vehicles found.</Text>
@@ -1031,7 +1032,7 @@ export default function App() {
         console.log(`Auth Token: ${typeof authToken === 'string' ? authToken.substring(0, 20) + '...' : 'None'}`);
         console.log(`Form Data:`, form);
 
-        const response = await makeAuthenticatedRequest('/api/deliveries/request_delivery/', {
+        const response = await makeAuthenticatedRequest('/deliveries/request_delivery/', {
           method: 'POST',
           body: JSON.stringify(form)
         });
@@ -3363,7 +3364,7 @@ export default function App() {
 
   const loadAvailableVehicles = async () => {
     try {
-      const response = await makeAuthenticatedRequest('/api/drivers/creation_data/');
+      const response = await makeAuthenticatedRequest('/drivers/creation_data/');
       if (response.ok) {
         const data = await response.json();
         return data.available_vehicles || [];
@@ -3382,7 +3383,7 @@ export default function App() {
   const createDriverVehicle = async (assignmentData: any) => {
     setLoading(true);
     try {
-      const response = await makeAuthenticatedRequest('/api/driver-vehicles/', {
+      const response = await makeAuthenticatedRequest('/driver-vehicles/', {
         method: 'POST',
         body: JSON.stringify({
           driver: parseInt(assignmentData.driver_id),
@@ -3409,7 +3410,7 @@ export default function App() {
   const updateDriverVehicle = async (assignmentId: any, assignmentData: any) => {
     setLoading(true);
     try {
-      const response = await makeAuthenticatedRequest(`/api/driver-vehicles/${assignmentId}/`, {
+      const response = await makeAuthenticatedRequest(`/driver-vehicles/${assignmentId}/`, {
         method: 'PUT',
         body: JSON.stringify({
           driver: parseInt(assignmentData.driver_id),
@@ -3436,7 +3437,7 @@ export default function App() {
   const deleteDriverVehicle = async (assignmentId: any) => {
     setLoading(true);
     try {
-      const response = await makeAuthenticatedRequest(`/api/driver-vehicles/${assignmentId}/`, {
+      const response = await makeAuthenticatedRequest(`/driver-vehicles/${assignmentId}/`, {
         method: 'DELETE'
       });
 
@@ -3486,7 +3487,7 @@ export default function App() {
   const createVehicle = async (vehicleData: any) => {
     setLoading(true);
     try {
-      const response = await makeAuthenticatedRequest('/api/vehicles/', {
+      const response = await makeAuthenticatedRequest('/vehicles/', {
         method: 'POST',
         body: JSON.stringify({
           license_plate: vehicleData.license_plate,
@@ -3495,28 +3496,41 @@ export default function App() {
           year: vehicleData.year,
           vin: vehicleData.vin,
           capacity: vehicleData.capacity,
-          active: true
+          capacity_unit: vehicleData.capacity_unit || 'kg',
+          active: vehicleData.active !== undefined ? vehicleData.active : true
         })
       });
 
-      if (response) {
-        Alert.alert('Success', 'Vehicle created successfully!');
-        setVehicleCrudMode('list');
-        setVehicleForm({
-          license_plate: '',
-          make: '',
-          model: '',
-          year: new Date().getFullYear(),
-          vin: '',
-          capacity: 1000,
-          capacity_unit: 'kg'
-        });
-        await loadVehicles();
+      if (!response.ok) {
+        let errorBody;
+        try {
+          errorBody = await response.json();
+        } catch {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        const msg = errorBody.detail || errorBody.message
+          || (typeof errorBody === 'object' && Object.keys(errorBody).length
+            ? Object.entries(errorBody).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join('; ') : v}`).join('\n')
+            : 'Failed to create vehicle');
+        throw new Error(msg);
       }
 
+      Alert.alert('Success', 'Vehicle created successfully!');
+      setVehicleCrudMode('list');
+      setVehicleForm({
+        license_plate: '',
+        make: '',
+        model: '',
+        year: new Date().getFullYear(),
+        vin: '',
+        capacity: 1000,
+        capacity_unit: 'kg'
+      });
+      await loadVehicles();
     } catch (error) {
       console.error('Error creating vehicle:', error);
       Alert.alert('Error', (error as any).message || 'Failed to create vehicle');
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -3525,8 +3539,8 @@ export default function App() {
   const updateVehicle = async (vehicleId: any, vehicleData: any) => {
     setLoading(true);
     try {
-      const response = await makeAuthenticatedRequest(`/api/vehicles/${vehicleId}/`, {
-        method: 'PUT',
+      const response = await makeAuthenticatedRequest(`/vehicles/${vehicleId}/`, {
+        method: 'PATCH',
         body: JSON.stringify({
           license_plate: vehicleData.license_plate,
           make: vehicleData.make,
@@ -3534,16 +3548,28 @@ export default function App() {
           year: vehicleData.year,
           vin: vehicleData.vin,
           capacity: vehicleData.capacity,
+          capacity_unit: vehicleData.capacity_unit || 'kg',
           active: vehicleData.active !== undefined ? vehicleData.active : true
         })
       });
 
-      if (response) {
-        Alert.alert('Success', 'Vehicle updated successfully!');
-        setVehicleCrudMode('list');
-        await loadVehicles();
+      if (!response.ok) {
+        let errorBody;
+        try {
+          errorBody = await response.json();
+        } catch {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        const msg = errorBody.detail || errorBody.message
+          || (typeof errorBody === 'object' && Object.keys(errorBody).length
+            ? Object.entries(errorBody).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join('; ') : v}`).join('\n')
+            : 'Failed to update vehicle');
+        throw new Error(msg);
       }
 
+      Alert.alert('Success', 'Vehicle updated successfully!');
+      setVehicleCrudMode('list');
+      await loadVehicles();
     } catch (error) {
       if (error instanceof Error) {
         console.error('Error updating vehicle:', error.message, error.stack);
@@ -3551,6 +3577,7 @@ export default function App() {
         console.error('Error updating vehicle:', error);
       }
       Alert.alert('Error', (error as any).message || 'Failed to update vehicle');
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -3559,14 +3586,23 @@ export default function App() {
   const deleteVehicle = async (vehicleId: number) => {
     setLoading(true);
     try {
-      await makeAuthenticatedRequest(`/api/vehicles/${vehicleId}/`, {
+      const response = await makeAuthenticatedRequest(`/vehicles/${vehicleId}/`, {
         method: 'DELETE'
       });
+
+      if (!response.ok) {
+        let errorBody;
+        try {
+          errorBody = await response.json();
+        } catch {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        throw new Error(errorBody.detail || errorBody.message || 'Failed to delete vehicle');
+      }
 
       Alert.alert('Success', 'Vehicle deleted successfully!');
       setVehicleCrudMode('list');
       await loadVehicles();
-
     } catch (error) {
       console.error('Error deleting vehicle:', error);
       if (error instanceof Error) {
@@ -3574,6 +3610,7 @@ export default function App() {
       } else {
         Alert.alert('Error', 'Failed to delete vehicle');
       }
+      throw error;
     } finally {
       setLoading(false);
     }
