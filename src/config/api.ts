@@ -56,6 +56,7 @@ export const getApiEndpoints = async () => {
     DRIVER_REGISTER: `${apiUrl}/drivers/register/`,
     DRIVER_ME: `${apiUrl}/drivers/me/`,
     DRIVER_ME_VEHICLE: `${apiUrl}/drivers/me/vehicle/`,
+    DRIVER_ME_VEHICLE_DEACTIVATE: `${apiUrl}/drivers/me/vehicle/deactivate/`,
     VEHICLES: `${apiUrl}/vehicles/`,
   };
 };

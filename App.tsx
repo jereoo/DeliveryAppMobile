@@ -600,23 +600,75 @@ export default function App() {
       setMode('edit');
     };
     const handleDelete = async (vehicle: any) => {
-      Alert.alert('Confirm Delete', 'Are you sure you want to delete this vehicle?', [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete', style: 'destructive', onPress: async () => {
-            setLocalLoading(true);
-            try {
-              await deleteVehicle(vehicle.id);
-              setMode('list');
-              setSelected(null);
-              await loadVehicles();
-            } catch (e) {
-              setError('Failed to delete vehicle');
+      Alert.alert(
+        'Remove vehicle',
+        vehicle.active
+          ? 'Delete permanently only works when the vehicle has no assignment history. Otherwise it will be marked inactive.'
+          : 'This vehicle is already inactive. Delete permanently only if it has no history.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete', style: 'destructive', onPress: async () => {
+              setLocalLoading(true);
+              try {
+                await deleteVehicle(vehicle.id);
+                setMode('list');
+                setSelected(null);
+                await loadVehicles();
+              } catch (e) {
+                setError('Failed to delete vehicle');
+              }
+              setLocalLoading(false);
             }
-            setLocalLoading(false);
           }
-        }
-      ]);
+        ]
+      );
+    };
+    const handleDeactivate = async (vehicle: any) => {
+      Alert.alert(
+        'Mark inactive',
+        'Vehicle will be taken off the active fleet. History is preserved. You can reactivate it later.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Deactivate', style: 'destructive', onPress: async () => {
+              setLocalLoading(true);
+              try {
+                await deactivateVehicle(vehicle.id);
+                setMode('list');
+                setSelected(null);
+                await loadVehicles();
+              } catch (e) {
+                setError('Failed to deactivate vehicle');
+              }
+              setLocalLoading(false);
+            }
+          }
+        ]
+      );
+    };
+    const handleReactivate = async (vehicle: any) => {
+      Alert.alert(
+        'Reactivate vehicle',
+        'Vehicle will be marked active. Insurance/registration checks will be added in a future release.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Reactivate', onPress: async () => {
+              setLocalLoading(true);
+              try {
+                await reactivateVehicle(vehicle.id);
+                setMode('list');
+                setSelected(null);
+                await loadVehicles();
+              } catch (e) {
+                setError('Failed to reactivate vehicle');
+              }
+              setLocalLoading(false);
+            }
+          }
+        ]
+      );
     };
     const handleCreate = async () => {
       if (!form.license_plate.trim() || !form.make.trim() || !form.model.trim() || !form.vin.trim() || form.capacity <= 0 || form.year <= 0 || form.year < 1900 || form.year > 2100) {
@@ -687,9 +739,18 @@ export default function App() {
                       <Button title="Edit" onPress={() => handleEdit(vehicle)} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Button title="Delete" color="#d9534f" onPress={() => handleDelete(vehicle)} />
+                      {vehicle.active ? (
+                        <Button title="Deactivate" color="#f0ad4e" onPress={() => handleDeactivate(vehicle)} />
+                      ) : (
+                        <Button title="Reactivate" color="#5cb85c" onPress={() => handleReactivate(vehicle)} />
+                      )}
                     </View>
                   </View>
+                  {vehicle.active && (
+                    <View style={{ marginTop: 4 }}>
+                      <Button title="Delete (no history only)" color="#d9534f" onPress={() => handleDelete(vehicle)} />
+                    </View>
+                  )}
                 </View>
               ))
             )}
@@ -805,8 +866,17 @@ export default function App() {
               <Button title="Edit" onPress={() => handleEdit(selected)} />
             </View>
             <View style={styles.buttonContainer}>
-              <Button title="Delete" color="#d9534f" onPress={() => handleDelete(selected)} />
+              {selected.active ? (
+                <Button title="Deactivate" color="#f0ad4e" onPress={() => handleDeactivate(selected)} />
+              ) : (
+                <Button title="Reactivate" color="#5cb85c" onPress={() => handleReactivate(selected)} />
+              )}
             </View>
+            {selected.active && (
+              <View style={styles.buttonContainer}>
+                <Button title="Delete (no history only)" color="#d9534f" onPress={() => handleDelete(selected)} />
+              </View>
+            )}
             <View style={styles.buttonContainer}>
               <Button title="Back to List" onPress={() => { setMode('list'); setSelected(null); }} />
             </View>
@@ -1675,9 +1745,11 @@ export default function App() {
       capacity: 1000,
       capacity_unit: 'kg',
     });
+    const [vehicleActive, setVehicleActive] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [localLoading, setLocalLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [deactivating, setDeactivating] = useState(false);
 
     useEffect(() => {
       const loadVehicle = async () => {
@@ -1690,6 +1762,7 @@ export default function App() {
             throw new Error(body.error || body.detail || 'Failed to load vehicle');
           }
           const data = await response.json();
+          setVehicleActive(data.active !== false);
           setFormData({
             license_plate: data.license_plate || '',
             make: data.make || '',
@@ -1706,6 +1779,32 @@ export default function App() {
       };
       loadVehicle();
     }, []);
+
+    const handleDeactivateOwnVehicle = async () => {
+      Alert.alert(
+        'Mark vehicle inactive',
+        'Use this if the vehicle was sold, destroyed, or is no longer in service. Contact admin to assign a new vehicle or reactivate this one.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Mark inactive',
+            style: 'destructive',
+            onPress: async () => {
+              setDeactivating(true);
+              setError(null);
+              try {
+                await driverDeactivateOwnVehicle();
+                Alert.alert('Success', 'Your vehicle has been marked inactive.');
+                onBack();
+              } catch (e) {
+                setError(e instanceof Error ? e.message : 'Failed to deactivate vehicle');
+              }
+              setDeactivating(false);
+            },
+          },
+        ]
+      );
+    };
 
     const handleSave = async () => {
       if (!formData.license_plate.trim() || !formData.make.trim() || !formData.model.trim() || !formData.vin.trim()) {
@@ -1758,6 +1857,15 @@ export default function App() {
             {error && <Text style={{ color: theme.error, marginBottom: 10 }}>{error}</Text>}
             {localLoading ? (
               <ActivityIndicator size="large" color={theme.border} />
+            ) : !vehicleActive ? (
+              <>
+                <Text style={{ color: theme.text, marginBottom: 12 }}>
+                  This vehicle is inactive. Contact admin to reactivate or assign a new vehicle.
+                </Text>
+                <View style={styles.buttonContainer}>
+                  <Button title="Back" onPress={onBack} />
+                </View>
+              </>
             ) : (
               <>
                 <TextInput style={styles.input} value={formData.license_plate}
@@ -1799,6 +1907,14 @@ export default function App() {
                 </View>
                 <View style={styles.buttonContainer}>
                   <Button title={saving ? 'Saving...' : 'Save Vehicle'} onPress={handleSave} disabled={saving} />
+                </View>
+                <View style={styles.buttonContainer}>
+                  <Button
+                    title={deactivating ? 'Working...' : 'Mark Vehicle Inactive'}
+                    color="#f0ad4e"
+                    onPress={handleDeactivateOwnVehicle}
+                    disabled={deactivating || saving}
+                  />
                 </View>
               </>
             )}
@@ -3600,7 +3716,19 @@ export default function App() {
         throw new Error(errorBody.detail || errorBody.message || 'Failed to delete vehicle');
       }
 
-      Alert.alert('Success', 'Vehicle deleted successfully!');
+      let message = 'Vehicle deleted successfully!';
+      if (response.status !== 204) {
+        try {
+          const data = await response.json();
+          if (data.deactivated) {
+            message = data.detail || 'Vehicle marked inactive (history preserved).';
+          }
+        } catch {
+          // 204 or empty body
+        }
+      }
+
+      Alert.alert('Success', message);
       setVehicleCrudMode('list');
       await loadVehicles();
     } catch (error) {
@@ -3614,6 +3742,63 @@ export default function App() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const deactivateVehicle = async (vehicleId: number) => {
+    setLoading(true);
+    try {
+      const response = await makeAuthenticatedRequest(`/vehicles/${vehicleId}/deactivate/`, {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody.detail || errorBody.message || 'Failed to deactivate vehicle');
+      }
+      const data = await response.json().catch(() => ({}));
+      Alert.alert('Success', data.detail || 'Vehicle marked inactive.');
+      setVehicleCrudMode('list');
+      await loadVehicles();
+    } catch (error) {
+      console.error('Error deactivating vehicle:', error);
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to deactivate vehicle');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const reactivateVehicle = async (vehicleId: number) => {
+    setLoading(true);
+    try {
+      const response = await makeAuthenticatedRequest(`/vehicles/${vehicleId}/reactivate/`, {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody.detail || errorBody.message || 'Failed to reactivate vehicle');
+      }
+      const data = await response.json().catch(() => ({}));
+      Alert.alert('Success', data.detail || 'Vehicle reactivated.');
+      setVehicleCrudMode('list');
+      await loadVehicles();
+    } catch (error) {
+      console.error('Error reactivating vehicle:', error);
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to reactivate vehicle');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const driverDeactivateOwnVehicle = async () => {
+    const response = await makeAuthenticatedRequest('/drivers/me/vehicle/deactivate/', {
+      method: 'POST',
+    });
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
+      throw new Error(errorBody.detail || errorBody.error || errorBody.message || 'Failed to deactivate vehicle');
+    }
+    return response.json().catch(() => ({}));
   };
 
   // Add missing handler stubs at the top of App function if not already defined

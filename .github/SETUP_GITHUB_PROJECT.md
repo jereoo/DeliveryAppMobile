@@ -69,14 +69,33 @@ Repeat for Phase 2/3 when you start them.
 
 ---
 
-## 6. GitHub CLI (optional)
+## 6. GitHub CLI — populate the board from the plan
 
-If you use [`gh`](https://cli.github.com/):
+If you use [`gh`](https://cli.github.com/) and created a project named **DeliveryAppMobilePlan**:
 
-```bash
+```powershell
 gh auth login
-gh repo view
-# Create project from UI, or explore: gh project --help
+# When prompted, use HTTPS and browser login.
+
+# Required for Projects API (issues + board). Run once after login:
+gh auth refresh -h github.com -s read:project,project
+
+cd C:\Users\360WEB\DeliveryAppMobile
+.\scripts\populate-github-project.ps1
 ```
 
-Project creation via `gh` is available for newer Projects; the web UI is the most reliable for small teams.
+This creates issues from `docs/PROJECT_PLAN.md` (Phase 1–4 + QA), adds labels (`phase-1` … `phase-4`, `qa`), and adds them to the project. Done items go to **Done**; open work goes to **Backlog**.
+
+Preview without creating anything:
+
+```powershell
+.\scripts\populate-github-project.ps1 -DryRun
+```
+
+Custom project name:
+
+```powershell
+.\scripts\populate-github-project.ps1 -ProjectName "DeliveryAppMobilePlan"
+```
+
+Project creation via the web UI is still fine for small teams; the script is for bulk import after the board exists.

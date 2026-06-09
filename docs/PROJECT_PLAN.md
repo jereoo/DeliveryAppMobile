@@ -1,6 +1,6 @@
 # DeliveryApp — Project Plan
 
-**Last updated:** June 3, 2026  
+**Last updated:** June 9, 2026  
 **Team size:** 1–3  
 **Overall status:** 🟢 Phase 1 **complete**; **driver self-service CRUD** shipped June 3, 2026  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
@@ -47,6 +47,19 @@ Full-stack delivery management: Django API on Heroku, Expo web on Vercel, React 
 | Clear API validation messages for duplicate registration fields | Todo |
 | Logging for auth and registration failures | Todo |
 | Optional: staging Heroku app | Todo |
+| **Vehicle lifecycle (MVP):** soft inactive + staff reactivate; no hard delete when history exists | Done |
+| Driver: deactivate own assigned vehicle (`POST /drivers/me/vehicle/deactivate/`) | Done |
+| Staff: deactivate/reactivate any vehicle; hard DELETE only when zero `DriverVehicle` / `DeliveryAssignment` rows | Done |
+
+**Vehicle status — ship now vs later**
+
+| Status | Meaning | Ship in |
+|--------|---------|---------|
+| **Active** | In service; eligible for assignment and deliveries | **Now** (`Vehicle.active=True`, already on model) |
+| **Inactive** | Temporarily off fleet (sold, repair, driver stepped down); row kept; **staff may reactivate** | **Now** (`Vehicle.active=False`) |
+| **Disposed** | Permanently retired (scrapped/totaled); never reactivated; archive or delete when no FK history | **Future** — not same as inactive; defer to Phase 4 |
+
+**Reactivation reverification (stub only in Phase 2):** When staff sets `active=True`, API accepts today with no extra checks. Add placeholder fields/docs for future gates: insurance valid, registration valid, inspection date (see Phase 4).
 
 ---
 
@@ -65,6 +78,9 @@ Full-stack delivery management: Django API on Heroku, Expo web on Vercel, React 
 
 - Large-item domain (dimensions, capacity matching, estimates) — see workspace `project-docs/AUTOMATED_BUILD_PLAN.md`
 - Payments (Stripe), notifications, EAS / store prep
+- **Vehicle `disposed` status** — third lifecycle state (distinct from inactive); staff-only; archive row or cascade delete when no related records; drivers cannot dispose (only inactive)
+- **Vehicle legal / compliance** — insurance, registration, inspection docs; upload/storage; expiry tracking
+- **Reactivation reverification workflow** — before `inactive → active`, require staff confirmation that insurance + registration (and later inspection) are current; block assignment until verified
 
 ---
 
