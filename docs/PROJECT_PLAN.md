@@ -4,7 +4,7 @@
 **Team size:** 1–3  
 **Overall status:** 🟢 Phase 1 **complete**; **driver self-service CRUD** shipped June 3, 2026  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
-**Latest status report:** `DeliveryApp/project-docs/PROJECT_STATUS_20260603.md`
+**Latest status report:** `DeliveryApp/project-docs/PROJECT_STATUS_20260609.md`
 
 ---
 
