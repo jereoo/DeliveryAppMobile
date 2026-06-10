@@ -27,6 +27,59 @@ import {
 } from 'react-native';
 import { checkBackendHealth, getApiDebugInfo, getApiUrl } from './src/config/api';
 
+/** Max vehicle load capacity by unit. */
+const MAX_VEHICLE_CAPACITY_KG = 2000;
+const MAX_VEHICLE_CAPACITY_LB = 4400;
+const KG_TO_LB = 2.2046226218;
+
+function maxVehicleCapacity(unit: string): number {
+  return unit === 'lb' ? MAX_VEHICLE_CAPACITY_LB : MAX_VEHICLE_CAPACITY_KG;
+}
+
+function convertCapacityBetweenUnits(value: number, fromUnit: string, toUnit: string): number {
+  if (fromUnit === toUnit || value <= 0 || Number.isNaN(value)) {
+    return value;
+  }
+  if (fromUnit === 'kg' && toUnit === 'lb') {
+    return Math.round(value * KG_TO_LB);
+  }
+  if (fromUnit === 'lb' && toUnit === 'kg') {
+    return Math.round(value / KG_TO_LB);
+  }
+  return value;
+}
+
+function validateCapacityText(text: string, unit: string): string | null {
+  if (!text.trim()) {
+    return 'Capacity is required';
+  }
+  const capacity = parseInt(text, 10);
+  if (Number.isNaN(capacity) || capacity < 1) {
+    return 'Capacity must be at least 1';
+  }
+  const capMax = maxVehicleCapacity(unit);
+  if (capacity > capMax) {
+    return `Maximum capacity is ${capMax} ${unit}`;
+  }
+  return null;
+}
+
+function clampCapacityText(text: string, unit: string): string {
+  const numericText = text.replace(/[^0-9]/g, '');
+  if (!numericText) {
+    return '';
+  }
+  const capMax = maxVehicleCapacity(unit);
+  const capacity = parseInt(numericText, 10);
+  if (Number.isNaN(capacity)) {
+    return '';
+  }
+  if (capacity > capMax) {
+    return String(capMax);
+  }
+  return numericText;
+}
+
 // ========================================
 // NETWORK HEALTH BANNER COMPONENT
 // ========================================
@@ -788,7 +841,7 @@ export default function App() {
             <Text style={styles.label}>VIN *</Text>
             <TextInput style={styles.input} value={form.vin} onChangeText={t => setForm((f: typeof form) => ({ ...f, vin: t.toUpperCase() }))} placeholderTextColor={theme.placeholder} placeholder="17 characters" autoCapitalize="characters" maxLength={17} />
 
-            <Text style={styles.label}>Capacity (kg) *</Text>
+            <Text style={styles.label}>Capacity ({form.capacity_unit || 'kg'}) *</Text>
             <TextInput
               style={styles.input}
               value={form.capacity === 0 ? '' : form.capacity.toString()}
@@ -803,7 +856,8 @@ export default function App() {
                 const numericText = text.replace(/[^0-9]/g, '');
                 if (numericText.length <= 6) {
                   const capacity = parseInt(numericText);
-                  if (!isNaN(capacity) && capacity >= 1 && capacity <= 50000) {
+                  const capMax = maxVehicleCapacity(form.capacity_unit || 'kg');
+                  if (!isNaN(capacity) && capacity >= 1 && capacity <= capMax) {
                     setForm((f: typeof form) => ({ ...f, capacity }));
                   } else if (numericText.length > 0) {
                     // Allow partial input while typing
@@ -814,7 +868,7 @@ export default function App() {
                   }
                 }
               }}
-              placeholderTextColor={theme.placeholder} placeholder="Enter capacity in kg"
+              placeholderTextColor={theme.placeholder} placeholder={`Enter capacity (1–${maxVehicleCapacity(form.capacity_unit || 'kg')} ${form.capacity_unit || 'kg'})`}
               keyboardType="numeric"
             />
             <View style={styles.switchContainer}>
@@ -1722,9 +1776,10 @@ export default function App() {
       model: '',
       year: new Date().getFullYear(),
       vin: '',
-      capacity: 1000,
       capacity_unit: 'kg',
     });
+    const [capacityText, setCapacityText] = useState('');
+    const [capacityFieldError, setCapacityFieldError] = useState<string | null>(null);
     const [vehicleActive, setVehicleActive] = useState(true);
     const [inService, setInService] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -1752,9 +1807,10 @@ export default function App() {
             model: data.model || '',
             year: data.year || new Date().getFullYear(),
             vin: data.vin || '',
-            capacity: data.capacity || 1000,
             capacity_unit: data.capacity_unit || 'kg',
           });
+          setCapacityText(data.capacity != null ? String(data.capacity) : '');
+          setCapacityFieldError(null);
         } catch (e) {
           setError(e instanceof Error ? e.message : 'Failed to load vehicle');
         }
@@ -1762,6 +1818,41 @@ export default function App() {
       };
       loadVehicle();
     }, []);
+
+    const switchCapacityUnit = (nextUnit: 'kg' | 'lb') => {
+      if (formData.capacity_unit === nextUnit) {
+        return;
+      }
+      const current = parseInt(capacityText, 10);
+      let nextText = capacityText;
+      if (!Number.isNaN(current) && current > 0) {
+        const converted = convertCapacityBetweenUnits(current, formData.capacity_unit, nextUnit);
+        nextText = String(converted);
+      }
+      nextText = clampCapacityText(nextText, nextUnit);
+      setFormData({ ...formData, capacity_unit: nextUnit });
+      setCapacityText(nextText);
+      setCapacityFieldError(nextText ? validateCapacityText(nextText, nextUnit) : 'Capacity is required');
+    };
+
+    const handleCapacityChange = (text: string) => {
+      const numericText = text.replace(/[^0-9]/g, '');
+      const capMax = maxVehicleCapacity(formData.capacity_unit);
+      if (numericText.length > String(capMax).length) {
+        return;
+      }
+      if (numericText) {
+        const capacity = parseInt(numericText, 10);
+        if (!Number.isNaN(capacity) && capacity > capMax) {
+          setCapacityFieldError(`Maximum capacity is ${capMax} ${formData.capacity_unit}`);
+          return;
+        }
+      }
+      setCapacityText(numericText);
+      setCapacityFieldError(
+        numericText ? validateCapacityText(numericText, formData.capacity_unit) : 'Capacity is required'
+      );
+    };
 
     const handleSave = async () => {
       if (!formData.license_plate.trim() || !formData.make.trim() || !formData.model.trim() || !formData.vin.trim()) {
@@ -1772,6 +1863,14 @@ export default function App() {
         setError('VIN must be exactly 17 characters');
         return;
       }
+      const capacityError = validateCapacityText(capacityText, formData.capacity_unit);
+      if (capacityError) {
+        setCapacityFieldError(capacityError);
+        setError(capacityError);
+        return;
+      }
+      setCapacityFieldError(null);
+      const capacity = parseInt(capacityText, 10);
       setSaving(true);
       setError(null);
       try {
@@ -1779,7 +1878,7 @@ export default function App() {
           ...formData,
           vin: formData.vin.toUpperCase(),
           year: Number(formData.year),
-          capacity: Number(formData.capacity),
+          capacity,
         };
         if (vehicleActive && !inService) {
           payload.active = false;
@@ -1862,22 +1961,44 @@ export default function App() {
                     <TextInput style={styles.input} value={formData.vin}
                       onChangeText={(t) => setFormData({ ...formData, vin: t.toUpperCase().slice(0, 17) })}
                       placeholderTextColor={theme.placeholder} placeholder="VIN (17 chars) *" autoCapitalize="characters" maxLength={17} />
-                    <TextInput style={styles.input} value={String(formData.capacity)}
-                      onChangeText={(t) => {
-                        const cap = parseInt(t, 10);
-                        if (!isNaN(cap)) setFormData({ ...formData, capacity: cap });
+                    <Text style={styles.label}>Capacity ({formData.capacity_unit}) *</Text>
+                    <TextInput
+                      style={[
+                        styles.input,
+                        capacityFieldError ? { borderColor: theme.error, borderWidth: 1 } : null,
+                      ]}
+                      value={capacityText}
+                      onChangeText={handleCapacityChange}
+                      onBlur={() => {
+                        const clamped = clampCapacityText(capacityText, formData.capacity_unit);
+                        if (clamped !== capacityText) {
+                          setCapacityText(clamped);
+                        }
+                        setCapacityFieldError(
+                          clamped ? validateCapacityText(clamped, formData.capacity_unit) : 'Capacity is required'
+                        );
                       }}
-                      placeholderTextColor={theme.placeholder} placeholder="Capacity *" keyboardType="numeric" />
+                      placeholderTextColor={theme.placeholder}
+                      placeholder={`1–${maxVehicleCapacity(formData.capacity_unit)} ${formData.capacity_unit}`}
+                      keyboardType="numeric"
+                    />
+                    {capacityFieldError ? (
+                      <Text style={{ color: theme.error, marginBottom: 8 }}>{capacityFieldError}</Text>
+                    ) : (
+                      <Text style={{ color: theme.text, opacity: 0.7, marginBottom: 8 }}>
+                        {`Max ${MAX_VEHICLE_CAPACITY_KG} kg or ${MAX_VEHICLE_CAPACITY_LB} lb. Switching units converts the value.`}
+                      </Text>
+                    )}
                     <Text style={styles.label}>Capacity unit</Text>
                     <View style={{ flexDirection: 'row', marginBottom: 10 }}>
                       <View style={{ flex: 1, marginRight: 5 }}>
                         <Button title={formData.capacity_unit === 'kg' ? 'kg (selected)' : 'kg'}
-                          onPress={() => setFormData({ ...formData, capacity_unit: 'kg' })}
+                          onPress={() => switchCapacityUnit('kg')}
                           color={formData.capacity_unit === 'kg' ? '#007AFF' : '#8E8E93'} />
                       </View>
                       <View style={{ flex: 1, marginLeft: 5 }}>
                         <Button title={formData.capacity_unit === 'lb' ? 'lb (selected)' : 'lb'}
-                          onPress={() => setFormData({ ...formData, capacity_unit: 'lb' })}
+                          onPress={() => switchCapacityUnit('lb')}
                           color={formData.capacity_unit === 'lb' ? '#007AFF' : '#8E8E93'} />
                       </View>
                     </View>
@@ -1885,7 +2006,7 @@ export default function App() {
                       <Button
                         title={saving ? 'Saving...' : (inService ? 'Save Vehicle' : 'Save & Mark Inactive')}
                         onPress={handleSave}
-                        disabled={saving}
+                        disabled={saving || !capacityText || !!capacityFieldError}
                       />
                     </View>
                     {inService && (
@@ -2541,11 +2662,11 @@ export default function App() {
           <Text style={styles.label}>Vehicle Capacity (kg) *</Text>
           <TextInput
             style={styles.input}
-            placeholderTextColor={theme.placeholder} placeholder="Enter vehicle capacity in kg"
+            placeholderTextColor={theme.placeholder} placeholder={`Enter vehicle capacity (1–${MAX_VEHICLE_CAPACITY_KG} kg)`}
             value={formData.vehicle_capacity.toString()}
             onChangeText={(text) => {
               const capacity = parseInt(text) || 1000;
-              if (capacity >= 1 && capacity <= 50000) {
+              if (capacity >= 1 && capacity <= MAX_VEHICLE_CAPACITY_KG) {
                 setFormData(prev => ({ ...prev, vehicle_capacity: capacity }));
               }
             }}
@@ -4364,11 +4485,11 @@ export default function App() {
               value={driverForm.vehicle_capacity.toString()}
               onChangeText={(text) => {
                 const capacity = parseInt(text) || 1000;
-                if (capacity >= 1 && capacity <= 50000) {
+                if (capacity >= 1 && capacity <= MAX_VEHICLE_CAPACITY_KG) {
                   setDriverForm({ ...driverForm, vehicle_capacity: capacity });
                 }
               }}
-              placeholderTextColor={theme.placeholder} placeholder="Vehicle Capacity (kg) *"
+              placeholderTextColor={theme.placeholder} placeholder={`Vehicle Capacity (1–${MAX_VEHICLE_CAPACITY_KG} kg) *`}
               keyboardType="numeric"
             />
 
