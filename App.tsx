@@ -625,50 +625,30 @@ export default function App() {
       );
     };
     const handleDeactivate = async (vehicle: any) => {
-      Alert.alert(
-        'Mark inactive',
-        'Vehicle will be taken off the active fleet. History is preserved. You can reactivate it later.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Deactivate', style: 'destructive', onPress: async () => {
-              setLocalLoading(true);
-              try {
-                await deactivateVehicle(vehicle.id);
-                setMode('list');
-                setSelected(null);
-                await loadVehicles();
-              } catch (e) {
-                setError('Failed to deactivate vehicle');
-              }
-              setLocalLoading(false);
-            }
-          }
-        ]
-      );
+      setLocalLoading(true);
+      setError(null);
+      try {
+        await deactivateVehicle(vehicle.id);
+        setMode('list');
+        setSelected(null);
+        await loadVehicles();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to deactivate vehicle');
+      }
+      setLocalLoading(false);
     };
     const handleReactivate = async (vehicle: any) => {
-      Alert.alert(
-        'Reactivate vehicle',
-        'Vehicle will be marked active. Insurance/registration checks will be added in a future release.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Reactivate', onPress: async () => {
-              setLocalLoading(true);
-              try {
-                await reactivateVehicle(vehicle.id);
-                setMode('list');
-                setSelected(null);
-                await loadVehicles();
-              } catch (e) {
-                setError('Failed to reactivate vehicle');
-              }
-              setLocalLoading(false);
-            }
-          }
-        ]
-      );
+      setLocalLoading(true);
+      setError(null);
+      try {
+        await reactivateVehicle(vehicle.id);
+        setMode('list');
+        setSelected(null);
+        await loadVehicles();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to reactivate vehicle');
+      }
+      setLocalLoading(false);
     };
     const handleCreate = async () => {
       if (!form.license_plate.trim() || !form.make.trim() || !form.model.trim() || !form.vin.trim() || form.capacity <= 0 || form.year <= 0 || form.year < 1900 || form.year > 2100) {
@@ -3816,13 +3796,10 @@ export default function App() {
         const errorBody = await response.json().catch(() => ({}));
         throw new Error(errorBody.detail || errorBody.message || 'Failed to deactivate vehicle');
       }
-      const data = await response.json().catch(() => ({}));
-      Alert.alert('Success', data.detail || 'Vehicle marked inactive.');
-      setVehicleCrudMode('list');
+      await response.json().catch(() => ({}));
       await loadVehicles();
     } catch (error) {
       console.error('Error deactivating vehicle:', error);
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to deactivate vehicle');
       throw error;
     } finally {
       setLoading(false);
@@ -3839,13 +3816,10 @@ export default function App() {
         const errorBody = await response.json().catch(() => ({}));
         throw new Error(errorBody.detail || errorBody.message || 'Failed to reactivate vehicle');
       }
-      const data = await response.json().catch(() => ({}));
-      Alert.alert('Success', data.detail || 'Vehicle reactivated.');
-      setVehicleCrudMode('list');
+      await response.json().catch(() => ({}));
       await loadVehicles();
     } catch (error) {
       console.error('Error reactivating vehicle:', error);
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to reactivate vehicle');
       throw error;
     } finally {
       setLoading(false);
