@@ -1746,6 +1746,7 @@ export default function App() {
       capacity_unit: 'kg',
     });
     const [vehicleActive, setVehicleActive] = useState(true);
+    const [inService, setInService] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [localLoading, setLocalLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -1762,7 +1763,9 @@ export default function App() {
             throw new Error(body.error || body.detail || 'Failed to load vehicle');
           }
           const data = await response.json();
-          setVehicleActive(data.active !== false);
+          const isActive = data.active !== false;
+          setVehicleActive(isActive);
+          setInService(isActive);
           setFormData({
             license_plate: data.license_plate || '',
             make: data.make || '',
@@ -1780,32 +1783,6 @@ export default function App() {
       loadVehicle();
     }, []);
 
-    const handleDeactivateOwnVehicle = async () => {
-      Alert.alert(
-        'Mark vehicle inactive',
-        'Use this if the vehicle was sold, destroyed, or is no longer in service. Contact admin to assign a new vehicle or reactivate this one.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Mark inactive',
-            style: 'destructive',
-            onPress: async () => {
-              setDeactivating(true);
-              setError(null);
-              try {
-                await driverDeactivateOwnVehicle();
-                Alert.alert('Success', 'Your vehicle has been marked inactive.');
-                onBack();
-              } catch (e) {
-                setError(e instanceof Error ? e.message : 'Failed to deactivate vehicle');
-              }
-              setDeactivating(false);
-            },
-          },
-        ]
-      );
-    };
-
     const handleSave = async () => {
       if (!formData.license_plate.trim() || !formData.make.trim() || !formData.model.trim() || !formData.vin.trim()) {
         setError('License plate, make, model, and VIN are required');
@@ -1818,14 +1795,18 @@ export default function App() {
       setSaving(true);
       setError(null);
       try {
+        const payload: Record<string, unknown> = {
+          ...formData,
+          vin: formData.vin.toUpperCase(),
+          year: Number(formData.year),
+          capacity: Number(formData.capacity),
+        };
+        if (vehicleActive && !inService) {
+          payload.active = false;
+        }
         const response = await makeAuthenticatedRequest('/drivers/me/vehicle/', {
           method: 'PATCH',
-          body: JSON.stringify({
-            ...formData,
-            vin: formData.vin.toUpperCase(),
-            year: Number(formData.year),
-            capacity: Number(formData.capacity),
-          }),
+          body: JSON.stringify(payload),
         });
         if (!response.ok) {
           const body = await response.json().catch(() => ({}));
@@ -1833,9 +1814,15 @@ export default function App() {
             || (typeof body === 'object' && Object.keys(body).length
               ? Object.entries(body).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join('; ') : v}`).join('\n')
               : 'Failed to update vehicle');
-          throw new Error(msg);
+          throw new Error(typeof msg === 'string' ? msg : 'Failed to update vehicle');
         }
-        Alert.alert('Success', 'Vehicle updated successfully!');
+        const updated = await response.json();
+        if (updated.active === false) {
+          Alert.alert('Success', 'Vehicle marked inactive. Contact admin to reactivate or assign a new vehicle.');
+        } else {
+          Alert.alert('Success', 'Vehicle updated successfully!');
+        }
+        await loadDriverMyVehicle();
         onBack();
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to update vehicle');
@@ -1857,65 +1844,113 @@ export default function App() {
             {error && <Text style={{ color: theme.error, marginBottom: 10 }}>{error}</Text>}
             {localLoading ? (
               <ActivityIndicator size="large" color={theme.border} />
-            ) : !vehicleActive ? (
-              <>
-                <Text style={{ color: theme.text, marginBottom: 12 }}>
-                  This vehicle is inactive. Contact admin to reactivate or assign a new vehicle.
-                </Text>
-                <View style={styles.buttonContainer}>
-                  <Button title="Back" onPress={onBack} />
-                </View>
-              </>
             ) : (
               <>
-                <TextInput style={styles.input} value={formData.license_plate}
-                  onChangeText={(t) => setFormData({ ...formData, license_plate: t.toUpperCase() })}
-                  placeholderTextColor={theme.placeholder} placeholder="License Plate *" autoCapitalize="characters" />
-                <TextInput style={styles.input} value={formData.make}
-                  onChangeText={(t) => setFormData({ ...formData, make: t })}
-                  placeholderTextColor={theme.placeholder} placeholder="Make *" />
-                <TextInput style={styles.input} value={formData.model}
-                  onChangeText={(t) => setFormData({ ...formData, model: t })}
-                  placeholderTextColor={theme.placeholder} placeholder="Model *" />
-                <TextInput style={styles.input} value={String(formData.year)}
-                  onChangeText={(t) => {
-                    const year = parseInt(t, 10);
-                    if (!isNaN(year)) setFormData({ ...formData, year });
-                  }}
-                  placeholderTextColor={theme.placeholder} placeholder="Year *" keyboardType="numeric" maxLength={4} />
-                <TextInput style={styles.input} value={formData.vin}
-                  onChangeText={(t) => setFormData({ ...formData, vin: t.toUpperCase().slice(0, 17) })}
-                  placeholderTextColor={theme.placeholder} placeholder="VIN (17 chars) *" autoCapitalize="characters" maxLength={17} />
-                <TextInput style={styles.input} value={String(formData.capacity)}
-                  onChangeText={(t) => {
-                    const cap = parseInt(t, 10);
-                    if (!isNaN(cap)) setFormData({ ...formData, capacity: cap });
-                  }}
-                  placeholderTextColor={theme.placeholder} placeholder="Capacity *" keyboardType="numeric" />
-                <Text style={styles.label}>Capacity unit</Text>
-                <View style={{ flexDirection: 'row', marginBottom: 10 }}>
-                  <View style={{ flex: 1, marginRight: 5 }}>
-                    <Button title={formData.capacity_unit === 'kg' ? 'kg (selected)' : 'kg'}
-                      onPress={() => setFormData({ ...formData, capacity_unit: 'kg' })}
-                      color={formData.capacity_unit === 'kg' ? '#007AFF' : '#8E8E93'} />
-                  </View>
-                  <View style={{ flex: 1, marginLeft: 5 }}>
-                    <Button title={formData.capacity_unit === 'lb' ? 'lb (selected)' : 'lb'}
-                      onPress={() => setFormData({ ...formData, capacity_unit: 'lb' })}
-                      color={formData.capacity_unit === 'lb' ? '#007AFF' : '#8E8E93'} />
-                  </View>
-                </View>
-                <View style={styles.buttonContainer}>
-                  <Button title={saving ? 'Saving...' : 'Save Vehicle'} onPress={handleSave} disabled={saving} />
-                </View>
-                <View style={styles.buttonContainer}>
-                  <Button
-                    title={deactivating ? 'Working...' : 'Mark Vehicle Inactive'}
-                    color="#f0ad4e"
-                    onPress={handleDeactivateOwnVehicle}
-                    disabled={deactivating || saving}
-                  />
-                </View>
+                <Text style={styles.label}>Vehicle status</Text>
+                <TextInput
+                  style={[styles.input, { color: theme.text }]}
+                  value={vehicleActive && inService ? 'Active' : 'Inactive'}
+                  editable={false}
+                />
+
+                {vehicleActive && inService ? (
+                  <>
+                    <View style={styles.switchContainer}>
+                      <Text style={styles.switchLabel}>Vehicle in service</Text>
+                      <Switch value={inService} onValueChange={setInService} />
+                    </View>
+                    {!inService && (
+                      <Text style={{ color: theme.error, marginBottom: 10 }}>
+                        Save will mark this vehicle inactive (sold, repair, or out of service).
+                      </Text>
+                    )}
+                    <TextInput style={styles.input} value={formData.license_plate}
+                      onChangeText={(t) => setFormData({ ...formData, license_plate: t.toUpperCase() })}
+                      placeholderTextColor={theme.placeholder} placeholder="License Plate *" autoCapitalize="characters" />
+                    <TextInput style={styles.input} value={formData.make}
+                      onChangeText={(t) => setFormData({ ...formData, make: t })}
+                      placeholderTextColor={theme.placeholder} placeholder="Make *" />
+                    <TextInput style={styles.input} value={formData.model}
+                      onChangeText={(t) => setFormData({ ...formData, model: t })}
+                      placeholderTextColor={theme.placeholder} placeholder="Model *" />
+                    <TextInput style={styles.input} value={String(formData.year)}
+                      onChangeText={(t) => {
+                        const year = parseInt(t, 10);
+                        if (!isNaN(year)) setFormData({ ...formData, year });
+                      }}
+                      placeholderTextColor={theme.placeholder} placeholder="Year *" keyboardType="numeric" maxLength={4} />
+                    <TextInput style={styles.input} value={formData.vin}
+                      onChangeText={(t) => setFormData({ ...formData, vin: t.toUpperCase().slice(0, 17) })}
+                      placeholderTextColor={theme.placeholder} placeholder="VIN (17 chars) *" autoCapitalize="characters" maxLength={17} />
+                    <TextInput style={styles.input} value={String(formData.capacity)}
+                      onChangeText={(t) => {
+                        const cap = parseInt(t, 10);
+                        if (!isNaN(cap)) setFormData({ ...formData, capacity: cap });
+                      }}
+                      placeholderTextColor={theme.placeholder} placeholder="Capacity *" keyboardType="numeric" />
+                    <Text style={styles.label}>Capacity unit</Text>
+                    <View style={{ flexDirection: 'row', marginBottom: 10 }}>
+                      <View style={{ flex: 1, marginRight: 5 }}>
+                        <Button title={formData.capacity_unit === 'kg' ? 'kg (selected)' : 'kg'}
+                          onPress={() => setFormData({ ...formData, capacity_unit: 'kg' })}
+                          color={formData.capacity_unit === 'kg' ? '#007AFF' : '#8E8E93'} />
+                      </View>
+                      <View style={{ flex: 1, marginLeft: 5 }}>
+                        <Button title={formData.capacity_unit === 'lb' ? 'lb (selected)' : 'lb'}
+                          onPress={() => setFormData({ ...formData, capacity_unit: 'lb' })}
+                          color={formData.capacity_unit === 'lb' ? '#007AFF' : '#8E8E93'} />
+                      </View>
+                    </View>
+                    <View style={styles.buttonContainer}>
+                      <Button
+                        title={saving ? 'Saving...' : (inService ? 'Save Vehicle' : 'Save & Mark Inactive')}
+                        onPress={handleSave}
+                        disabled={saving}
+                      />
+                    </View>
+                    {inService && (
+                      <View style={styles.buttonContainer}>
+                        <Button
+                          title={deactivating ? 'Working...' : 'Mark Inactive Now'}
+                          color="#f0ad4e"
+                          onPress={async () => {
+                            setDeactivating(true);
+                            setError(null);
+                            try {
+                              const response = await makeAuthenticatedRequest('/drivers/me/vehicle/', {
+                                method: 'PATCH',
+                                body: JSON.stringify({ active: false }),
+                              });
+                              if (!response.ok) {
+                                const body = await response.json().catch(() => ({}));
+                                throw new Error(body.error || body.detail || 'Failed to deactivate vehicle');
+                              }
+                              Alert.alert('Success', 'Your vehicle has been marked inactive.');
+                              await loadDriverMyVehicle();
+                              onBack();
+                            } catch (e) {
+                              setError(e instanceof Error ? e.message : 'Failed to deactivate vehicle');
+                            }
+                            setDeactivating(false);
+                          }}
+                          disabled={deactivating || saving}
+                        />
+                      </View>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Text style={{ color: theme.text, marginBottom: 8 }}>
+                      {formData.make} {formData.model} ({formData.license_plate})
+                    </Text>
+                    <Text style={{ color: theme.text, marginBottom: 12 }}>
+                      This vehicle is inactive. Contact admin to reactivate or assign a new vehicle.
+                    </Text>
+                    <View style={styles.buttonContainer}>
+                      <Button title="Back" onPress={onBack} />
+                    </View>
+                  </>
+                )}
               </>
             )}
           </View>
@@ -2575,6 +2610,12 @@ export default function App() {
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [driverVehicles, setDriverVehicles] = useState<any[]>([]);
+  const [driverVehicleSummary, setDriverVehicleSummary] = useState<{
+    license_plate: string;
+    make: string;
+    model: string;
+    active: boolean;
+  } | null>(null);
   const [driversLoading, setDriversLoading] = useState(false);
   const [adminScreen, setAdminScreen] = useState<string | null>(null); // e.g. 'driver_vehicles'
 
@@ -2893,7 +2934,8 @@ export default function App() {
           loadDrivers(),
           loadVehicles(),
           loadAssignments(),
-          loadDriverVehicles()
+          loadDriverVehicles(),
+          ...(userType === 'driver' ? [loadDriverMyVehicle()] : []),
         ]);
       } else if (userType === 'customer') {
         await loadMyDeliveries();
@@ -2999,6 +3041,26 @@ export default function App() {
       }
     } catch (error) {
       console.error('Error loading driver vehicles:', error);
+    }
+  };
+
+  const loadDriverMyVehicle = async () => {
+    try {
+      const response = await makeAuthenticatedRequest('/drivers/me/vehicle/');
+      if (response.ok) {
+        const data = await response.json();
+        setDriverVehicleSummary({
+          license_plate: data.license_plate || '',
+          make: data.make || '',
+          model: data.model || '',
+          active: data.active !== false,
+        });
+      } else {
+        setDriverVehicleSummary(null);
+      }
+    } catch (error) {
+      console.error('Error loading driver vehicle:', error);
+      setDriverVehicleSummary(null);
     }
   };
 
@@ -4382,6 +4444,18 @@ export default function App() {
           {userType === 'driver' && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>🚚 Driver Services</Text>
+              {driverVehicleSummary ? (
+                <View style={[styles.itemContainer, { marginBottom: 12 }]}>
+                  <Text style={styles.itemTitle}>
+                    {driverVehicleSummary.make} {driverVehicleSummary.model} ({driverVehicleSummary.license_plate})
+                  </Text>
+                  <Text style={{ color: theme.text }}>
+                    Vehicle status: {driverVehicleSummary.active ? 'Active' : 'Inactive'}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={{ color: theme.text, marginBottom: 12 }}>No vehicle on file.</Text>
+              )}
               <View style={styles.buttonContainer}>
                 <Button title="👤 Edit My Profile" onPress={() => setCurrentScreen('driver_profile_edit')} />
               </View>
