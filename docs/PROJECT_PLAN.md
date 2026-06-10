@@ -2,7 +2,7 @@
 
 **Last updated:** June 9, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟢 Phase 1 **complete**; **driver self-service CRUD** shipped June 3, 2026  
+**Overall status:** 🟢 Phase 1 **complete**; Phase 2 **in progress** (validation + logging shipped)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
 **Latest status report:** `DeliveryApp/project-docs/PROJECT_STATUS_20260609.md`
 
@@ -39,13 +39,13 @@ Full-stack delivery management: Django API on Heroku, Expo web on Vercel, React 
 
 ---
 
-## Phase 2 — Data & workflow reliability *(not started)*
+## Phase 2 — Data & workflow reliability *(in progress)*
 
 | Item | Status |
 |------|--------|
 | Seed / demo data strategy for staging/production | Todo |
-| Clear API validation messages for duplicate registration fields | Todo |
-| Logging for auth and registration failures | Todo |
+| Clear API validation messages for duplicate registration fields | Done |
+| Logging for auth and registration failures | Done |
 | Optional: staging Heroku app | Todo |
 | **Vehicle lifecycle (MVP):** soft inactive + staff reactivate; no hard delete when history exists | Done |
 | Driver: deactivate own assigned vehicle (`POST /drivers/me/vehicle/deactivate/`) | Done |
@@ -67,9 +67,9 @@ Full-stack delivery management: Django API on Heroku, Expo web on Vercel, React 
 
 | Item | Status |
 |------|--------|
-| CI: backend tests + frontend build on PR (`phase1-ci.yml`) | Partial — workflows exist; tests use `continue-on-error` |
+| CI: backend tests + frontend build on PR (`phase1-ci.yml`) | Partial — critical test subset gates CI; full suite `continue-on-error` |
 | Branch strategy: `main` = production deploys | Done |
-| Document rollback (Heroku releases, Vercel deployments) | Todo |
+| Document rollback (Heroku releases, Vercel deployments) | Done — `DeliveryAppBackend/docs/ROLLBACK.md` |
 | Align mobile CI `EXPO_PUBLIC_BACKEND_URL` with `truck-buddy` Heroku app | Done |
 
 ---
