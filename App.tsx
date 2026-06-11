@@ -26,6 +26,11 @@ import {
   View
 } from 'react-native';
 import { checkBackendHealth, getApiDebugInfo, getApiUrl } from './src/config/api';
+import {
+  buildVehicleUpdatePayload,
+  createVehicleByApi,
+  updateVehicleById,
+} from './src/services/vehicleService';
 
 /** Max vehicle load capacity by unit. */
 const MAX_VEHICLE_CAPACITY_KG = 2000;
@@ -78,6 +83,116 @@ function clampCapacityText(text: string, unit: string): string {
     return String(capMax);
   }
   return numericText;
+}
+
+function nextCapacityAfterInput(text: string, unit: string): {
+  text: string;
+  error: string | null;
+  rejected: boolean;
+} {
+  const numericText = text.replace(/[^0-9]/g, '');
+  const capMax = maxVehicleCapacity(unit);
+  if (numericText.length > String(capMax).length) {
+    return { text: '', error: null, rejected: true };
+  }
+  if (numericText) {
+    const capacity = parseInt(numericText, 10);
+    if (!Number.isNaN(capacity) && capacity > capMax) {
+      return {
+        text: numericText,
+        error: `Maximum capacity is ${capMax} ${unit}`,
+        rejected: true,
+      };
+    }
+  }
+  return {
+    text: numericText,
+    error: numericText ? validateCapacityText(numericText, unit) : 'Capacity is required',
+    rejected: false,
+  };
+}
+
+function convertCapacityTextForUnit(
+  capacityText: string,
+  fromUnit: string,
+  toUnit: 'kg' | 'lb',
+): { text: string; error: string | null } {
+  const current = parseInt(capacityText, 10);
+  let nextText = capacityText;
+  if (!Number.isNaN(current) && current > 0) {
+    nextText = String(convertCapacityBetweenUnits(current, fromUnit, toUnit));
+  }
+  nextText = clampCapacityText(nextText, toUnit);
+  return {
+    text: nextText,
+    error: nextText ? validateCapacityText(nextText, toUnit) : 'Capacity is required',
+  };
+}
+
+function VehicleCapacityFields({
+  capacityUnit,
+  capacityText,
+  capacityFieldError,
+  onCapacityTextChange,
+  onSwitchUnit,
+  disabled,
+}: {
+  capacityUnit: string;
+  capacityText: string;
+  capacityFieldError: string | null;
+  onCapacityTextChange: (text: string) => void;
+  onSwitchUnit: (unit: 'kg' | 'lb') => void;
+  disabled?: boolean;
+}) {
+  return (
+    <>
+      <Text style={styles.label}>Capacity ({capacityUnit}) *</Text>
+      <TextInput
+        style={[
+          styles.input,
+          capacityFieldError ? { borderColor: theme.error, borderWidth: 1 } : null,
+        ]}
+        value={capacityText}
+        onChangeText={onCapacityTextChange}
+        onBlur={() => {
+          const clamped = clampCapacityText(capacityText, capacityUnit);
+          if (clamped !== capacityText) {
+            onCapacityTextChange(clamped);
+          }
+        }}
+        placeholderTextColor={theme.placeholder}
+        placeholder={`1–${maxVehicleCapacity(capacityUnit)} ${capacityUnit}`}
+        keyboardType="numeric"
+        editable={!disabled}
+      />
+      {capacityFieldError ? (
+        <Text style={{ color: theme.error, marginBottom: 8 }}>{capacityFieldError}</Text>
+      ) : (
+        <Text style={{ color: theme.text, opacity: 0.7, marginBottom: 8 }}>
+          {`Max ${MAX_VEHICLE_CAPACITY_KG} kg or ${MAX_VEHICLE_CAPACITY_LB} lb. Switching units converts the value.`}
+        </Text>
+      )}
+      <Text style={styles.label}>Capacity unit</Text>
+      <View style={{ flexDirection: 'row', marginBottom: 10 }}>
+        <View style={{ flex: 1, marginRight: 5 }}>
+          <Button
+            title={capacityUnit === 'kg' ? 'kg (selected)' : 'kg'}
+            onPress={() => onSwitchUnit('kg')}
+            color={capacityUnit === 'kg' ? '#007AFF' : '#8E8E93'}
+            disabled={disabled}
+          />
+        </View>
+        <View style={{ flex: 1, marginLeft: 5 }}>
+          <Button
+            title={capacityUnit === 'lb' ? 'lb (selected)' : 'lb'}
+            onPress={() => onSwitchUnit('lb')}
+            color={capacityUnit === 'lb' ? '#007AFF' : '#8E8E93'}
+            disabled={disabled}
+          />
+        </View>
+      </View>
+    </>
+  );
 }
 
 // ========================================
@@ -628,10 +743,71 @@ export default function App() {
     const [selected, setSelected] = useState<any>(null);
     const [form, setForm] = useState<any>({
       license_plate: '', make: '', model: '', year: 0,
-      vin: '', capacity: 0, capacity_unit: 'kg', active: true
+      vin: '', capacity_unit: 'kg', active: true
     });
+    const [capacityText, setCapacityText] = useState('');
+    const [capacityFieldError, setCapacityFieldError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [localLoading, setLocalLoading] = useState(false);
+
+    const resetVehicleForm = () => {
+      setForm({
+        license_plate: '', make: '', model: '', year: 0,
+        vin: '', capacity_unit: 'kg', active: true
+      });
+      setCapacityText('');
+      setCapacityFieldError(null);
+    };
+
+    const handleCapacityChange = (text: string) => {
+      const result = nextCapacityAfterInput(text, form.capacity_unit || 'kg');
+      if (result.rejected) {
+        if (result.error) {
+          setCapacityFieldError(result.error);
+        }
+        return;
+      }
+      setCapacityText(result.text);
+      setCapacityFieldError(result.error);
+    };
+
+    const switchCapacityUnit = (nextUnit: 'kg' | 'lb') => {
+      if ((form.capacity_unit || 'kg') === nextUnit) {
+        return;
+      }
+      const converted = convertCapacityTextForUnit(capacityText, form.capacity_unit || 'kg', nextUnit);
+      setForm((f: typeof form) => ({ ...f, capacity_unit: nextUnit }));
+      setCapacityText(converted.text);
+      setCapacityFieldError(converted.error);
+    };
+
+    const validateVehicleForm = (): boolean => {
+      if (!form.license_plate.trim() || !form.make.trim() || !form.model.trim() || !form.vin.trim()) {
+        setError('License plate, make, model, and VIN are required');
+        return false;
+      }
+      if (form.vin.length !== 17) {
+        setError('VIN must be exactly 17 characters');
+        return false;
+      }
+      if (form.year <= 0 || form.year < 1900 || form.year > 2100) {
+        setError('Year must be between 1900 and 2100');
+        return false;
+      }
+      const capacityError = validateCapacityText(capacityText, form.capacity_unit || 'kg');
+      if (capacityError) {
+        setCapacityFieldError(capacityError);
+        setError(capacityError);
+        return false;
+      }
+      return true;
+    };
+
+    const buildVehiclePayload = () => ({
+      ...form,
+      capacity: parseInt(capacityText, 10),
+      vin: form.vin.toUpperCase(),
+    });
 
     // Handlers
     const handleSelect = (vehicle: any) => {
@@ -646,10 +822,11 @@ export default function App() {
         model: vehicle.model || '',
         year: vehicle.year || 0,
         vin: vehicle.vin || '',
-        capacity: vehicle.capacity || 0,
         capacity_unit: vehicle.capacity_unit || 'kg',
         active: vehicle.active !== undefined ? vehicle.active : true
       });
+      setCapacityText(vehicle.capacity != null ? String(vehicle.capacity) : '');
+      setCapacityFieldError(null);
       setMode('edit');
     };
     const handleDelete = async (vehicle: any) => {
@@ -704,40 +881,35 @@ export default function App() {
       setLocalLoading(false);
     };
     const handleCreate = async () => {
-      if (!form.license_plate.trim() || !form.make.trim() || !form.model.trim() || !form.vin.trim() || form.capacity <= 0 || form.year <= 0 || form.year < 1900 || form.year > 2100) {
-        setError('All fields are required, capacity must be greater than 0, and year must be between 1900-2100');
+      if (!validateVehicleForm()) {
         return;
       }
       setLocalLoading(true);
       setError(null);
       try {
-        await createVehicle(form);
+        await createVehicle(buildVehiclePayload());
         setMode('list');
-        setForm({
-          license_plate: '', make: '', model: '', year: 0,
-          vin: '', capacity: 0, capacity_unit: 'kg', active: true
-        });
+        resetVehicleForm();
         await loadVehicles();
       } catch (e) {
-        setError('Failed to create vehicle');
+        setError(e instanceof Error ? e.message : 'Failed to create vehicle');
       }
       setLocalLoading(false);
     };
     const handleUpdate = async () => {
       if (!selected) return;
-      if (!form.license_plate.trim() || !form.make.trim() || !form.model.trim() || !form.vin.trim() || form.capacity <= 0 || form.year <= 0 || form.year < 1900 || form.year > 2100) {
-        setError('All fields are required, capacity must be greater than 0, and year must be between 1900-2100');
+      if (!validateVehicleForm()) {
         return;
       }
       setLocalLoading(true);
       setError(null);
       try {
-        await updateVehicle(selected.id, form);
+        await updateVehicle(selected.id, buildVehiclePayload());
         setMode('list');
         setSelected(null);
         await loadVehicles();
       } catch (e) {
-        setError('Failed to update vehicle');
+        setError(e instanceof Error ? e.message : 'Failed to update vehicle');
       }
       setLocalLoading(false);
     };
@@ -753,7 +925,7 @@ export default function App() {
             </View>
             {error && <Text style={{ color: theme.error, marginBottom: 10 }}>{error}</Text>}
             <View style={styles.buttonContainer}>
-              <Button title="Add Vehicle" onPress={() => { setMode('create'); setForm({ license_plate: '', make: '', model: '', year: 0, vin: '', capacity: 0, capacity_unit: 'kg', active: true }); }} />
+              <Button title="Add Vehicle" onPress={() => { resetVehicleForm(); setMode('create'); }} />
             </View>
             {localLoading ? <ActivityIndicator /> : vehicles.length === 0 ? (
               <Text style={styles.emptyText}>No vehicles found.</Text>
@@ -762,7 +934,7 @@ export default function App() {
                 <View key={vehicle.id} style={styles.itemContainer}>
                   <Text style={styles.itemTitle}>{vehicle.make} {vehicle.model} ({vehicle.license_plate})</Text>
                   <Text style={{ color: theme.text }}>Year: {vehicle.year}</Text>
-                  <Text style={{ color: theme.text }}>Capacity: {vehicle.capacity} kg</Text>
+                  <Text style={{ color: theme.text }}>Capacity: {vehicle.capacity} {vehicle.capacity_unit || 'kg'}</Text>
                   <Text style={{ color: theme.text }}>Status: {vehicle.active ? 'Active' : 'Inactive'}</Text>
                   <View style={{ flexDirection: 'row', marginTop: 8 }}>
                     <View style={{ flex: 1, marginRight: 4 }}>
@@ -841,42 +1013,23 @@ export default function App() {
             <Text style={styles.label}>VIN *</Text>
             <TextInput style={styles.input} value={form.vin} onChangeText={t => setForm((f: typeof form) => ({ ...f, vin: t.toUpperCase() }))} placeholderTextColor={theme.placeholder} placeholder="17 characters" autoCapitalize="characters" maxLength={17} />
 
-            <Text style={styles.label}>Capacity ({form.capacity_unit || 'kg'}) *</Text>
-            <TextInput
-              style={styles.input}
-              value={form.capacity === 0 ? '' : form.capacity.toString()}
-              onChangeText={(text) => {
-                // Allow empty input while typing
-                if (text === '') {
-                  setForm((f: typeof form) => ({ ...f, capacity: 0 }));
-                  return;
-                }
-
-                // Only allow numeric characters
-                const numericText = text.replace(/[^0-9]/g, '');
-                if (numericText.length <= 6) {
-                  const capacity = parseInt(numericText);
-                  const capMax = maxVehicleCapacity(form.capacity_unit || 'kg');
-                  if (!isNaN(capacity) && capacity >= 1 && capacity <= capMax) {
-                    setForm((f: typeof form) => ({ ...f, capacity }));
-                  } else if (numericText.length > 0) {
-                    // Allow partial input while typing
-                    const partialCapacity = parseInt(numericText);
-                    if (!isNaN(partialCapacity)) {
-                      setForm((f: typeof form) => ({ ...f, capacity: partialCapacity }));
-                    }
-                  }
-                }
-              }}
-              placeholderTextColor={theme.placeholder} placeholder={`Enter capacity (1–${maxVehicleCapacity(form.capacity_unit || 'kg')} ${form.capacity_unit || 'kg'})`}
-              keyboardType="numeric"
+            <VehicleCapacityFields
+              capacityUnit={form.capacity_unit || 'kg'}
+              capacityText={capacityText}
+              capacityFieldError={capacityFieldError}
+              onCapacityTextChange={handleCapacityChange}
+              onSwitchUnit={switchCapacityUnit}
             />
             <View style={styles.switchContainer}>
               <Text style={styles.switchLabel}>Active Vehicle</Text>
               <Switch value={form.active} onValueChange={v => setForm((f: typeof form) => ({ ...f, active: v }))} />
             </View>
             <View style={styles.buttonContainer}>
-              <Button title={mode === 'create' ? 'Create' : 'Update'} onPress={mode === 'create' ? handleCreate : handleUpdate} disabled={localLoading} />
+              <Button
+                title={mode === 'create' ? 'Create' : 'Update'}
+                onPress={mode === 'create' ? handleCreate : handleUpdate}
+                disabled={localLoading || !capacityText || !!capacityFieldError}
+              />
             </View>
             <View style={styles.buttonContainer}>
               <Button title="Cancel" onPress={() => { setMode('list'); setSelected(null); }} />
@@ -894,7 +1047,7 @@ export default function App() {
             <Text style={{ color: theme.text }}>License Plate: {selected.license_plate}</Text>
             <Text style={{ color: theme.text }}>Year: {selected.year}</Text>
             <Text style={{ color: theme.text }}>VIN: {selected.vin}</Text>
-            <Text style={{ color: theme.text }}>Capacity: {selected.capacity} kg</Text>
+            <Text style={{ color: theme.text }}>Capacity: {selected.capacity} {selected.capacity_unit || 'kg'}</Text>
             <Text style={{ color: theme.text }}>Status: {selected.active ? 'Active' : 'Inactive'}</Text>
             <View style={styles.buttonContainer}>
               <Button title="Edit" onPress={() => handleEdit(selected)} />
@@ -1782,6 +1935,7 @@ export default function App() {
     const [capacityFieldError, setCapacityFieldError] = useState<string | null>(null);
     const [vehicleActive, setVehicleActive] = useState(true);
     const [inService, setInService] = useState(true);
+    const [vehicleId, setVehicleId] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [localLoading, setLocalLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -1799,6 +1953,7 @@ export default function App() {
           }
           const data = await response.json();
           const isActive = data.active !== false;
+          setVehicleId(data.id ?? null);
           setVehicleActive(isActive);
           setInService(isActive);
           setFormData({
@@ -1823,35 +1978,22 @@ export default function App() {
       if (formData.capacity_unit === nextUnit) {
         return;
       }
-      const current = parseInt(capacityText, 10);
-      let nextText = capacityText;
-      if (!Number.isNaN(current) && current > 0) {
-        const converted = convertCapacityBetweenUnits(current, formData.capacity_unit, nextUnit);
-        nextText = String(converted);
-      }
-      nextText = clampCapacityText(nextText, nextUnit);
+      const converted = convertCapacityTextForUnit(capacityText, formData.capacity_unit, nextUnit);
       setFormData({ ...formData, capacity_unit: nextUnit });
-      setCapacityText(nextText);
-      setCapacityFieldError(nextText ? validateCapacityText(nextText, nextUnit) : 'Capacity is required');
+      setCapacityText(converted.text);
+      setCapacityFieldError(converted.error);
     };
 
     const handleCapacityChange = (text: string) => {
-      const numericText = text.replace(/[^0-9]/g, '');
-      const capMax = maxVehicleCapacity(formData.capacity_unit);
-      if (numericText.length > String(capMax).length) {
+      const result = nextCapacityAfterInput(text, formData.capacity_unit);
+      if (result.rejected) {
+        if (result.error) {
+          setCapacityFieldError(result.error);
+        }
         return;
       }
-      if (numericText) {
-        const capacity = parseInt(numericText, 10);
-        if (!Number.isNaN(capacity) && capacity > capMax) {
-          setCapacityFieldError(`Maximum capacity is ${capMax} ${formData.capacity_unit}`);
-          return;
-        }
-      }
-      setCapacityText(numericText);
-      setCapacityFieldError(
-        numericText ? validateCapacityText(numericText, formData.capacity_unit) : 'Capacity is required'
-      );
+      setCapacityText(result.text);
+      setCapacityFieldError(result.error);
     };
 
     const handleSave = async () => {
@@ -1874,28 +2016,20 @@ export default function App() {
       setSaving(true);
       setError(null);
       try {
-        const payload: Record<string, unknown> = {
-          ...formData,
-          vin: formData.vin.toUpperCase(),
-          year: Number(formData.year),
-          capacity,
-        };
-        if (vehicleActive && !inService) {
-          payload.active = false;
+        if (vehicleId == null) {
+          throw new Error('Vehicle ID not loaded. Go back and try again.');
         }
-        const response = await makeAuthenticatedRequest('/drivers/me/vehicle/', {
-          method: 'PATCH',
-          body: JSON.stringify(payload),
-        });
-        if (!response.ok) {
-          const body = await response.json().catch(() => ({}));
-          const msg = body.error || body.detail
-            || (typeof body === 'object' && Object.keys(body).length
-              ? Object.entries(body).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join('; ') : v}`).join('\n')
-              : 'Failed to update vehicle');
-          throw new Error(typeof msg === 'string' ? msg : 'Failed to update vehicle');
-        }
-        const updated = await response.json();
+        const payload = buildVehicleUpdatePayload(
+          {
+            ...formData,
+            vin: formData.vin.toUpperCase(),
+            year: Number(formData.year),
+            capacity,
+            capacity_unit: formData.capacity_unit as 'kg' | 'lb',
+          },
+          { vehicleActive, inService },
+        );
+        const updated = await updateVehicleById(makeAuthenticatedRequest, vehicleId, payload);
         if (updated.active === false) {
           Alert.alert('Success', 'Vehicle marked inactive. Contact admin to reactivate or assign a new vehicle.');
         } else {
@@ -1961,47 +2095,14 @@ export default function App() {
                     <TextInput style={styles.input} value={formData.vin}
                       onChangeText={(t) => setFormData({ ...formData, vin: t.toUpperCase().slice(0, 17) })}
                       placeholderTextColor={theme.placeholder} placeholder="VIN (17 chars) *" autoCapitalize="characters" maxLength={17} />
-                    <Text style={styles.label}>Capacity ({formData.capacity_unit}) *</Text>
-                    <TextInput
-                      style={[
-                        styles.input,
-                        capacityFieldError ? { borderColor: theme.error, borderWidth: 1 } : null,
-                      ]}
-                      value={capacityText}
-                      onChangeText={handleCapacityChange}
-                      onBlur={() => {
-                        const clamped = clampCapacityText(capacityText, formData.capacity_unit);
-                        if (clamped !== capacityText) {
-                          setCapacityText(clamped);
-                        }
-                        setCapacityFieldError(
-                          clamped ? validateCapacityText(clamped, formData.capacity_unit) : 'Capacity is required'
-                        );
-                      }}
-                      placeholderTextColor={theme.placeholder}
-                      placeholder={`1–${maxVehicleCapacity(formData.capacity_unit)} ${formData.capacity_unit}`}
-                      keyboardType="numeric"
+                    <VehicleCapacityFields
+                      capacityUnit={formData.capacity_unit}
+                      capacityText={capacityText}
+                      capacityFieldError={capacityFieldError}
+                      onCapacityTextChange={handleCapacityChange}
+                      onSwitchUnit={switchCapacityUnit}
+                      disabled={saving}
                     />
-                    {capacityFieldError ? (
-                      <Text style={{ color: theme.error, marginBottom: 8 }}>{capacityFieldError}</Text>
-                    ) : (
-                      <Text style={{ color: theme.text, opacity: 0.7, marginBottom: 8 }}>
-                        {`Max ${MAX_VEHICLE_CAPACITY_KG} kg or ${MAX_VEHICLE_CAPACITY_LB} lb. Switching units converts the value.`}
-                      </Text>
-                    )}
-                    <Text style={styles.label}>Capacity unit</Text>
-                    <View style={{ flexDirection: 'row', marginBottom: 10 }}>
-                      <View style={{ flex: 1, marginRight: 5 }}>
-                        <Button title={formData.capacity_unit === 'kg' ? 'kg (selected)' : 'kg'}
-                          onPress={() => switchCapacityUnit('kg')}
-                          color={formData.capacity_unit === 'kg' ? '#007AFF' : '#8E8E93'} />
-                      </View>
-                      <View style={{ flex: 1, marginLeft: 5 }}>
-                        <Button title={formData.capacity_unit === 'lb' ? 'lb (selected)' : 'lb'}
-                          onPress={() => switchCapacityUnit('lb')}
-                          color={formData.capacity_unit === 'lb' ? '#007AFF' : '#8E8E93'} />
-                      </View>
-                    </View>
                     <View style={styles.buttonContainer}>
                       <Button
                         title={saving ? 'Saving...' : (inService ? 'Save Vehicle' : 'Save & Mark Inactive')}
@@ -2018,14 +2119,10 @@ export default function App() {
                             setDeactivating(true);
                             setError(null);
                             try {
-                              const response = await makeAuthenticatedRequest('/drivers/me/vehicle/', {
-                                method: 'PATCH',
-                                body: JSON.stringify({ active: false }),
-                              });
-                              if (!response.ok) {
-                                const body = await response.json().catch(() => ({}));
-                                throw new Error(body.error || body.detail || 'Failed to deactivate vehicle');
+                              if (vehicleId == null) {
+                                throw new Error('Vehicle ID not loaded. Go back and try again.');
                               }
+                              await updateVehicleById(makeAuthenticatedRequest, vehicleId, { active: false });
                               Alert.alert('Success', 'Your vehicle has been marked inactive.');
                               await loadDriverMyVehicle();
                               onBack();
@@ -3766,33 +3863,16 @@ export default function App() {
   const createVehicle = async (vehicleData: any) => {
     setLoading(true);
     try {
-      const response = await makeAuthenticatedRequest('/vehicles/', {
-        method: 'POST',
-        body: JSON.stringify({
-          license_plate: vehicleData.license_plate,
-          make: vehicleData.make,
-          model: vehicleData.model,
-          year: vehicleData.year,
-          vin: vehicleData.vin,
-          capacity: vehicleData.capacity,
-          capacity_unit: vehicleData.capacity_unit || 'kg',
-          active: vehicleData.active !== undefined ? vehicleData.active : true
-        })
+      await createVehicleByApi(makeAuthenticatedRequest, {
+        license_plate: vehicleData.license_plate,
+        make: vehicleData.make,
+        model: vehicleData.model,
+        year: vehicleData.year,
+        vin: vehicleData.vin,
+        capacity: vehicleData.capacity,
+        capacity_unit: vehicleData.capacity_unit || 'kg',
+        active: vehicleData.active !== undefined ? vehicleData.active : true,
       });
-
-      if (!response.ok) {
-        let errorBody;
-        try {
-          errorBody = await response.json();
-        } catch {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        const msg = errorBody.detail || errorBody.message
-          || (typeof errorBody === 'object' && Object.keys(errorBody).length
-            ? Object.entries(errorBody).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join('; ') : v}`).join('\n')
-            : 'Failed to create vehicle');
-        throw new Error(msg);
-      }
 
       Alert.alert('Success', 'Vehicle created successfully!');
       setVehicleCrudMode('list');
@@ -3818,33 +3898,16 @@ export default function App() {
   const updateVehicle = async (vehicleId: any, vehicleData: any) => {
     setLoading(true);
     try {
-      const response = await makeAuthenticatedRequest(`/vehicles/${vehicleId}/`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          license_plate: vehicleData.license_plate,
-          make: vehicleData.make,
-          model: vehicleData.model,
-          year: vehicleData.year,
-          vin: vehicleData.vin,
-          capacity: vehicleData.capacity,
-          capacity_unit: vehicleData.capacity_unit || 'kg',
-          active: vehicleData.active !== undefined ? vehicleData.active : true
-        })
-      });
-
-      if (!response.ok) {
-        let errorBody;
-        try {
-          errorBody = await response.json();
-        } catch {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        const msg = errorBody.detail || errorBody.message
-          || (typeof errorBody === 'object' && Object.keys(errorBody).length
-            ? Object.entries(errorBody).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join('; ') : v}`).join('\n')
-            : 'Failed to update vehicle');
-        throw new Error(msg);
-      }
+      await updateVehicleById(makeAuthenticatedRequest, vehicleId, buildVehicleUpdatePayload({
+        license_plate: vehicleData.license_plate,
+        make: vehicleData.make,
+        model: vehicleData.model,
+        year: vehicleData.year,
+        vin: vehicleData.vin,
+        capacity: vehicleData.capacity,
+        capacity_unit: vehicleData.capacity_unit || 'kg',
+        active: vehicleData.active !== undefined ? vehicleData.active : true,
+      }));
 
       Alert.alert('Success', 'Vehicle updated successfully!');
       setVehicleCrudMode('list');
