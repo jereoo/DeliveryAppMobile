@@ -2077,24 +2077,29 @@ export default function App() {
                         Save will mark this vehicle inactive (sold, repair, or out of service).
                       </Text>
                     )}
+                    <Text style={styles.label}>License Plate *</Text>
                     <TextInput style={styles.input} value={formData.license_plate}
                       onChangeText={(t) => setFormData({ ...formData, license_plate: t.toUpperCase() })}
-                      placeholderTextColor={theme.placeholder} placeholder="License Plate *" autoCapitalize="characters" />
+                      placeholderTextColor={theme.placeholder} placeholder="Enter license plate" autoCapitalize="characters" />
+                    <Text style={styles.label}>Make *</Text>
                     <TextInput style={styles.input} value={formData.make}
                       onChangeText={(t) => setFormData({ ...formData, make: t })}
-                      placeholderTextColor={theme.placeholder} placeholder="Make *" />
+                      placeholderTextColor={theme.placeholder} placeholder="e.g., Ford, Toyota" />
+                    <Text style={styles.label}>Model *</Text>
                     <TextInput style={styles.input} value={formData.model}
                       onChangeText={(t) => setFormData({ ...formData, model: t })}
-                      placeholderTextColor={theme.placeholder} placeholder="Model *" />
+                      placeholderTextColor={theme.placeholder} placeholder="e.g., Transit, Hiace" />
+                    <Text style={styles.label}>Year *</Text>
                     <TextInput style={styles.input} value={String(formData.year)}
                       onChangeText={(t) => {
                         const year = parseInt(t, 10);
                         if (!isNaN(year)) setFormData({ ...formData, year });
                       }}
-                      placeholderTextColor={theme.placeholder} placeholder="Year *" keyboardType="numeric" maxLength={4} />
+                      placeholderTextColor={theme.placeholder} placeholder="Enter year" keyboardType="numeric" maxLength={4} />
+                    <Text style={styles.label}>VIN *</Text>
                     <TextInput style={styles.input} value={formData.vin}
                       onChangeText={(t) => setFormData({ ...formData, vin: t.toUpperCase().slice(0, 17) })}
-                      placeholderTextColor={theme.placeholder} placeholder="VIN (17 chars) *" autoCapitalize="characters" maxLength={17} />
+                      placeholderTextColor={theme.placeholder} placeholder="17 characters" autoCapitalize="characters" maxLength={17} />
                     <VehicleCapacityFields
                       capacityUnit={formData.capacity_unit}
                       capacityText={capacityText}

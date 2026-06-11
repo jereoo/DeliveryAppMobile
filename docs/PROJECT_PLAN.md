@@ -1,16 +1,42 @@
 # DeliveryApp — Project Plan
 
-**Last updated:** June 10, 2026  
+**Last updated:** June 11, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟢 Phase 1 **complete**; Phase 2 **in progress**; driver vehicle capacity limits **verified prod**  
+**Overall status:** 🟢 Phase 1 **complete**; Phase 2 **in progress**; layered architecture **documented**; vehicle update SSOT **deployed**  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
-**Latest status report:** `DeliveryApp/project-docs/PROJECT_STATUS_20260610.md`
+**Latest status report:** `DeliveryApp/project-docs/PROJECT_STATUS_20260611.md`  
+**Architecture:** `DeliveryApp/project-docs/ARCHITECTURE.md` + `.cursor/rules/layered-architecture.mdc`
 
 ---
 
 ## Vision
 
 Full-stack delivery management: Django API on Heroku, Expo web on Vercel, React Native for devices.
+
+**v1.0:** Single fleet — Admin, Driver, Customer only. Admin assigns deliveries (no separate Dispatcher role).  
+**v2.0 (~Phase 5):** Commercial fleet — Dispatcher role, multi-tenant organizations. **Deferred.**
+
+See `DeliveryApp/project-docs/ARCHITECTURE.md` for layered architecture rules and v1.0 feature gate.
+
+---
+
+## Architecture (v1.0)
+
+| Layer | Backend | Frontend |
+|-------|---------|----------|
+| HTTP / UI | ViewSets | Components (`App.tsx`, screens) |
+| Authorization | DRF Permission classes (migrate incrementally) | `userType`: admin \| driver \| customer |
+| Business logic | Services (`vehicle_update.py`, `*_service.py`) | `src/services/` (`vehicleService.ts`, …) |
+| Validation | Serializers | Shared helpers in services |
+| Data | Models (thin) | — |
+
+**Principles:** SSOT for CRUD, no duplicate Admin/Driver logic, SOLID, DRY, RBAC.
+
+**Shipped example:** Vehicle update — `update_vehicle()` (backend) + `updateVehicleById()` (mobile); commits `6b74039` / `8eb2cb9`.
+
+**Next (v1.0):** Permission classes for vehicle access; more service extractions from `App.tsx`.
+
+**Not in v1.0:** Organization models, Dispatcher role/UI, multi-tenant querysets.
 
 ---
 
@@ -51,6 +77,8 @@ Full-stack delivery management: Django API on Heroku, Expo web on Vercel, React 
 | Driver: deactivate own assigned vehicle (`POST /drivers/me/vehicle/deactivate/`) | Done |
 | Staff: deactivate/reactivate any vehicle; hard DELETE only when zero `DriverVehicle` / `DeliveryAssignment` rows | Done |
 | Driver Edit My Vehicle — capacity limits (2000 kg / 4400 lb) + kg/lb conversion | Done — prod verified June 10, 2026 (`PROJECT_STATUS_20260610.md`) |
+| **Vehicle update SSOT** — shared service; Admin + Driver use `PATCH /vehicles/{id}/` | Done — `6b74039` / `8eb2cb9` June 11, 2026 (`ARCHITECTURE.md`) |
+| **Layered architecture** — Cursor rules + project docs | Done — June 11, 2026 |
 
 **Vehicle status — ship now vs later**
 
@@ -82,6 +110,21 @@ Full-stack delivery management: Django API on Heroku, Expo web on Vercel, React 
 - **Vehicle `disposed` status** — third lifecycle state (distinct from inactive); staff-only; archive row or cascade delete when no related records; drivers cannot dispose (only inactive)
 - **Vehicle legal / compliance** — insurance, registration, inspection docs; upload/storage; expiry tracking
 - **Reactivation reverification workflow** — before `inactive → active`, require staff confirmation that insurance + registration (and later inspection) are current; block assignment until verified
+
+---
+
+## Phase 5 — Commercial fleet / v2.0 *(deferred)*
+
+**Not v1.0.** Target when moving from single-driver to commercial multi-driver operations.
+
+| Item | Notes |
+|------|--------|
+| **Dispatcher** role | Assign routes/deliveries within org; not full admin |
+| **Multi-tenant organizations** | `Organization`, membership, org-scoped data isolation |
+| **Org-scoped RBAC** | Permission classes + queryset mixins; extend existing services |
+| **Frontend** | Dispatcher screens, org context, `/api/me/` role payload |
+
+Do not add org or dispatcher abstractions until Phase 5 begins. See `project-docs/ARCHITECTURE.md`.
 
 ---
 
