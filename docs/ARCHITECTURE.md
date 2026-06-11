@@ -119,6 +119,7 @@ Design v1.0 services so org scope can be added later **without rewriting busines
 | Doc | Purpose |
 |-----|---------|
 | `docs/PROJECT_PLAN.md` | Phase roadmap |
+| `docs/PHASE_4A_LEGAL_COMPLIANCE.md` | Driver/vehicle legal docs — full Phase 4A plan |
 | `docs/PROJECT_STATUS_20260612.md` | Latest prod QA |
 | `DeliveryAppBackend/docs/ROLLBACK.md` | Heroku rollback |
 

@@ -106,11 +106,49 @@ See `docs/ARCHITECTURE.md` for layered architecture rules and v1.0 feature gate.
 
 ## Phase 4 — Product (from roadmap) *(not started)*
 
+**Full Phase 4A spec:** [`docs/PHASE_4A_LEGAL_COMPLIANCE.md`](PHASE_4A_LEGAL_COMPLIANCE.md)
+
+### Phase 4A — Driver & vehicle legal documentation *(not started)*
+
+Commercial delivery requires **commercial insurance** (personal auto excludes delivery use), plus driver license and vehicle registration on file.
+
+| # | Task | Status |
+|---|------|--------|
+| 1 | `LegalDocument` model + migrations (`DRIVER_LICENSE`, `VEHICLE_REGISTRATION`, `COMMERCIAL_INSURANCE`, `INSPECTION`) | Todo |
+| 2 | `compliance_service.py` — create, list, verify, reject, compliance summary | Todo |
+| 3 | DRF permissions + API (`/drivers/{id}/documents/`, `/vehicles/{id}/documents/`, verify/reject, `/drivers/me/compliance-status/`) | Todo |
+| 4 | S3 presigned upload (private bucket; no Heroku disk storage) | Todo |
+| 5 | `docs/COMPLIANCE.md` — policy fields, US/CA notes, driver consent, retention | Todo |
+| 6 | Mobile `complianceService.ts` | Todo |
+| 7 | Admin: documents tab on driver + vehicle screens (verify/reject) | Todo |
+| 8 | Driver: compliance dashboard tile + upload on own driver/assigned vehicle | Todo |
+| 9 | Tests: `tests/test_compliance.py` + no regression on vehicle/driver CRUD | Todo |
+
+**4A defaults:** No assignment blocking; no reactivate blocking; registration not blocked; inspection optional.
+
+**4A exit criteria:** Admin verifies commercial insurance; driver uploads own docs; compliance-status API; prod CRUD unchanged.
+
+### Phase 4B — Expiry + reactivation gates *(after 4A)*
+
+| Item | Status |
+|------|--------|
+| Nightly job marks documents `EXPIRED` | Todo |
+| `reactivate_vehicle()` checks registration + commercial insurance | Todo |
+| Mobile expiry banners + admin reactivate checklist | Todo |
+
+### Phase 4C — Dispatch assignment gate *(after 4B)*
+
+| Item | Status |
+|------|--------|
+| `is_driver_eligible_for_dispatch()` in compliance service | Todo |
+| Block `DeliveryAssignment` when non-compliant | Todo |
+| Admin assign UI shows eligibility before save | Todo |
+
+### Phase 4 — Other product items
+
 - Large-item domain (dimensions, capacity matching, estimates) — see workspace `project-docs/AUTOMATED_BUILD_PLAN.md`
 - Payments (Stripe), notifications, EAS / store prep
-- **Vehicle `disposed` status** — third lifecycle state (distinct from inactive); staff-only; archive row or cascade delete when no related records; drivers cannot dispose (only inactive)
-- **Vehicle legal / compliance** — insurance, registration, inspection docs; upload/storage; expiry tracking
-- **Reactivation reverification workflow** — before `inactive → active`, require staff confirmation that insurance + registration (and later inspection) are current; block assignment until verified
+- **Vehicle `disposed` status** — third lifecycle state (distinct from inactive); staff-only
 
 ---
 

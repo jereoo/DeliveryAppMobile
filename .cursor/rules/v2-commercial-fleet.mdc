@@ -1,0 +1,20 @@
+---
+description: v2.0 Phase 5 frontend — dispatcher, org context (NOT v1.0)
+globs: "{App.tsx,src/**/*.{ts,tsx}}"
+alwaysApply: false
+---
+
+# v2.0 Commercial Fleet — Frontend (Phase 5 only)
+
+**Inactive until Phase 5.** For current work, use `layered-architecture.mdc`.
+
+Full spec: workspace `v2-commercial-fleet.mdc`.
+
+When Phase 5 begins:
+
+- Add Dispatcher screens and org-scoped navigation — not in v1.0 (`admin | driver | customer` only today)
+- Use `src/services/` for all API/compliance-related calls — no business logic in components
+- Consume `GET /api/me/` for role + org routing
+- Reuse SSOT service functions across Admin and Dispatcher where they share operations
+
+Do not add org switcher, dispatcher UI, or compliance UX until Phase 5 is explicitly started.
