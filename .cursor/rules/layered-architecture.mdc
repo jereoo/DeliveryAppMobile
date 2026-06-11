@@ -1,0 +1,25 @@
+---
+description: Frontend layered architecture — components UI-only, logic in services
+globs: "{App.tsx,src/**/*.{ts,tsx}}"
+alwaysApply: false
+---
+
+# Frontend Layered Architecture
+
+See also: workspace rule `layered-architecture.mdc`.
+
+- **Components / screens** (`App.tsx`, `src/components/`): UI, local UI state, event handlers.
+- **Services** (`src/services/`): API calls, payload builders, error parsing, shared validation helpers.
+- **Config** (`src/config/`): URLs and environment only — no business logic.
+
+Do not put capacity rules, RBAC assumptions, or payload shaping inside screen components. Extract to `src/services/` and import.
+
+Admin and Driver flows that hit the same API must use the **same service function** (e.g. `updateVehicleById`).
+
+## v1.0 scope (frontend)
+
+**In scope:** `userType` of `admin | driver | customer` only. Single-fleet UX.
+
+**Defer to v2.0 / Phase 5:** Dispatcher screens, org switcher, tenant-scoped navigation, multi-org `/api/me/`.
+
+Do not add dispatcher UI or organization selection flows until v2.0 commercial fleet work begins.

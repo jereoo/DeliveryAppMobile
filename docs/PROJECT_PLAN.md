@@ -1,11 +1,11 @@
 # DeliveryApp — Project Plan
 
-**Last updated:** June 11, 2026  
+**Last updated:** June 12, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟢 Phase 1 **complete**; Phase 2 **in progress**; layered architecture **documented**; vehicle update SSOT **deployed**  
+**Overall status:** 🟢 Phase 1 **complete**; Phase 2 **in progress**; driver + vehicle CRUD **prod verified** (admin & driver)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
-**Latest status report:** `DeliveryApp/project-docs/PROJECT_STATUS_20260611.md`  
-**Architecture:** `DeliveryApp/project-docs/ARCHITECTURE.md` + `.cursor/rules/layered-architecture.mdc`
+**Latest status report:** `docs/PROJECT_STATUS_20260612.md`  
+**Architecture:** `docs/ARCHITECTURE.md` + `.cursor/rules/layered-architecture.mdc`
 
 ---
 
@@ -16,7 +16,7 @@ Full-stack delivery management: Django API on Heroku, Expo web on Vercel, React 
 **v1.0:** Single fleet — Admin, Driver, Customer only. Admin assigns deliveries (no separate Dispatcher role).  
 **v2.0 (~Phase 5):** Commercial fleet — Dispatcher role, multi-tenant organizations. **Deferred.**
 
-See `DeliveryApp/project-docs/ARCHITECTURE.md` for layered architecture rules and v1.0 feature gate.
+See `docs/ARCHITECTURE.md` for layered architecture rules and v1.0 feature gate.
 
 ---
 
@@ -77,8 +77,9 @@ See `DeliveryApp/project-docs/ARCHITECTURE.md` for layered architecture rules an
 | Driver: deactivate own assigned vehicle (`POST /drivers/me/vehicle/deactivate/`) | Done |
 | Staff: deactivate/reactivate any vehicle; hard DELETE only when zero `DriverVehicle` / `DeliveryAssignment` rows | Done |
 | Driver Edit My Vehicle — capacity limits (2000 kg / 4400 lb) + kg/lb conversion | Done — prod verified June 10, 2026 (`PROJECT_STATUS_20260610.md`) |
-| **Vehicle update SSOT** — shared service; Admin + Driver use `PATCH /vehicles/{id}/` | Done — `6b74039` / `8eb2cb9` June 11, 2026 (`ARCHITECTURE.md`) |
-| **Layered architecture** — Cursor rules + project docs | Done — June 11, 2026 |
+| **Vehicle update SSOT** — shared service; Admin + Driver use `PATCH /vehicles/{id}/` | Done — prod verified June 12, 2026 (`PROJECT_STATUS_20260612.md`) |
+| **Driver Edit My Vehicle — field labels** | Done — prod verified June 12, 2026 (`93d6d1a`) |
+| **Layered architecture** — Cursor rules + project docs | Done — June 11–12, 2026 |
 
 **Vehicle status — ship now vs later**
 
