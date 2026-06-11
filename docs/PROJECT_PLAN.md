@@ -1,10 +1,10 @@
 # DeliveryApp — Project Plan
 
-**Last updated:** June 9, 2026  
+**Last updated:** June 10, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟢 Phase 1 **complete**; Phase 2 **in progress** (validation + logging shipped)  
+**Overall status:** 🟢 Phase 1 **complete**; Phase 2 **in progress**; driver vehicle capacity limits **verified prod**  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
-**Latest status report:** `DeliveryApp/project-docs/PROJECT_STATUS_20260609.md`
+**Latest status report:** `DeliveryApp/project-docs/PROJECT_STATUS_20260610.md`
 
 ---
 
@@ -50,6 +50,7 @@ Full-stack delivery management: Django API on Heroku, Expo web on Vercel, React 
 | **Vehicle lifecycle (MVP):** soft inactive + staff reactivate; no hard delete when history exists | Done |
 | Driver: deactivate own assigned vehicle (`POST /drivers/me/vehicle/deactivate/`) | Done |
 | Staff: deactivate/reactivate any vehicle; hard DELETE only when zero `DriverVehicle` / `DeliveryAssignment` rows | Done |
+| Driver Edit My Vehicle — capacity limits (2000 kg / 4400 lb) + kg/lb conversion | Done — prod verified June 10, 2026 (`PROJECT_STATUS_20260610.md`) |
 
 **Vehicle status — ship now vs later**
 
