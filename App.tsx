@@ -2224,6 +2224,7 @@ export default function App() {
               canUpload
               theme={theme}
               styles={styles}
+              title="Legal documents - Driver"
             />
           ) : null}
           {driverVehicleId ? (
@@ -2235,6 +2236,12 @@ export default function App() {
               canUpload
               theme={theme}
               styles={styles}
+              title="Legal documents - Vehicle"
+              subtitle={
+                driverVehicleSummary
+                  ? `Assigned vehicle: ${driverVehicleSummary.make} ${driverVehicleSummary.model} (${driverVehicleSummary.license_plate})`
+                  : 'Assigned vehicle'
+              }
             />
           ) : null}
         </View>

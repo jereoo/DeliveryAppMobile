@@ -48,6 +48,8 @@ interface ComplianceDocumentsPanelProps {
   canUpload: boolean;
   theme: Theme;
   styles: Styles;
+  title?: string;
+  subtitle?: string;
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -65,6 +67,8 @@ export function ComplianceDocumentsPanel({
   canUpload,
   theme,
   styles,
+  title = 'Legal documents',
+  subtitle,
 }: ComplianceDocumentsPanelProps) {
   const [documents, setDocuments] = useState<LegalDocument[]>([]);
   const [loading, setLoading] = useState(true);
@@ -191,7 +195,10 @@ export function ComplianceDocumentsPanel({
 
   return (
     <View style={{ marginTop: 16 }}>
-      <Text style={styles.sectionTitle}>Legal documents</Text>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {subtitle ? (
+        <Text style={{ color: theme.textMuted, marginBottom: 8 }}>{subtitle}</Text>
+      ) : null}
       {error ? <Text style={{ color: theme.error, marginBottom: 8 }}>{error}</Text> : null}
       {loading ? (
         <ActivityIndicator size="small" color={theme.border} />
