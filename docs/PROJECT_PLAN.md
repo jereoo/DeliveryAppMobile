@@ -125,9 +125,9 @@ Commercial delivery requires **commercial insurance** (personal auto excludes de
 | 3 | DRF permissions + API (`/drivers/{id}/documents/`, `/vehicles/{id}/documents/`, verify/reject, `/drivers/me/compliance-status/`) | Done |
 | 4 | S3 presigned upload (private bucket; no Heroku disk storage) | Partial — stub endpoint; returns 400 until S3 wired |
 | 5 | `docs/COMPLIANCE.md` — policy fields, US/CA notes, driver consent, retention | Done |
-| 6 | Mobile `complianceService.ts` | **Next** |
-| 7 | Admin: documents tab on driver + vehicle screens (verify/reject) | Todo |
-| 8 | Driver: compliance dashboard tile + upload on own driver/assigned vehicle | Todo |
+| 6 | Mobile `complianceService.ts` | Done |
+| 7 | Admin: documents tab on driver + vehicle screens (verify/reject) | Done |
+| 8 | Driver: compliance dashboard tile + upload on own driver/assigned vehicle | Done |
 | 9 | Tests: `tests/test_compliance.py` + no regression on vehicle/driver CRUD | Done — 92 critical CI tests pass |
 
 **4A defaults:** No assignment blocking; no reactivate blocking; registration not blocked; inspection optional.

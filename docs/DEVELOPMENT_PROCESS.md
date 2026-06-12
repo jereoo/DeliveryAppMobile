@@ -221,7 +221,7 @@ Cursor rules (`layered-architecture.mdc`) define **how** to code; this document 
 
 **Phase 3:** Executed — legacy workflows removed, CI docs added, pushed and verified green.
 
-**Phase 4A (backend):** #1–3 + tests done. **Next:** mobile `complianceService.ts` + admin/driver UI (#6–8).
+**Phase 4A:** Backend done; mobile #6–8 done locally. **Next:** deploy backend migration + prod smoke.
 
 **Optional:** S3 presigned upload wiring (#4); deploy backend migration to Heroku before mobile UI.
 

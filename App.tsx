@@ -31,6 +31,10 @@ import {
   createVehicleByApi,
   updateVehicleById,
 } from './src/services/vehicleService';
+import { getMyComplianceStatus } from './src/services/complianceService';
+import type { ComplianceSummary } from './src/services/complianceService';
+import { ComplianceDocumentsPanel } from './src/components/ComplianceDocumentsPanel';
+import { ComplianceStatusCard } from './src/components/ComplianceStatusCard';
 
 /** Max vehicle load capacity by unit. */
 const MAX_VEHICLE_CAPACITY_KG = 2000;
@@ -1049,6 +1053,15 @@ export default function App() {
             <Text style={{ color: theme.text }}>VIN: {selected.vin}</Text>
             <Text style={{ color: theme.text }}>Capacity: {selected.capacity} {selected.capacity_unit || 'kg'}</Text>
             <Text style={{ color: theme.text }}>Status: {selected.active ? 'Active' : 'Inactive'}</Text>
+            <ComplianceDocumentsPanel
+              subjectType="vehicle"
+              subjectId={selected.id}
+              request={makeAuthenticatedRequest}
+              isAdmin
+              canUpload
+              theme={theme}
+              styles={styles}
+            />
             <View style={styles.buttonContainer}>
               <Button title="Edit" onPress={() => handleEdit(selected)} />
             </View>
@@ -1742,6 +1755,27 @@ export default function App() {
               </View>
             )}
 
+            <ComplianceDocumentsPanel
+              subjectType="driver"
+              subjectId={selectedDriver.id}
+              request={makeAuthenticatedRequest}
+              isAdmin
+              canUpload
+              theme={theme}
+              styles={styles}
+            />
+            {selectedDriver.current_vehicle ? (
+              <ComplianceDocumentsPanel
+                subjectType="vehicle"
+                subjectId={selectedDriver.current_vehicle}
+                request={makeAuthenticatedRequest}
+                isAdmin
+                canUpload
+                theme={theme}
+                styles={styles}
+              />
+            ) : null}
+
             <View style={styles.buttonContainer}>
               <Button title="Edit Driver" onPress={() => handleEdit(selectedDriver)} />
               <Button
@@ -2140,6 +2174,12 @@ export default function App() {
                         />
                       </View>
                     )}
+                    <ComplianceStatusCard
+                      summary={driverComplianceSummary}
+                      theme={theme}
+                      styles={styles}
+                      title="Vehicle compliance"
+                    />
                   </>
                 ) : (
                   <>
@@ -2159,6 +2199,46 @@ export default function App() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+    );
+  }
+
+  function DriverComplianceScreen({ onBack }: { onBack: () => void }) {
+    return (
+      <ScrollView style={styles.container}>
+        <View style={styles.content}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+            <Button title="← Back" onPress={onBack} />
+            <Text style={[styles.title, { flex: 1, textAlign: 'center' }]}>Compliance</Text>
+          </View>
+          <ComplianceStatusCard
+            summary={driverComplianceSummary}
+            theme={theme}
+            styles={styles}
+          />
+          {driverMeId ? (
+            <ComplianceDocumentsPanel
+              subjectType="driver"
+              subjectId={driverMeId}
+              request={makeAuthenticatedRequest}
+              isAdmin={false}
+              canUpload
+              theme={theme}
+              styles={styles}
+            />
+          ) : null}
+          {driverVehicleId ? (
+            <ComplianceDocumentsPanel
+              subjectType="vehicle"
+              subjectId={driverVehicleId}
+              request={makeAuthenticatedRequest}
+              isAdmin={false}
+              canUpload
+              theme={theme}
+              styles={styles}
+            />
+          ) : null}
+        </View>
+      </ScrollView>
     );
   }
 
@@ -2819,6 +2899,9 @@ export default function App() {
     model: string;
     active: boolean;
   } | null>(null);
+  const [driverMeId, setDriverMeId] = useState<number | null>(null);
+  const [driverVehicleId, setDriverVehicleId] = useState<number | null>(null);
+  const [driverComplianceSummary, setDriverComplianceSummary] = useState<ComplianceSummary | null>(null);
   const [driversLoading, setDriversLoading] = useState(false);
   const [adminScreen, setAdminScreen] = useState<string | null>(null); // e.g. 'driver_vehicles'
 
@@ -3138,7 +3221,7 @@ export default function App() {
           loadVehicles(),
           loadAssignments(),
           loadDriverVehicles(),
-          ...(userType === 'driver' ? [loadDriverMyVehicle()] : []),
+          ...(userType === 'driver' ? [loadDriverMyVehicle(), loadDriverCompliance()] : []),
         ]);
       } else if (userType === 'customer') {
         await loadMyDeliveries();
@@ -3252,6 +3335,7 @@ export default function App() {
       const response = await makeAuthenticatedRequest('/drivers/me/vehicle/');
       if (response.ok) {
         const data = await response.json();
+        setDriverVehicleId(data.id ?? null);
         setDriverVehicleSummary({
           license_plate: data.license_plate || '',
           make: data.make || '',
@@ -3260,10 +3344,27 @@ export default function App() {
         });
       } else {
         setDriverVehicleSummary(null);
+        setDriverVehicleId(null);
       }
     } catch (error) {
       console.error('Error loading driver vehicle:', error);
       setDriverVehicleSummary(null);
+      setDriverVehicleId(null);
+    }
+  };
+
+  const loadDriverCompliance = async () => {
+    try {
+      const profileResponse = await makeAuthenticatedRequest('/drivers/me/');
+      if (profileResponse.ok) {
+        const profile = await profileResponse.json();
+        setDriverMeId(profile.id ?? null);
+      }
+      const summary = await getMyComplianceStatus(makeAuthenticatedRequest);
+      setDriverComplianceSummary(summary);
+    } catch (error) {
+      console.error('Error loading driver compliance:', error);
+      setDriverComplianceSummary(null);
     }
   };
 
@@ -4146,6 +4247,10 @@ export default function App() {
     return <DriverVehicleEditScreen onBack={() => setCurrentScreen('dashboard')} />;
   }
 
+  if (currentScreen === 'driver_compliance' && userType === 'driver') {
+    return <DriverComplianceScreen onBack={() => setCurrentScreen('dashboard')} />;
+  }
+
   // Register as Driver Screen
   if (currentScreen === 'register_driver') {
     return <RegisterAsDriverScreen onBack={() => setCurrentScreen('main')} />;
@@ -4619,6 +4724,14 @@ export default function App() {
               ) : (
                 <Text style={{ color: theme.text, marginBottom: 12 }}>No vehicle on file.</Text>
               )}
+              <View style={styles.buttonContainer}>
+                <Button title="📋 Compliance & Documents" onPress={() => setCurrentScreen('driver_compliance')} />
+              </View>
+              <ComplianceStatusCard
+                summary={driverComplianceSummary}
+                theme={theme}
+                styles={styles}
+              />
               <View style={styles.buttonContainer}>
                 <Button title="👤 Edit My Profile" onPress={() => setCurrentScreen('driver_profile_edit')} />
               </View>
