@@ -1,6 +1,6 @@
 # Phase 4A — Driver & Vehicle Legal Documentation
 
-**Status:** Not started  
+**Status:** In progress — backend #1–3 + tests done (June 3, 2026)  
 **Last updated:** June 12, 2026  
 **Product context:** v1.0 single fleet (Admin, Driver, Customer) — **no multi-tenant**  
 **Architecture:** Layered — models thin; `compliance_service.py` SSOT; DRF permissions; mobile `complianceService.ts`  
@@ -281,9 +281,10 @@ New file: `tests/test_compliance.py`
 
 ## 16. Success criteria (Phase 4A complete)
 
-- [ ] `LegalDocument` model migrated on Heroku
-- [ ] Admin can verify commercial insurance record for a vehicle
-- [ ] Driver can upload insurance metadata (+ file if S3 enabled)
-- [ ] `GET /api/drivers/me/compliance-status/` returns accurate summary
-- [ ] No regression on vehicle/driver CRUD (prod smoke pass)
-- [ ] `docs/COMPLIANCE.md` published in backend repo
+- [x] `LegalDocument` model migrated locally (`0004_legal_document_phase_4a`)
+- [ ] Admin can verify commercial insurance record for a vehicle *(API ready; mobile UI pending)*
+- [ ] Driver can upload insurance metadata (+ file if S3 enabled) *(API ready; mobile UI pending)*
+- [x] `GET /api/drivers/me/compliance-status/` returns accurate summary
+- [ ] No regression on vehicle/driver CRUD (prod smoke pass after deploy)
+- [x] `docs/COMPLIANCE.md` published in backend repo
+- [x] `compliance_service.py` + DRF API + `tests/test_compliance.py`

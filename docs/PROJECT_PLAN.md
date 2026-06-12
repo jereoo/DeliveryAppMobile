@@ -2,7 +2,7 @@
 
 **Last updated:** June 12, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟢 Phase 1 **complete**; Phase 2 **in progress**; driver + vehicle CRUD **prod verified** (admin & driver)  
+**Overall status:** 🟢 Phase 1–3 **complete**; Phase 4A **in progress** (#1–3 backend done)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
 **Latest status report:** `docs/PROJECT_STATUS_20260612.md`  
 **Architecture:** `docs/ARCHITECTURE.md` + `.cursor/rules/layered-architecture.mdc`  
@@ -66,14 +66,14 @@ See `docs/ARCHITECTURE.md` for layered architecture rules and v1.0 feature gate.
 
 ---
 
-## Phase 2 — Data & workflow reliability *(in progress)*
+## Phase 2 — Data & workflow reliability *(complete)*
 
 | Item | Status |
 |------|--------|
-| Seed / demo data strategy for staging/production | Todo |
+| Seed / demo data strategy for staging/production | Done — `DeliveryAppBackend/docs/SEED_DATA.md`, `seed_demo_data` command |
 | Clear API validation messages for duplicate registration fields | Done |
 | Logging for auth and registration failures | Done |
-| Optional: staging Heroku app | Todo |
+| Optional: staging Heroku app | Done (documented) — `DeliveryAppBackend/docs/STAGING.md`; provisioning optional |
 | **Vehicle lifecycle (MVP):** soft inactive + staff reactivate; no hard delete when history exists | Done |
 | Driver: deactivate own assigned vehicle (`POST /drivers/me/vehicle/deactivate/`) | Done |
 | Staff: deactivate/reactivate any vehicle; hard DELETE only when zero `DriverVehicle` / `DeliveryAssignment` rows | Done |
@@ -94,36 +94,37 @@ See `docs/ARCHITECTURE.md` for layered architecture rules and v1.0 feature gate.
 
 ---
 
-## Phase 3 — CI/CD & release safety *(partial)*
+## Phase 3 — CI/CD & release safety *(complete)*
 
 | Item | Status |
 |------|--------|
-| CI: backend tests + frontend build on PR (`phase1-ci.yml`) | Partial — critical test subset gates CI; full suite `continue-on-error` |
+| CI: backend tests + frontend build on PR (`phase1-ci.yml`) | Done — critical suite gates CI (incl. compliance + seed); full suite runs without `continue-on-error` |
 | Branch strategy: `main` = production deploys | Done |
 | Document rollback (Heroku releases, Vercel deployments) | Done — `DeliveryAppBackend/docs/ROLLBACK.md` |
 | Align mobile CI `EXPO_PUBLIC_BACKEND_URL` with `truck-buddy` Heroku app | Done |
+| Fix `test_api.py` pytest import (manage.py test) | Done |
 
 ---
 
-## Phase 4 — Product (from roadmap) *(not started)*
+## Phase 4 — Product (from roadmap) *(in progress — 4A backend)*
 
 **Full Phase 4A spec:** [`docs/PHASE_4A_LEGAL_COMPLIANCE.md`](PHASE_4A_LEGAL_COMPLIANCE.md)
 
-### Phase 4A — Driver & vehicle legal documentation *(not started)*
+### Phase 4A — Driver & vehicle legal documentation *(in progress)*
 
 Commercial delivery requires **commercial insurance** (personal auto excludes delivery use), plus driver license and vehicle registration on file.
 
 | # | Task | Status |
 |---|------|--------|
-| 1 | `LegalDocument` model + migrations (`DRIVER_LICENSE`, `VEHICLE_REGISTRATION`, `COMMERCIAL_INSURANCE`, `INSPECTION`) | Todo |
-| 2 | `compliance_service.py` — create, list, verify, reject, compliance summary | Todo |
-| 3 | DRF permissions + API (`/drivers/{id}/documents/`, `/vehicles/{id}/documents/`, verify/reject, `/drivers/me/compliance-status/`) | Todo |
-| 4 | S3 presigned upload (private bucket; no Heroku disk storage) | Todo |
-| 5 | `docs/COMPLIANCE.md` — policy fields, US/CA notes, driver consent, retention | Todo |
-| 6 | Mobile `complianceService.ts` | Todo |
+| 1 | `LegalDocument` model + migrations (`DRIVER_LICENSE`, `VEHICLE_REGISTRATION`, `COMMERCIAL_INSURANCE`, `INSPECTION`) | Done — `0004_legal_document_phase_4a`, `docs/COMPLIANCE.md` |
+| 2 | `compliance_service.py` — create, list, verify, reject, compliance summary | Done |
+| 3 | DRF permissions + API (`/drivers/{id}/documents/`, `/vehicles/{id}/documents/`, verify/reject, `/drivers/me/compliance-status/`) | Done |
+| 4 | S3 presigned upload (private bucket; no Heroku disk storage) | Partial — stub endpoint; returns 400 until S3 wired |
+| 5 | `docs/COMPLIANCE.md` — policy fields, US/CA notes, driver consent, retention | Done |
+| 6 | Mobile `complianceService.ts` | **Next** |
 | 7 | Admin: documents tab on driver + vehicle screens (verify/reject) | Todo |
 | 8 | Driver: compliance dashboard tile + upload on own driver/assigned vehicle | Todo |
-| 9 | Tests: `tests/test_compliance.py` + no regression on vehicle/driver CRUD | Todo |
+| 9 | Tests: `tests/test_compliance.py` + no regression on vehicle/driver CRUD | Done — 92 critical CI tests pass |
 
 **4A defaults:** No assignment blocking; no reactivate blocking; registration not blocked; inspection optional.
 

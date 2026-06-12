@@ -217,10 +217,13 @@ Cursor rules (`layered-architecture.mdc`) define **how** to code; this document 
 
 ---
 
-## 11. Current focus (as of June 12, 2026)
+## 11. Current focus (as of June 3, 2026)
 
-**Active phase:** Phase 4A — Driver & vehicle legal documentation  
-**Next Todo:** Phase 4A #1 — `LegalDocument` model + migrations (+ `COMPLIANCE.md` in parallel)
+**Phase 2–3:** Closed — demo seed, CI fix (`test_api.py`), critical test gate expanded.
+
+**Phase 4A (backend):** #1–3 + tests done. **Next:** mobile `complianceService.ts` + admin/driver UI (#6–8).
+
+**Optional:** S3 presigned upload wiring (#4); deploy backend migration to Heroku before mobile UI.
 
 **Deferred:** Phase 5 (multi-tenant, Dispatcher) — see `.cursor/rules/v2-commercial-fleet.mdc`
 
