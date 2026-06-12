@@ -28,7 +28,6 @@ jobs:
 
       - name: Run tests
         run: npm run test:ci
-        continue-on-error: true
 
   build-web:
     runs-on: ubuntu-latest

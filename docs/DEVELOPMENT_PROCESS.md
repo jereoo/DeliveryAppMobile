@@ -219,7 +219,7 @@ Cursor rules (`layered-architecture.mdc`) define **how** to code; this document 
 
 ## 11. Current focus (as of June 3, 2026)
 
-**Phase 2–3:** Closed — demo seed, CI fix (`test_api.py`), critical test gate expanded.
+**Phase 3:** Executed — legacy workflows removed, CI docs added, pushed and verified green.
 
 **Phase 4A (backend):** #1–3 + tests done. **Next:** mobile `complianceService.ts` + admin/driver UI (#6–8).
 

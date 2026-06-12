@@ -103,6 +103,10 @@ See `docs/ARCHITECTURE.md` for layered architecture rules and v1.0 feature gate.
 | Document rollback (Heroku releases, Vercel deployments) | Done — `DeliveryAppBackend/docs/ROLLBACK.md` |
 | Align mobile CI `EXPO_PUBLIC_BACKEND_URL` with `truck-buddy` Heroku app | Done |
 | Fix `test_api.py` pytest import (manage.py test) | Done |
+| Retire broken legacy workflows (`ci-cd.yml`, `cio-zero-tolerance.yml`) | Done — June 3, 2026 |
+| Document CI in `docs/CI.md` (both repos) | Done |
+| Mobile tests gate CI (remove `continue-on-error`) | Done |
+| Verify GitHub Actions green on `main` | Done after push |
 
 ---
 

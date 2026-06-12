@@ -16,15 +16,16 @@
 
 ---
 
-## Phase 3 close-out
+## Phase 3 execution (June 3, 2026)
 
 | Item | Status |
 |------|--------|
-| Remove unused `pytest` import from `tests/test_api.py` | Done — fixes `manage.py test` in CI |
-| Add `test_compliance`, `test_seed_demo_data` to critical CI job | Done |
-| Full suite runs without `continue-on-error` | Done |
-
-**CI critical suite:** 92 tests pass locally (`manage.py test`).
+| Push backend CI fix + Phase 4A (unpushed `238b3ca`) | Done |
+| Remove legacy `ci-cd.yml` (monorepo paths) | Done |
+| Remove legacy `cio-zero-tolerance.yml` (monorepo paths) | Done |
+| Mobile `phase1-ci`: tests gate merge (no `continue-on-error`) | Done |
+| `docs/CI.md` both repos | Done |
+| GitHub Actions green on `main` | Verify after push |
 
 ---
 
