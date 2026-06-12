@@ -5,7 +5,8 @@
 **Overall status:** 🟢 Phase 1 **complete**; Phase 2 **in progress**; driver + vehicle CRUD **prod verified** (admin & driver)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
 **Latest status report:** `docs/PROJECT_STATUS_20260612.md`  
-**Architecture:** `docs/ARCHITECTURE.md` + `.cursor/rules/layered-architecture.mdc`
+**Architecture:** `docs/ARCHITECTURE.md` + `.cursor/rules/layered-architecture.mdc`  
+**Development process:** [`docs/DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md) — plan → build → test → done
 
 ---
 
@@ -194,4 +195,6 @@ Local: `C:\Users\360WEB\DeliveryAppBackend` (backend), `C:\Users\360WEB\Delivery
 3. Create **Issues** from the Phase 1 table (one issue per row, or group small items).
 4. Link PRs with `Fixes #issue` in the description.
 
-See `.github/SETUP_GITHUB_PROJECT.md` for step-by-step clicks.
+See [`.github/SETUP_GITHUB_PROJECT.md`](../.github/SETUP_GITHUB_PROJECT.md) for step-by-step clicks.
+
+**Process:** Every item follows [`docs/DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md) (DoR → implement → test → record). PRs use [`.github/PULL_REQUEST_TEMPLATE.md`](../.github/PULL_REQUEST_TEMPLATE.md).
