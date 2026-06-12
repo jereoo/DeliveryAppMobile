@@ -25,7 +25,7 @@
 | Remove legacy `cio-zero-tolerance.yml` (monorepo paths) | Done |
 | Mobile `phase1-ci`: tests gate merge (no `continue-on-error`) | Done |
 | `docs/CI.md` both repos | Done |
-| GitHub Actions green on `main` | Verify after push |
+| GitHub Actions green on `main` | Done — backend `4a5ad65`, mobile `c40a4f3` |
 
 ---
 
