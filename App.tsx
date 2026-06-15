@@ -4,8 +4,6 @@ import 'react-native-gesture-handler';
 // Copy this file as App.tsx to your DeliveryAppMobile directory
 // FIXES: Virtual keyboard blocking bottom form fields
 
-
-
 /**
  * DEPLOYMENT INSTRUCTIONS:
  * 1. Copy this entire file content
@@ -27,16 +25,16 @@ import {
   TextInput,
   View
 } from 'react-native';
+import { ComplianceDocumentsPanel } from './src/components/ComplianceDocumentsPanel';
+import { ComplianceStatusCard } from './src/components/ComplianceStatusCard';
 import { checkBackendHealth, getApiDebugInfo, getApiUrl } from './src/config/api';
+import type { ComplianceSummary } from './src/services/complianceService';
+import { getMyComplianceStatus } from './src/services/complianceService';
 import {
   buildVehicleUpdatePayload,
   createVehicleByApi,
   updateVehicleById,
 } from './src/services/vehicleService';
-import { getMyComplianceStatus } from './src/services/complianceService';
-import type { ComplianceSummary } from './src/services/complianceService';
-import { ComplianceDocumentsPanel } from './src/components/ComplianceDocumentsPanel';
-import { ComplianceStatusCard } from './src/components/ComplianceStatusCard';
 
 /** Max vehicle load capacity by unit. */
 const MAX_VEHICLE_CAPACITY_KG = 2000;

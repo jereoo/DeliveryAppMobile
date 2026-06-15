@@ -36,7 +36,7 @@
 | 1 | `LegalDocument` model + migration `0004` | Done |
 | 2 | `compliance_service.py` | Done |
 | 3 | API: driver/vehicle documents, verify/reject, `me/compliance-status` | Done |
-| 4 | Presigned S3 upload | Stub — metadata-only until bucket configured |
+| 4 | Presigned S3 upload | **#4.2 done** — `compliance_storage.py`, presigned PUT/GET; #4.3 download view pending |
 | 5 | `docs/COMPLIANCE.md` | Done |
 | 9 | `tests/test_compliance.py` (model + service + API) | Done |
 

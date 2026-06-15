@@ -1,10 +1,10 @@
 # DeliveryApp — Project Plan
 
-**Last updated:** June 12, 2026  
+**Last updated:** June 3, 2026  
 **Team size:** 1–3  
 **Overall status:** 🟢 Phase 1–3 **complete**; Phase 4A **in progress** (#1–3 backend done)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
-**Latest status report:** `docs/PROJECT_STATUS_20260612.md`  
+**Latest status report:** `docs/PROJECT_LOG.md` + `docs/PROJECT_STATUS_20260603.md`  
 **Architecture:** `docs/ARCHITECTURE.md` + `.cursor/rules/layered-architecture.mdc`  
 **Development process:** [`docs/DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md) — plan → build → test → done
 
@@ -123,7 +123,7 @@ Commercial delivery requires **commercial insurance** (personal auto excludes de
 | 1 | `LegalDocument` model + migrations (`DRIVER_LICENSE`, `VEHICLE_REGISTRATION`, `COMMERCIAL_INSURANCE`, `INSPECTION`) | Done — `0004_legal_document_phase_4a`, `docs/COMPLIANCE.md` |
 | 2 | `compliance_service.py` — create, list, verify, reject, compliance summary | Done |
 | 3 | DRF permissions + API (`/drivers/{id}/documents/`, `/vehicles/{id}/documents/`, verify/reject, `/drivers/me/compliance-status/`) | Done |
-| 4 | S3 presigned upload (private bucket; no Heroku disk storage) | Partial — stub endpoint; returns 400 until S3 wired |
+| 4 | S3 presigned upload (private bucket; no Heroku disk storage) | In progress — #4.2 service (`compliance_storage.py` + presigned PUT/GET) |
 | 5 | `docs/COMPLIANCE.md` — policy fields, US/CA notes, driver consent, retention | Done |
 | 6 | Mobile `complianceService.ts` | Done |
 | 7 | Admin: documents tab on driver + vehicle screens (verify/reject) | Done |
