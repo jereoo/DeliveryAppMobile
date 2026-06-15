@@ -4,6 +4,8 @@ import 'react-native-gesture-handler';
 // Copy this file as App.tsx to your DeliveryAppMobile directory
 // FIXES: Virtual keyboard blocking bottom form fields
 
+
+
 /**
  * DEPLOYMENT INSTRUCTIONS:
  * 1. Copy this entire file content
@@ -1061,6 +1063,8 @@ export default function App() {
               canUpload
               theme={theme}
               styles={styles}
+              title="Legal documents - Vehicle"
+              subtitle={`Vehicle: ${selected.make} ${selected.model} (${selected.license_plate})`}
             />
             <View style={styles.buttonContainer}>
               <Button title="Edit" onPress={() => handleEdit(selected)} />
@@ -1763,6 +1767,7 @@ export default function App() {
               canUpload
               theme={theme}
               styles={styles}
+              title="Legal documents - Driver"
             />
             {selectedDriver.current_vehicle ? (
               <ComplianceDocumentsPanel
@@ -1773,6 +1778,12 @@ export default function App() {
                 canUpload
                 theme={theme}
                 styles={styles}
+                title="Legal documents - Vehicle"
+                subtitle={
+                  selectedDriver.current_vehicle_plate
+                    ? `Assigned vehicle: ${selectedDriver.current_vehicle_model || 'Vehicle'} (${selectedDriver.current_vehicle_plate})`
+                    : 'Assigned vehicle'
+                }
               />
             ) : null}
 
