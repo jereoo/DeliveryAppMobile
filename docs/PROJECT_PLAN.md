@@ -123,7 +123,7 @@ Commercial delivery requires **commercial insurance** (personal auto excludes de
 | 1 | `LegalDocument` model + migrations (`DRIVER_LICENSE`, `VEHICLE_REGISTRATION`, `COMMERCIAL_INSURANCE`, `INSPECTION`) | Done — `0004_legal_document_phase_4a`, `docs/COMPLIANCE.md` |
 | 2 | `compliance_service.py` — create, list, verify, reject, compliance summary | Done |
 | 3 | DRF permissions + API (`/drivers/{id}/documents/`, `/vehicles/{id}/documents/`, verify/reject, `/drivers/me/compliance-status/`) | Done |
-| 4 | S3 presigned upload (private bucket; no Heroku disk storage) | In progress — #4.2 service (`compliance_storage.py` + presigned PUT/GET) |
+| 4 | S3 presigned upload (private bucket; no Heroku disk storage) | Done — #4.2 service + #4.3 `GET /documents/{id}/download/` |
 | 5 | `docs/COMPLIANCE.md` — policy fields, US/CA notes, driver consent, retention | Done |
 | 6 | Mobile `complianceService.ts` | Done |
 | 7 | Admin: documents tab on driver + vehicle screens (verify/reject) | Done |

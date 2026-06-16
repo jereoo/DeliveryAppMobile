@@ -146,7 +146,8 @@ Commercial delivery requires verified legal documentation before a driver/vehicl
 | POST | `/api/documents/{id}/verify/` | Admin only | Mark verified |
 | POST | `/api/documents/{id}/reject/` | Admin only | Mark rejected |
 | GET | `/api/drivers/me/compliance-status/` | Driver | Summary for dashboard |
-| POST | `/api/documents/presigned-upload/` | Authenticated | Get S3 presigned URL |
+| POST | `/api/documents/presigned-upload/` | Authenticated | Get S3 presigned PUT URL |
+| GET | `/api/documents/{id}/download/` | Admin; document owner | Get S3 presigned GET URL |
 
 Reuse existing auth patterns (`IsAuthenticated` + new permission classes).
 

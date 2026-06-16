@@ -47,7 +47,7 @@ Chronological decisions and implementation notes. Latest status reports: `PROJEC
 |---|------|------|--------|
 | 4.1 | S3 bucket + IAM + Heroku env | Ops | Todo |
 | 4.2 | `get_presigned_upload_url` + `get_presigned_download_url` in `compliance_service.py` | Backend | **Done June 3, 2026** — `compliance_storage.py`, PDF-only, staging keys |
-| 4.3 | Wire presigned + download on `LegalDocumentViewSet` | Backend | Todo |
+| 4.3 | Wire presigned + download on `LegalDocumentViewSet` | Backend | **Done June 3, 2026** — `GET /api/documents/{id}/download/` |
 | 4.4 | Tests: PDF ok, DOCX rejected, size, permissions, file_key ownership | Backend | Partial (with 4.2) |
 | 4.5 | `uploadComplianceFile()` + file picker in `ComplianceDocumentsPanel` | Mobile | Todo |
 | 4.6 | Admin “View file” on document row | Mobile | Todo |
