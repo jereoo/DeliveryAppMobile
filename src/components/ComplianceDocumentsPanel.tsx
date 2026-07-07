@@ -64,6 +64,18 @@ const STATUS_COLOR: Record<string, string> = {
   EXPIRED: '#888888',
 };
 
+async function confirmComplianceAction(title: string, message: string): Promise<boolean> {
+  if (Platform.OS === 'web' && typeof globalThis.confirm === 'function') {
+    return globalThis.confirm(`${title}\n\n${message}`);
+  }
+  return new Promise((resolve) => {
+    Alert.alert(title, message, [
+      { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+      { text: 'OK', onPress: () => resolve(true) },
+    ]);
+  });
+}
+
 export function ComplianceDocumentsPanel({
   subjectType,
   subjectId,
@@ -84,6 +96,8 @@ export function ComplianceDocumentsPanel({
   const [rejectReason, setRejectReason] = useState('');
   const [selectedPdf, setSelectedPdf] = useState<PdfFileSelection | null>(null);
   const [viewingFileId, setViewingFileId] = useState<number | null>(null);
+  const [verifyingId, setVerifyingId] = useState<number | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [form, setForm] = useState<CreateDocumentPayload>({
     document_type: subjectType === 'driver' ? 'DRIVER_LICENSE' : 'COMMERCIAL_INSURANCE',
     issuer: '',
@@ -219,42 +233,48 @@ export function ComplianceDocumentsPanel({
     setSaving(false);
   };
 
-  const handleVerify = (doc: LegalDocument) => {
-    Alert.alert('Verify document', `Mark ${DOCUMENT_TYPE_LABELS[doc.document_type]} as verified?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Verify',
-        onPress: async () => {
-          try {
-            await verifyDocument(request, doc.id);
-            await loadDocuments();
-            Alert.alert('Success', 'Document verified.');
-          } catch (e) {
-            Alert.alert('Error', e instanceof Error ? e.message : 'Verify failed');
-          }
-        },
-      },
-    ]);
+  const handleVerify = async (doc: LegalDocument) => {
+    const confirmed = await confirmComplianceAction(
+      'Approve document',
+      `Mark ${DOCUMENT_TYPE_LABELS[doc.document_type]} as verified?`,
+    );
+    if (!confirmed) {
+      return;
+    }
+    setVerifyingId(doc.id);
+    setError(null);
+    setSuccessMessage(null);
+    try {
+      await verifyDocument(request, doc.id);
+      await loadDocuments();
+      setSuccessMessage(`${DOCUMENT_TYPE_LABELS[doc.document_type]} approved.`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Approve failed');
+    }
+    setVerifyingId(null);
   };
 
   const handleReject = async (doc: LegalDocument) => {
     if (rejectingId !== doc.id) {
       setRejectingId(doc.id);
       setRejectReason('');
+      setSuccessMessage(null);
       return;
     }
     if (!rejectReason.trim()) {
       setError('Rejection reason is required');
       return;
     }
+    setError(null);
+    setSuccessMessage(null);
     try {
       await rejectDocument(request, doc.id, rejectReason.trim());
       setRejectingId(null);
       setRejectReason('');
       await loadDocuments();
-      Alert.alert('Success', 'Document rejected.');
+      setSuccessMessage(`${DOCUMENT_TYPE_LABELS[doc.document_type]} rejected.`);
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Reject failed');
+      setError(e instanceof Error ? e.message : 'Reject failed');
     }
   };
 
@@ -265,6 +285,9 @@ export function ComplianceDocumentsPanel({
         <Text style={{ color: theme.textMuted, marginBottom: 8 }}>{subtitle}</Text>
       ) : null}
       {error ? <Text style={{ color: theme.error, marginBottom: 8 }}>{error}</Text> : null}
+      {successMessage ? (
+        <Text style={{ color: '#5cb85c', marginBottom: 8 }}>{successMessage}</Text>
+      ) : null}
       {loading ? (
         <ActivityIndicator size="small" color={theme.border} />
       ) : documents.length === 0 ? (
@@ -303,7 +326,11 @@ export function ComplianceDocumentsPanel({
             {isAdmin && doc.status === 'PENDING' ? (
               <View style={{ marginTop: 8 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-                  <Button title="Verify" onPress={() => handleVerify(doc)} />
+                  <Button
+                    title={verifyingId === doc.id ? 'Approving…' : 'Approve'}
+                    onPress={() => handleVerify(doc)}
+                    disabled={verifyingId === doc.id}
+                  />
                   <Button
                     title={rejectingId === doc.id ? 'Confirm reject' : 'Reject'}
                     color="#d9534f"
