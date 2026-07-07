@@ -3007,8 +3007,9 @@ export default function App() {
   // ========================================
 
   const makeAuthenticatedRequest = async (endpoint: string, options: Record<string, any> = {}) => {
+    const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
     const headers: any = {
-      'Content-Type': 'application/json',
+      ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
       ...((typeof authToken === 'string' && authToken) ? { 'Authorization': `Bearer ${authToken}` } : {}),
       ...(options.headers || {})
     };

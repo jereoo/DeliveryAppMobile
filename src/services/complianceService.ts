@@ -150,27 +150,47 @@ export async function uploadPdfToPresignedUrl(
   blob: Blob,
   contentType = 'application/pdf',
 ): Promise<void> {
-  const response = await fetch(uploadUrl, {
-    method: 'PUT',
-    body: blob,
-    headers: { 'Content-Type': contentType },
+  try {
+    const response = await fetch(uploadUrl, {
+      method: 'PUT',
+      body: blob,
+      headers: { 'Content-Type': contentType },
+    });
+    if (!response.ok) {
+      throw new Error(`Upload to storage failed (HTTP ${response.status}).`);
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Upload to storage failed')) {
+      throw error;
+    }
+    throw new Error(
+      'Upload to storage failed. The server may need S3 CORS configured, or retry after the app update.',
+    );
+  }
+}
+
+export async function uploadCompliancePdfViaBackend(
+  request: AuthenticatedRequest,
+  file: PdfFileSelection,
+): Promise<{ file_key: string; file_name: string }> {
+  validatePdfSelection(file);
+  const formData = new FormData();
+  formData.append('file', file.blob, file.name);
+  const response = await request('/documents/upload/', {
+    method: 'POST',
+    body: formData,
   });
   if (!response.ok) {
-    throw new Error(`Upload to storage failed (HTTP ${response.status}).`);
+    throw new Error(await parseComplianceError(response, 'Could not upload PDF'));
   }
+  return response.json();
 }
 
 export async function uploadCompliancePdf(
   request: AuthenticatedRequest,
   file: PdfFileSelection,
 ): Promise<{ file_key: string; file_name: string }> {
-  validatePdfSelection(file);
-  const presigned = await getPresignedUploadUrl(request, {
-    file_name: file.name,
-    file_size: file.size,
-  });
-  await uploadPdfToPresignedUrl(presigned.upload_url, file.blob, presigned.content_type);
-  return { file_key: presigned.file_key, file_name: presigned.file_name };
+  return uploadCompliancePdfViaBackend(request, file);
 }
 
 export async function getDocumentDownloadUrl(

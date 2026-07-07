@@ -126,19 +126,14 @@ describe('uploadPdfToPresignedUrl', () => {
 });
 
 describe('uploadCompliancePdf', () => {
-  it('requests presigned url then uploads', async () => {
+  it('uploads pdf through backend proxy endpoint', async () => {
     const request = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        upload_url: 'https://s3.example/upload',
         file_key: 'compliance/staging/1/policy.pdf',
         file_name: 'policy.pdf',
-        content_type: 'application/pdf',
-        expires_in: 900,
-        max_size_bytes: MAX_COMPLIANCE_PDF_BYTES,
       }),
     });
-    global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200 }) as typeof fetch;
     const blob = new Blob(['%PDF-1.4'], { type: 'application/pdf' });
     const result = await uploadCompliancePdf(request, {
       name: 'policy.pdf',
@@ -146,8 +141,10 @@ describe('uploadCompliancePdf', () => {
       type: 'application/pdf',
       blob,
     });
-    expect(result.file_key).toBe('compliance/staging/1/policy.pdf');
-    expect(result.file_name).toBe('policy.pdf');
+    expect(request).toHaveBeenCalledWith('/documents/upload/', expect.objectContaining({
+      method: 'POST',
+    }));
+    expect(result.file_key).toContain('compliance/');
   });
 });
 
