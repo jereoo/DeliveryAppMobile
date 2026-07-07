@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Button,
+  Platform,
   Text,
   TextInput,
   View,
@@ -13,12 +14,16 @@ import {
   DOCUMENT_TYPE_LABELS,
   DRIVER_DOCUMENT_TYPES,
   LegalDocument,
+  PdfFileSelection,
   VEHICLE_DOCUMENT_TYPES,
   createDriverDocument,
   createVehicleDocument,
   listDriverDocuments,
   listVehicleDocuments,
+  openDocumentDownload,
   rejectDocument,
+  uploadCompliancePdf,
+  validatePdfSelection,
   verifyDocument,
   DocumentType,
   CoverageType,
@@ -77,6 +82,8 @@ export function ComplianceDocumentsPanel({
   const [saving, setSaving] = useState(false);
   const [rejectingId, setRejectingId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [selectedPdf, setSelectedPdf] = useState<PdfFileSelection | null>(null);
+  const [viewingFileId, setViewingFileId] = useState<number | null>(null);
   const [form, setForm] = useState<CreateDocumentPayload>({
     document_type: subjectType === 'driver' ? 'DRIVER_LICENSE' : 'COMMERCIAL_INSURANCE',
     issuer: '',
@@ -106,6 +113,64 @@ export function ComplianceDocumentsPanel({
     loadDocuments();
   }, [loadDocuments]);
 
+  const resetForm = () => {
+    setShowForm(false);
+    setSelectedPdf(null);
+    setForm({
+      document_type: allowedTypes[0],
+      issuer: '',
+      policy_number: '',
+      coverage_type: 'COMMERCIAL',
+      expiry_date: '',
+      notes: '',
+    });
+  };
+
+  const handleChoosePdf = () => {
+    if (Platform.OS !== 'web') {
+      Alert.alert('PDF upload', 'Attach PDFs using the web app (Vercel) for now.');
+      return;
+    }
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/pdf,.pdf';
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) {
+        return;
+      }
+      try {
+        validatePdfSelection({
+          name: file.name,
+          size: file.size,
+          type: file.type,
+        });
+        setSelectedPdf({
+          name: file.name,
+          size: file.size,
+          type: file.type || 'application/pdf',
+          blob: file,
+        });
+        setError(null);
+      } catch (e) {
+        setSelectedPdf(null);
+        setError(e instanceof Error ? e.message : 'Invalid PDF file');
+      }
+    };
+    input.click();
+  };
+
+  const handleViewFile = async (doc: LegalDocument) => {
+    setViewingFileId(doc.id);
+    setError(null);
+    try {
+      await openDocumentDownload(request, doc.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not open file');
+    }
+    setViewingFileId(null);
+  };
+
   const handleCreate = async () => {
     if (!form.document_type) {
       setError('Document type is required');
@@ -124,6 +189,10 @@ export function ComplianceDocumentsPanel({
     setSaving(true);
     setError(null);
     try {
+      let fileMeta: { file_key: string; file_name: string } | undefined;
+      if (selectedPdf) {
+        fileMeta = await uploadCompliancePdf(request, selectedPdf);
+      }
       const payload: CreateDocumentPayload = {
         document_type: form.document_type,
         issuer: form.issuer?.trim() || undefined,
@@ -131,23 +200,19 @@ export function ComplianceDocumentsPanel({
         coverage_type: form.coverage_type,
         expiry_date: form.expiry_date?.trim() || undefined,
         notes: form.notes?.trim() || undefined,
+        file_key: fileMeta?.file_key,
+        file_name: fileMeta?.file_name,
       };
       if (subjectType === 'driver') {
         await createDriverDocument(request, subjectId, payload);
       } else {
         await createVehicleDocument(request, subjectId, payload);
       }
-      setShowForm(false);
-      setForm({
-        document_type: allowedTypes[0],
-        issuer: '',
-        policy_number: '',
-        coverage_type: 'COMMERCIAL',
-        expiry_date: '',
-        notes: '',
-      });
+      resetForm();
       await loadDocuments();
-      Alert.alert('Success', 'Document submitted for review.');
+      Alert.alert('Success', fileMeta
+        ? 'Document and PDF submitted for review.'
+        : 'Document submitted for review.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to submit document');
     }
@@ -219,6 +284,18 @@ export function ComplianceDocumentsPanel({
             ) : null}
             {doc.expiry_date ? (
               <Text style={{ color: theme.text }}>Expires: {doc.expiry_date}</Text>
+            ) : null}
+            {doc.file_name ? (
+              <Text style={{ color: theme.textMuted }}>File: {doc.file_name}</Text>
+            ) : null}
+            {doc.file_key ? (
+              <View style={{ marginTop: 6 }}>
+                <Button
+                  title={viewingFileId === doc.id ? 'Opening…' : 'View file'}
+                  onPress={() => handleViewFile(doc)}
+                  disabled={viewingFileId === doc.id}
+                />
+              </View>
             ) : null}
             {doc.rejection_reason ? (
               <Text style={{ color: theme.error }}>Rejected: {doc.rejection_reason}</Text>
@@ -318,6 +395,27 @@ export function ComplianceDocumentsPanel({
                 placeholderTextColor={theme.textMuted}
                 multiline
               />
+              <Text style={styles.label}>Attach PDF (optional)</Text>
+              <Text style={{ color: theme.textMuted, fontSize: 12, marginBottom: 8 }}>
+                PDF only, max 10 MB. From your insurer or DMV — not Word documents.
+              </Text>
+              <View style={styles.buttonContainer}>
+                <Button title="Choose PDF" onPress={handleChoosePdf} />
+              </View>
+              {selectedPdf ? (
+                <Text style={{ color: theme.text, marginBottom: 8 }}>
+                  Selected: {selectedPdf.name} ({Math.ceil(selectedPdf.size / 1024)} KB)
+                </Text>
+              ) : (
+                <Text style={{ color: theme.textMuted, marginBottom: 8 }}>
+                  No file selected — metadata only
+                </Text>
+              )}
+              {selectedPdf ? (
+                <View style={styles.buttonContainer}>
+                  <Button title="Remove PDF" onPress={() => setSelectedPdf(null)} />
+                </View>
+              ) : null}
               <View style={styles.buttonContainer}>
                 <Button
                   title={saving ? 'Submitting…' : 'Submit for review'}
@@ -326,7 +424,7 @@ export function ComplianceDocumentsPanel({
                 />
               </View>
               <View style={styles.buttonContainer}>
-                <Button title="Cancel" onPress={() => setShowForm(false)} />
+                <Button title="Cancel" onPress={resetForm} />
               </View>
             </View>
           )}

@@ -45,12 +45,12 @@ Chronological decisions and implementation notes. Latest status reports: `PROJEC
 
 | # | Task | Repo | Status |
 |---|------|------|--------|
-| 4.1 | S3 bucket + IAM + Heroku env | Ops | Todo |
+| 4.1 | S3 bucket + IAM + Heroku env | Ops | **Done** — smoke test 6/6 on Heroku |
 | 4.2 | `get_presigned_upload_url` + `get_presigned_download_url` in `compliance_service.py` | Backend | **Done June 3, 2026** — `compliance_storage.py`, PDF-only, staging keys |
 | 4.3 | Wire presigned + download on `LegalDocumentViewSet` | Backend | **Done June 3, 2026** — `GET /api/documents/{id}/download/` |
 | 4.4 | Tests: PDF ok, DOCX rejected, size, permissions, file_key ownership | Backend | Partial (with 4.2) |
-| 4.5 | `uploadComplianceFile()` + file picker in `ComplianceDocumentsPanel` | Mobile | Todo |
-| 4.6 | Admin “View file” on document row | Mobile | Todo |
+| 4.5 | `uploadComplianceFile()` + file picker in `ComplianceDocumentsPanel` | Mobile | **Done** — PDF picker + presigned upload on web |
+| 4.6 | Admin “View file” on document row | Mobile | **Done** — View file button when `file_key` set |
 | 4.7 | Prod smoke: driver upload PDF → admin preview → verify | Both | Todo |
 
 ### Related docs

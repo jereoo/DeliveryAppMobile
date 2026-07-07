@@ -1,9 +1,15 @@
 import {
   DOCUMENT_TYPE_LABELS,
   DRIVER_DOCUMENT_TYPES,
+  MAX_COMPLIANCE_PDF_BYTES,
   VEHICLE_DOCUMENT_TYPES,
+  getDocumentDownloadUrl,
+  getPresignedUploadUrl,
   listDriverDocuments,
   parseComplianceError,
+  uploadCompliancePdf,
+  uploadPdfToPresignedUrl,
+  validatePdfSelection,
 } from '../services/complianceService';
 
 describe('complianceService constants', () => {
@@ -51,5 +57,112 @@ describe('listDriverDocuments', () => {
     const docs = await listDriverDocuments(request, 42);
     expect(request).toHaveBeenCalledWith('/drivers/42/documents/');
     expect(docs).toHaveLength(1);
+  });
+});
+
+describe('validatePdfSelection', () => {
+  it('accepts valid pdf', () => {
+    expect(() => validatePdfSelection({
+      name: 'policy.pdf',
+      size: 1024,
+      type: 'application/pdf',
+    })).not.toThrow();
+  });
+
+  it('rejects non-pdf extension', () => {
+    expect(() => validatePdfSelection({ name: 'policy.docx', size: 1024 }))
+      .toThrow(/PDF/);
+  });
+
+  it('rejects oversize files', () => {
+    expect(() => validatePdfSelection({
+      name: 'big.pdf',
+      size: MAX_COMPLIANCE_PDF_BYTES + 1,
+    })).toThrow(/10 MB/);
+  });
+});
+
+describe('getPresignedUploadUrl', () => {
+  it('posts pdf metadata to presigned endpoint', async () => {
+    const request = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        upload_url: 'https://s3.example/upload',
+        file_key: 'compliance/staging/1/x.pdf',
+        file_name: 'policy.pdf',
+        content_type: 'application/pdf',
+        expires_in: 900,
+        max_size_bytes: MAX_COMPLIANCE_PDF_BYTES,
+      }),
+    });
+    const result = await getPresignedUploadUrl(request, {
+      file_name: 'policy.pdf',
+      file_size: 2048,
+    });
+    expect(request).toHaveBeenCalledWith('/documents/presigned-upload/', {
+      method: 'POST',
+      body: JSON.stringify({
+        file_name: 'policy.pdf',
+        content_type: 'application/pdf',
+        file_size: 2048,
+      }),
+    });
+    expect(result.file_key).toContain('compliance/');
+  });
+});
+
+describe('uploadPdfToPresignedUrl', () => {
+  it('puts blob to presigned url', async () => {
+    const fetchMock = jest.fn().mockResolvedValue({ ok: true, status: 200 });
+    global.fetch = fetchMock as typeof fetch;
+    const blob = new Blob(['%PDF-1.4'], { type: 'application/pdf' });
+    await uploadPdfToPresignedUrl('https://s3.example/upload', blob);
+    expect(fetchMock).toHaveBeenCalledWith('https://s3.example/upload', {
+      method: 'PUT',
+      body: blob,
+      headers: { 'Content-Type': 'application/pdf' },
+    });
+  });
+});
+
+describe('uploadCompliancePdf', () => {
+  it('requests presigned url then uploads', async () => {
+    const request = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        upload_url: 'https://s3.example/upload',
+        file_key: 'compliance/staging/1/policy.pdf',
+        file_name: 'policy.pdf',
+        content_type: 'application/pdf',
+        expires_in: 900,
+        max_size_bytes: MAX_COMPLIANCE_PDF_BYTES,
+      }),
+    });
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200 }) as typeof fetch;
+    const blob = new Blob(['%PDF-1.4'], { type: 'application/pdf' });
+    const result = await uploadCompliancePdf(request, {
+      name: 'policy.pdf',
+      size: blob.size,
+      type: 'application/pdf',
+      blob,
+    });
+    expect(result.file_key).toBe('compliance/staging/1/policy.pdf');
+    expect(result.file_name).toBe('policy.pdf');
+  });
+});
+
+describe('getDocumentDownloadUrl', () => {
+  it('calls document download endpoint', async () => {
+    const request = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        download_url: 'https://s3.example/download',
+        file_name: 'policy.pdf',
+        expires_in: 900,
+      }),
+    });
+    const result = await getDocumentDownloadUrl(request, 99);
+    expect(request).toHaveBeenCalledWith('/documents/99/download/');
+    expect(result.download_url).toContain('s3.example');
   });
 });
