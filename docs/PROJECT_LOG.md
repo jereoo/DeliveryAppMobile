@@ -49,9 +49,42 @@ Chronological decisions and implementation notes. Latest status reports: `PROJEC
 | 4.2 | `get_presigned_upload_url` + `get_presigned_download_url` in `compliance_service.py` | Backend | **Done June 3, 2026** — `compliance_storage.py`, PDF-only, staging keys |
 | 4.3 | Wire presigned + download on `LegalDocumentViewSet` | Backend | **Done June 3, 2026** — `GET /api/documents/{id}/download/` |
 | 4.4 | Tests: PDF ok, DOCX rejected, size, permissions, file_key ownership | Backend | Partial (with 4.2) |
-| 4.5 | `uploadComplianceFile()` + file picker in `ComplianceDocumentsPanel` | Mobile | **Done** — PDF picker + presigned upload on web |
+| 4.5 | `uploadComplianceFile()` + file picker in `ComplianceDocumentsPanel` | Mobile | **Done** — PDF picker; upload via `POST /documents/upload/` |
 | 4.6 | Admin “View file” on document row | Mobile | **Done** — View file button when `file_key` set |
-| 4.7 | Prod smoke: driver upload PDF → admin preview → verify | Both | Todo |
+| 4.7 | Prod smoke: driver upload PDF → admin preview → verify | Both | **Done July 7, 2026** — tom thumb driver license E2E on Vercel/Heroku |
+
+---
+
+## July 7, 2026 — Phase 4A prod verification (compliance PDF + admin approve)
+
+**Environments:** Vercel web + Heroku `truck-buddy` + S3 `truck-buddy-compliance-prod` (ca-central-1)
+
+### Prod smoke (4.7) — PASS
+
+| Step | Role | Result |
+|------|------|--------|
+| Upload driver license PDF | Driver (tom thumb) | Pass |
+| Submit for review | Driver | Pass — status `PENDING` |
+| View attached PDF | Admin | Pass |
+| Approve document | Admin | Pass — status `VERIFIED`, no browser popup |
+| S3 infrastructure | Ops | Pass — `test_s3_storage` 6/6 on Heroku |
+
+### Fixes shipped during testing
+
+| Issue | Fix | Commits |
+|-------|-----|---------|
+| `Failed to fetch` on PDF upload (browser → S3 CORS) | Backend proxy `POST /api/documents/upload/`; mobile FormData upload | Backend `e12e4f4`, Mobile `8b1da9f` |
+| `InvalidRegionError` on Heroku | `AWS_S3_REGION_NAME=ca-central-1` (not console label); region normalizer | Backend `8a671ed` |
+| S3 `head_bucket` 403 | IAM: `ListBucket` without prefix condition | Ops (IAM policy) |
+| Admin Approve did nothing on web | `Alert.alert` multi-button broken on RN Web → direct Approve + inline success | Mobile `a6f6de9`, `a1a5fdf` |
+
+### Upload flow (production)
+
+1. Driver → **Choose PDF** → **Submit for review**
+2. Mobile → `POST /api/documents/upload/` (multipart) → Heroku → S3 `compliance/staging/…`
+3. Mobile → `POST /api/drivers/{id}/documents/` with metadata + `file_key`
+4. Admin → **View file** → `GET /api/documents/{id}/download/` → presigned GET
+5. Admin → **Approve** (immediate save, no confirmation dialog)
 
 ### Related docs
 

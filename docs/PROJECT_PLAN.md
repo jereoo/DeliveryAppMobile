@@ -2,7 +2,7 @@
 
 **Last updated:** June 3, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟢 Phase 1–3 **complete**; Phase 4A **in progress** (#1–3 backend done)  
+**Overall status:** 🟢 Phase 1–3 **complete**; Phase 4A **complete** (prod verified July 7, 2026)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
 **Latest status report:** `docs/PROJECT_LOG.md` + `docs/PROJECT_STATUS_20260603.md`  
 **Architecture:** `docs/ARCHITECTURE.md` + `.cursor/rules/layered-architecture.mdc`  
@@ -110,11 +110,11 @@ See `docs/ARCHITECTURE.md` for layered architecture rules and v1.0 feature gate.
 
 ---
 
-## Phase 4 — Product (from roadmap) *(in progress — 4A backend)*
+## Phase 4 — Product (from roadmap) *(Phase 4A complete)*
 
 **Full Phase 4A spec:** [`docs/PHASE_4A_LEGAL_COMPLIANCE.md`](PHASE_4A_LEGAL_COMPLIANCE.md)
 
-### Phase 4A — Driver & vehicle legal documentation *(in progress)*
+### Phase 4A — Driver & vehicle legal documentation *(complete — prod verified July 7, 2026)*
 
 Commercial delivery requires **commercial insurance** (personal auto excludes delivery use), plus driver license and vehicle registration on file.
 
@@ -123,16 +123,16 @@ Commercial delivery requires **commercial insurance** (personal auto excludes de
 | 1 | `LegalDocument` model + migrations (`DRIVER_LICENSE`, `VEHICLE_REGISTRATION`, `COMMERCIAL_INSURANCE`, `INSPECTION`) | Done — `0004_legal_document_phase_4a`, `docs/COMPLIANCE.md` |
 | 2 | `compliance_service.py` — create, list, verify, reject, compliance summary | Done |
 | 3 | DRF permissions + API (`/drivers/{id}/documents/`, `/vehicles/{id}/documents/`, verify/reject, `/drivers/me/compliance-status/`) | Done |
-| 4 | S3 presigned upload (private bucket; no Heroku disk storage) | Done — #4.2 service + #4.3 `GET /documents/{id}/download/` |
+| 4 | S3 upload + download (proxy upload on web; presigned GET) | Done — `POST /documents/upload/`, `GET /documents/{id}/download/` |
 | 5 | `docs/COMPLIANCE.md` — policy fields, US/CA notes, driver consent, retention | Done |
-| 6 | Mobile `complianceService.ts` | Done |
-| 7 | Admin: documents tab on driver + vehicle screens (verify/reject) | Done |
-| 8 | Driver: compliance dashboard tile + upload on own driver/assigned vehicle | Done |
-| 9 | Tests: `tests/test_compliance.py` + no regression on vehicle/driver CRUD | Done — 92 critical CI tests pass |
+| 6 | Mobile `complianceService.ts` + PDF picker + View file | Done |
+| 7 | Admin: documents on driver + vehicle (Approve/Reject, View file) | Done |
+| 8 | Driver: compliance dashboard + PDF upload | Done |
+| 9 | Tests + prod smoke (tom thumb license E2E) | Done — see `docs/PROJECT_LOG.md` July 7, 2026 |
 
 **4A defaults:** No assignment blocking; no reactivate blocking; registration not blocked; inspection optional.
 
-**4A exit criteria:** Admin verifies commercial insurance; driver uploads own docs; compliance-status API; prod CRUD unchanged.
+**4A exit criteria:** ✅ Admin approves driver docs; driver uploads PDF; compliance-status API; prod CRUD unchanged. Verified on Vercel/Heroku July 7, 2026.
 
 ### Phase 4B — Expiry + reactivation gates *(after 4A)*
 
