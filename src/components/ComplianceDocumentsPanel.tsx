@@ -64,18 +64,6 @@ const STATUS_COLOR: Record<string, string> = {
   EXPIRED: '#888888',
 };
 
-async function confirmComplianceAction(title: string, message: string): Promise<boolean> {
-  if (Platform.OS === 'web' && typeof globalThis.confirm === 'function') {
-    return globalThis.confirm(`${title}\n\n${message}`);
-  }
-  return new Promise((resolve) => {
-    Alert.alert(title, message, [
-      { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
-      { text: 'OK', onPress: () => resolve(true) },
-    ]);
-  });
-}
-
 export function ComplianceDocumentsPanel({
   subjectType,
   subjectId,
@@ -234,13 +222,6 @@ export function ComplianceDocumentsPanel({
   };
 
   const handleVerify = async (doc: LegalDocument) => {
-    const confirmed = await confirmComplianceAction(
-      'Approve document',
-      `Mark ${DOCUMENT_TYPE_LABELS[doc.document_type]} as verified?`,
-    );
-    if (!confirmed) {
-      return;
-    }
     setVerifyingId(doc.id);
     setError(null);
     setSuccessMessage(null);
