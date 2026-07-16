@@ -1,8 +1,9 @@
 # DeliveryApp — Project Plan
 
-**Last updated:** June 3, 2026  
+**Last updated:** July 16, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟢 Phase 1–3 **complete**; Phase 4A **complete** (prod verified July 7, 2026)  
+**Overall status:** 🟢 Phase 1–4A **complete**; Phase 4B–4D **next** (compliance enforcement + ops UX)  
+**Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
 **Latest status report:** `docs/PROJECT_LOG.md` + `docs/PROJECT_STATUS_20260603.md`  
 **Architecture:** `docs/ARCHITECTURE.md` + `.cursor/rules/layered-architecture.mdc`  
@@ -14,8 +15,9 @@
 
 Full-stack delivery management: Django API on Heroku, Expo web on Vercel, React Native for devices.
 
-**v1.0:** Single fleet — Admin, Driver, Customer only. Admin assigns deliveries (no separate Dispatcher role).  
-**v2.0 (~Phase 5):** Commercial fleet — Dispatcher role, multi-tenant organizations. **Deferred.**
+**v1.0:** Single **local delivery** fleet (pickup trucks / vans optional) — Admin, Driver, Customer. Admin assigns deliveries.  
+**v1.0 geography:** US/CA capable; **primary ops context BC** (Class 5, ICBC) per compliance requirements review.  
+**v2.0 (~Phase 5):** Courier **fleet / logistics** — Dispatcher role, multi-tenant organizations. **Deferred — not MVP.**
 
 See `docs/ARCHITECTURE.md` for layered architecture rules and v1.0 feature gate.
 
@@ -146,15 +148,66 @@ Commercial delivery requires **commercial insurance** (personal auto excludes de
 
 | Item | Status |
 |------|--------|
-| `is_driver_eligible_for_dispatch()` in compliance service | Todo |
+| `is_driver_eligible_for_dispatch()` real enforcement | Todo |
 | Block `DeliveryAssignment` when non-compliant | Todo |
 | Admin assign UI shows eligibility before save | Todo |
+
+### Phase 4D — Compliance ops UX & notifications *(after 4B)*
+
+From BC requirements doc: admin visibility + expiry reminders. **MVP-recommended.**
+
+| Item | Status | Priority |
+|------|--------|----------|
+| Admin compliance inbox (pending approvals across all drivers) | Todo | High |
+| Admin list: drivers/vehicles with **expired** or **expiring soon** docs | Todo | High |
+| Email reminders: 30 / 14 / 0 days before document expiry | Todo | High |
+| Driver dashboard: explicit expiry dates per doc type | Todo | Medium |
+| Compliance summary on admin home (counts: pending / expired / active) | Todo | Medium |
+
+**Not in 4D:** SMS/push (defer until notification service chosen).
+
+### Phase 4E — Driver & vehicle profile gaps *(MVP nice-to-have)*
+
+| Item | Status | Priority |
+|------|--------|----------|
+| Vehicle **colour** field (customer/driver identification) | Todo | Medium |
+| Driver **emergency contact** (name + phone) | Todo | Medium |
+| BC/ICBC-aware consent copy on insurance upload | Todo | Low (copy only) |
+| Optional `license_class` (default Class 5) on driver or licence doc | Todo | Low |
+
+### Phase 4F — Trust & safety *(post-MVP / v1.1 — optional)*
+
+Document lists as good practice; **not required** for BC Class 5 local delivery MVP.
+
+| Item | Status | Verdict |
+|------|--------|---------|
+| Pre-shift vehicle safety checklist (tires, lights, brakes…) | Todo | Optional — backlog |
+| Criminal record check upload + expiry | Todo | Defer |
+| Driver abstract (ICBC) upload + expiry | Todo | Defer |
+| Work eligibility document | Todo | Defer |
+| Selfie + licence photo match | Todo | Defer — needs vendor or manual ops |
+| Municipal **business licence** document type | Todo | Optional |
+| **GST number** on driver profile | Todo | Optional — if contractor reporting needed |
 
 ### Phase 4 — Other product items
 
 - Large-item domain (dimensions, capacity matching, estimates) — see workspace `project-docs/AUTOMATED_BUILD_PLAN.md`
-- Payments (Stripe), notifications, EAS / store prep
 - **Vehicle `disposed` status** — third lifecycle state (distinct from inactive); staff-only
+
+---
+
+## Phase 6 — Payments & operations *(post-MVP)*
+
+From requirements doc “Delivery Management System” modules — **after** compliant dispatch loop works.
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Driver payouts / direct deposit | Todo | Requires banking + tax policy; **SIN not in MVP** |
+| Customer payments (Stripe) | Todo | Listed in prior roadmap |
+| Invoicing / GST reporting | Todo | Only if fleet revenue model requires |
+| Route tracking / map dispatch board | Todo | Doc: future enhancement |
+| Reporting & analytics (delivery + compliance) | Todo | Start with 4D compliance reports |
+| Push / SMS notifications | Todo | After email reminders in 4D |
 
 ---
 
