@@ -47,8 +47,19 @@ export function ComplianceStatusCard({
   return (
     <View style={[styles.itemContainer, { marginTop: 12 }]}>
       <Text style={styles.sectionTitle}>{title}</Text>
+      {summary.expired > 0 && (
+        <Text style={{ color: theme.error, marginBottom: 6, fontWeight: '600' }}>
+          {summary.expired} document{summary.expired === 1 ? '' : 's'} expired — upload and verify replacements.
+        </Text>
+      )}
+      {summary.expiring_soon > 0 && summary.expired === 0 && (
+        <Text style={{ color: '#f0ad4e', marginBottom: 6 }}>
+          {summary.expiring_soon} document{summary.expiring_soon === 1 ? '' : 's'} expiring within 30 days.
+        </Text>
+      )}
       <Text style={{ color: theme.text }}>
         Verified: {summary.verified} · Pending: {summary.pending}
+        {summary.expired > 0 ? ` · Expired: ${summary.expired}` : ''}
         {summary.expiring_soon > 0 ? ` · Expiring soon: ${summary.expiring_soon}` : ''}
       </Text>
       {summary.is_fully_compliant ? (

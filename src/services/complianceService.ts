@@ -48,6 +48,21 @@ export interface ComplianceSummary {
   is_fully_compliant: boolean;
 }
 
+export interface VehicleComplianceStatus {
+  compliant: boolean;
+  registration: boolean;
+  insurance: boolean;
+  blockers: string[];
+  may_reactivate: boolean;
+}
+
+export const COMPLIANCE_BLOCKER_LABELS: Record<string, string> = {
+  vehicle_registration_missing: 'Verified vehicle registration required',
+  vehicle_registration_expired: 'Vehicle registration expired — upload and verify a new document',
+  commercial_insurance_missing: 'Verified commercial insurance required',
+  commercial_insurance_expired: 'Commercial insurance expired — upload and verify a new policy',
+};
+
 export interface CreateDocumentPayload {
   document_type: DocumentType;
   policy_number?: string;
@@ -104,6 +119,11 @@ export async function parseComplianceError(
   fallback = 'Compliance request failed',
 ): Promise<string> {
   const body = await response.json().catch(() => ({} as Record<string, unknown>));
+  if (Array.isArray(body.compliance)) {
+    return body.compliance
+      .map((code) => COMPLIANCE_BLOCKER_LABELS[String(code)] || String(code))
+      .join('; ');
+  }
   const msg = body.error || body.detail
     || (typeof body === 'object' && Object.keys(body).length
       ? Object.entries(body).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join('; ') : v}`).join('\n')
@@ -292,6 +312,17 @@ export async function rejectDocument(
     method: 'POST',
     body: JSON.stringify({ rejection_reason: rejectionReason }),
   });
+  if (!response.ok) {
+    throw new Error(await parseComplianceError(response));
+  }
+  return response.json();
+}
+
+export async function getVehicleComplianceStatus(
+  request: AuthenticatedRequest,
+  vehicleId: number,
+): Promise<VehicleComplianceStatus> {
+  const response = await request(`/vehicles/${vehicleId}/compliance-status/`);
   if (!response.ok) {
     throw new Error(await parseComplianceError(response));
   }

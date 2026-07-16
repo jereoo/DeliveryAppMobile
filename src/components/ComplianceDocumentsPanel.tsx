@@ -55,6 +55,7 @@ interface ComplianceDocumentsPanelProps {
   styles: Styles;
   title?: string;
   subtitle?: string;
+  onDocumentsChanged?: () => void | Promise<void>;
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -74,6 +75,7 @@ export function ComplianceDocumentsPanel({
   styles,
   title = 'Legal documents',
   subtitle,
+  onDocumentsChanged,
 }: ComplianceDocumentsPanelProps) {
   const [documents, setDocuments] = useState<LegalDocument[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,6 +112,13 @@ export function ComplianceDocumentsPanel({
     }
     setLoading(false);
   }, [request, subjectId, subjectType]);
+
+  const refreshDocuments = useCallback(async () => {
+    await loadDocuments();
+    if (onDocumentsChanged) {
+      await onDocumentsChanged();
+    }
+  }, [loadDocuments, onDocumentsChanged]);
 
   useEffect(() => {
     loadDocuments();
@@ -211,7 +220,7 @@ export function ComplianceDocumentsPanel({
         await createVehicleDocument(request, subjectId, payload);
       }
       resetForm();
-      await loadDocuments();
+      await refreshDocuments();
       Alert.alert('Success', fileMeta
         ? 'Document and PDF submitted for review.'
         : 'Document submitted for review.');
@@ -227,7 +236,7 @@ export function ComplianceDocumentsPanel({
     setSuccessMessage(null);
     try {
       await verifyDocument(request, doc.id);
-      await loadDocuments();
+      await refreshDocuments();
       setSuccessMessage(`${DOCUMENT_TYPE_LABELS[doc.document_type]} approved.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Approve failed');
@@ -252,7 +261,7 @@ export function ComplianceDocumentsPanel({
       await rejectDocument(request, doc.id, rejectReason.trim());
       setRejectingId(null);
       setRejectReason('');
-      await loadDocuments();
+      await refreshDocuments();
       setSuccessMessage(`${DOCUMENT_TYPE_LABELS[doc.document_type]} rejected.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Reject failed');

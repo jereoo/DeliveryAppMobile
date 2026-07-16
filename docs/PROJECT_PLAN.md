@@ -2,7 +2,7 @@
 
 **Last updated:** July 16, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟢 Phase 1–4A **complete**; Phase 4B–4D **next** (compliance enforcement + ops UX)  
+**Overall status:** 🟢 Phase 1–4A **complete**; Phase 4B **implemented** (schedule nightly job on Heroku); Phase 4C–4D **next**  
 **Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
 **Latest status report:** `docs/PROJECT_LOG.md` + `docs/PROJECT_STATUS_20260603.md`  
@@ -140,9 +140,12 @@ Commercial delivery requires **commercial insurance** (personal auto excludes de
 
 | Item | Status |
 |------|--------|
-| Nightly job marks documents `EXPIRED` | Todo |
-| `reactivate_vehicle()` checks registration + commercial insurance | Todo |
-| Mobile expiry banners + admin reactivate checklist | Todo |
+| Nightly job marks documents `EXPIRED` (`manage.py expire_compliance_documents`) | Done — schedule on Heroku Scheduler (daily) |
+| `reactivate_vehicle()` checks registration + commercial insurance | Done |
+| `GET /api/vehicles/{id}/compliance-status/` for admin checklist | Done |
+| Mobile expiry banners + admin reactivate checklist | Done |
+
+**4B exit criteria:** Inactive vehicle cannot reactivate without verified, non-expired registration + commercial insurance; expired verified docs flip to `EXPIRED` via nightly job.
 
 ### Phase 4C — Dispatch assignment gate *(after 4B)*
 

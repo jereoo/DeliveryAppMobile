@@ -27,9 +27,10 @@ import {
 } from 'react-native';
 import { ComplianceDocumentsPanel } from './src/components/ComplianceDocumentsPanel';
 import { ComplianceStatusCard } from './src/components/ComplianceStatusCard';
+import { VehicleReactivationChecklist } from './src/components/VehicleReactivationChecklist';
 import { checkBackendHealth, getApiDebugInfo, getApiUrl } from './src/config/api';
-import type { ComplianceSummary } from './src/services/complianceService';
-import { getMyComplianceStatus } from './src/services/complianceService';
+import type { ComplianceSummary, VehicleComplianceStatus } from './src/services/complianceService';
+import { getMyComplianceStatus, getVehicleComplianceStatus } from './src/services/complianceService';
 import {
   buildVehicleUpdatePayload,
   createVehicleByApi,
@@ -753,6 +754,37 @@ export default function App() {
     const [capacityFieldError, setCapacityFieldError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [localLoading, setLocalLoading] = useState(false);
+    const [vehicleCompliance, setVehicleCompliance] = useState<VehicleComplianceStatus | null>(null);
+    const [complianceLoading, setComplianceLoading] = useState(false);
+
+    useEffect(() => {
+      let cancelled = false;
+      const loadCompliance = async () => {
+        if (mode !== 'detail' || !selected?.id) {
+          setVehicleCompliance(null);
+          return;
+        }
+        setComplianceLoading(true);
+        try {
+          const status = await getVehicleComplianceStatus(makeAuthenticatedRequest, selected.id);
+          if (!cancelled) {
+            setVehicleCompliance(status);
+          }
+        } catch {
+          if (!cancelled) {
+            setVehicleCompliance(null);
+          }
+        } finally {
+          if (!cancelled) {
+            setComplianceLoading(false);
+          }
+        }
+      };
+      loadCompliance();
+      return () => {
+        cancelled = true;
+      };
+    }, [mode, selected?.id]);
 
     const resetVehicleForm = () => {
       setForm({
@@ -1063,7 +1095,23 @@ export default function App() {
               styles={styles}
               title="Legal documents - Vehicle"
               subtitle={`Vehicle: ${selected.make} ${selected.model} (${selected.license_plate})`}
+              onDocumentsChanged={async () => {
+                try {
+                  const status = await getVehicleComplianceStatus(makeAuthenticatedRequest, selected.id);
+                  setVehicleCompliance(status);
+                } catch {
+                  setVehicleCompliance(null);
+                }
+              }}
             />
+            {!selected.active && (
+              <VehicleReactivationChecklist
+                status={vehicleCompliance}
+                loading={complianceLoading}
+                theme={theme}
+                styles={styles}
+              />
+            )}
             <View style={styles.buttonContainer}>
               <Button title="Edit" onPress={() => handleEdit(selected)} />
             </View>
@@ -1071,7 +1119,12 @@ export default function App() {
               {selected.active ? (
                 <Button title="Deactivate" color="#f0ad4e" onPress={() => handleDeactivate(selected)} />
               ) : (
-                <Button title="Reactivate" color="#5cb85c" onPress={() => handleReactivate(selected)} />
+                <Button
+                  title="Reactivate"
+                  color="#5cb85c"
+                  onPress={() => handleReactivate(selected)}
+                  disabled={vehicleCompliance !== null && !vehicleCompliance.may_reactivate}
+                />
               )}
             </View>
             {selected.active && (
@@ -4121,7 +4174,12 @@ export default function App() {
       });
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({}));
-        throw new Error(errorBody.detail || errorBody.message || 'Failed to reactivate vehicle');
+        const complianceMsg = Array.isArray(errorBody.compliance)
+          ? errorBody.compliance.join('; ')
+          : null;
+        throw new Error(
+          complianceMsg || errorBody.detail || errorBody.message || 'Failed to reactivate vehicle',
+        );
       }
       await response.json().catch(() => ({}));
       await loadVehicles();
