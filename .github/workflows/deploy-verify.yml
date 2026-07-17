@@ -7,6 +7,7 @@ on:
     workflows: [Phase 1 Frontend CI]
     types: [completed]
     branches: [main, master]
+  workflow_dispatch:
 
 env:
   PRODUCTION_WEB: https://deliveryapp-mobile.vercel.app
@@ -16,8 +17,9 @@ env:
 jobs:
   verify:
     if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push'
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -47,7 +49,7 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+          COMMIT_SHA: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
           deadline=$(( $(date +%s) + TIMEOUT_MINUTES * 60 ))
@@ -103,7 +105,7 @@ jobs:
         env:
           VERIFY_RESULT: ${{ steps.verify.outputs.result }}
           VERIFY_DETAIL: ${{ steps.verify.outputs.detail }}
-          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+          COMMIT_SHA: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.event.workflow_run.head_sha }}
         with:
           script: |
             const result = process.env.VERIFY_RESULT || 'failed';
@@ -121,13 +123,14 @@ jobs:
             });
 
       - name: Notify webhook (optional)
-        if: always() && secrets.DEPLOY_NOTIFY_WEBHOOK_URL != ''
+        if: always()
         env:
           WEBHOOK_URL: ${{ secrets.DEPLOY_NOTIFY_WEBHOOK_URL }}
           VERIFY_RESULT: ${{ steps.verify.outputs.result }}
           VERIFY_DETAIL: ${{ steps.verify.outputs.detail }}
-          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+          COMMIT_SHA: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.event.workflow_run.head_sha }}
         run: |
+          if [ -z "$WEBHOOK_URL" ]; then exit 0; fi
           emoji="✅"
           title="Mobile deploy verified"
           if [ "$VERIFY_RESULT" != "success" ]; then
@@ -155,7 +158,7 @@ jobs:
       - name: Notify deploy blocked by CI
         env:
           WEBHOOK_URL: ${{ secrets.DEPLOY_NOTIFY_WEBHOOK_URL }}
-          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+          COMMIT_SHA: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.event.workflow_run.head_sha }}
           CONCLUSION: ${{ github.event.workflow_run.conclusion }}
         run: |
           msg="⚠️ Mobile deploy blocked: CI ${CONCLUSION} on \`${COMMIT_SHA:0:7}\`. Vercel may not deploy until CI is green."
