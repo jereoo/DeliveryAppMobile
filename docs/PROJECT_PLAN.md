@@ -1,8 +1,9 @@
 # DeliveryApp — Project Plan
 
-**Last updated:** July 16, 2026  
+**Last updated:** July 17, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟢 Phase 1–4A **complete**; Phase 4B **implemented** (schedule nightly job on Heroku); Phase 4C–4D **next**  
+**Overall status:** 🟢 Phase 1–4A **complete**; Phase 4B **implemented** — **current focus: finish compliance polish** (approve/expiry UX, test PDFs, nightly job on Heroku); Phase 4C–4D **next**  
+**Current focus:** Complete compliance (4B close-out + Jack Frost retest) before dispatch gates (4C) or vehicle make/model dropdown (4E).  
 **Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
 **Latest status report:** `docs/PROJECT_LOG.md` + `docs/PROJECT_STATUS_20260603.md`  
@@ -131,6 +132,10 @@ Commercial delivery requires **commercial insurance** (personal auto excludes de
 | 7 | Admin: documents on driver + vehicle (Approve/Reject, View file) | Done |
 | 8 | Driver: compliance dashboard + PDF upload | Done |
 | 9 | Tests + prod smoke (tom thumb license E2E) | Done — see `docs/PROJECT_LOG.md` July 7, 2026 |
+| 10 | **Production upload formats:** driver submits **PDF file** or **photo/scan** of licence, registration, insurance (camera/gallery on mobile; PDF picker on web) | Todo — enforce/validate accepted MIME types in UI + API; no arbitrary file types |
+| 11 | **QA test PDFs:** fictional SAMPLE documents via backend `python manage.py generate_compliance_test_pdfs` → `DeliveryAppBackend/tests/fixtures/compliance/` | Done — use PDFs for upload/E2E testing (not photos in CI) |
+
+**Driver document upload (v1.0):** Real drivers upload a **PDF** or take a **photo/scan** of their documents. Development and automated tests use the **PDF generator** (`generate_compliance_test_pdfs`) — clearly labeled SAMPLE / TEST ONLY fixtures, not government-form replicas.
 
 **4A defaults:** No assignment blocking; no reactivate blocking; registration not blocked; inspection optional.
 
@@ -140,12 +145,16 @@ Commercial delivery requires **commercial insurance** (personal auto excludes de
 
 | Item | Status |
 |------|--------|
-| Nightly job marks documents `EXPIRED` (`manage.py expire_compliance_documents`) | Done — schedule on Heroku Scheduler (daily) |
+| Nightly job marks documents `EXPIRED` (`manage.py expire_compliance_documents`) | Done — **Todo:** schedule on Heroku Scheduler (daily) |
 | `reactivate_vehicle()` checks registration + commercial insurance | Done |
 | `GET /api/vehicles/{id}/compliance-status/` for admin checklist | Done |
 | Mobile expiry banners + admin reactivate checklist | Done |
+| Admin approve: prompt/set **expiry_date** when missing (registration, insurance, licence) | Todo — local fix in progress (Jack Frost retest) |
+| Admin driver panel: show **driver licence only** (not vehicle docs duplicated) | Todo — local fix in progress |
+| Mobile: surface API error body on compliance verify failure (not generic “request failed”) | Todo — local fix in progress |
+| Driver upload: require **expiry date** on submit for licence / registration / insurance | Todo — local fix in progress |
 
-**4B exit criteria:** Inactive vehicle cannot reactivate without verified, non-expired registration + commercial insurance; expired verified docs flip to `EXPIRED` via nightly job.
+**4B exit criteria:** Inactive vehicle cannot reactivate without verified, non-expired registration + commercial insurance; expired verified docs flip to `EXPIRED` via nightly job; admin approve + upload flows require expiry; Jack Frost E2E passes on prod.
 
 ### Phase 4C — Dispatch assignment gate *(after 4B)*
 
@@ -169,14 +178,27 @@ From BC requirements doc: admin visibility + expiry reminders. **MVP-recommended
 
 **Not in 4D:** SMS/push (defer until notification service chosen).
 
-### Phase 4E — Driver & vehicle profile gaps *(MVP nice-to-have)*
+### Phase 4E — Driver & vehicle profile gaps *(MVP nice-to-have — after compliance)*
 
 | Item | Status | Priority |
 |------|--------|----------|
+| Vehicle **make / model** dropdowns (replace free text) — NA pickup trucks only | Todo | High — **after 4B close-out** |
+| Seed **vehicle make/model reference data** (Ford, GMC, Chevrolet, Toyota) | Todo | High — backend fixture or lookup table + mobile dropdowns |
 | Vehicle **colour** field (customer/driver identification) | Todo | Medium |
 | Driver **emergency contact** (name + phone) | Todo | Medium |
 | BC/ICBC-aware consent copy on insurance upload | Todo | Low (copy only) |
 | Optional `license_class` (default Class 5) on driver or licence doc | Todo | Low |
+
+**v1.0 vehicle scope (make/model):** Light-duty pickup tiers only — equivalents to **Ford F-150, F-250, F-350** (half-ton / three-quarter / one-ton). **No F-450 or heavier** in v1.0.
+
+| Make | Example models (v1.0) |
+|------|------------------------|
+| Ford | F-150, F-250, F-350 |
+| GMC | Sierra 1500, Sierra 2500HD, Sierra 3500HD |
+| Chevrolet | Silverado 1500, Silverado 2500HD, Silverado 3500HD |
+| Toyota | Tundra (1500-class; align trim/GVWR with F-150 tier) |
+
+Registration and compliance flows stay on current free-text make/model until this data load ships.
 
 ### Phase 4F — Trust & safety *(post-MVP / v1.1 — optional)*
 
@@ -224,8 +246,9 @@ From requirements doc “Delivery Management System” modules — **after** com
 | **Multi-tenant organizations** | `Organization`, membership, org-scoped data isolation |
 | **Org-scoped RBAC** | Permission classes + queryset mixins; extend existing services |
 | **Frontend** | Dispatcher screens, org context, `/api/me/` role payload |
+| **Heavy commercial vehicles** | Ford **F-450+**, medium-duty trucks, fleet GVWR above v1.0 cap — **commercial app only**; separate capacity/compliance rules |
 
-Do not add org or dispatcher abstractions until Phase 5 begins. See `project-docs/ARCHITECTURE.md`.
+Do not add org or dispatcher abstractions until Phase 5 begins. See `project-docs/ARCHITECTURE.md`. v1.0 caps vehicles at F-350–class pickups (see Phase 4E).
 
 ---
 

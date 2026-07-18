@@ -114,6 +114,12 @@ export const VEHICLE_DOCUMENT_TYPES: DocumentType[] = [
   'INSPECTION',
 ];
 
+export const DOCUMENT_TYPES_REQUIRING_EXPIRY: DocumentType[] = [
+  'DRIVER_LICENSE',
+  'VEHICLE_REGISTRATION',
+  'COMMERCIAL_INSURANCE',
+];
+
 export async function parseComplianceError(
   response: Response,
   fallback = 'Compliance request failed',
@@ -291,11 +297,14 @@ export async function createVehicleDocument(
 export async function verifyDocument(
   request: AuthenticatedRequest,
   documentId: number,
-  notes?: string,
+  options?: { notes?: string; expiry_date?: string },
 ): Promise<LegalDocument> {
   const response = await request(`/documents/${documentId}/verify/`, {
     method: 'POST',
-    body: JSON.stringify({ notes: notes || '' }),
+    body: JSON.stringify({
+      notes: options?.notes || '',
+      ...(options?.expiry_date ? { expiry_date: options.expiry_date } : {}),
+    }),
   });
   if (!response.ok) {
     throw new Error(await parseComplianceError(response));

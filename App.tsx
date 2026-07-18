@@ -2301,11 +2301,15 @@ export default function App() {
               title="Legal documents - Vehicle"
               subtitle={
                 driverVehicleSummary
-                  ? `Assigned vehicle: ${driverVehicleSummary.make} ${driverVehicleSummary.model} (${driverVehicleSummary.license_plate})`
-                  : 'Assigned vehicle'
+                  ? `Assigned vehicle: ${driverVehicleSummary.make} ${driverVehicleSummary.model} (${driverVehicleSummary.license_plate}). Upload registration and commercial insurance here.`
+                  : 'Assigned vehicle — upload registration and commercial insurance here.'
               }
             />
-          ) : null}
+          ) : (
+            <Text style={{ color: theme.textMuted, marginTop: 16 }}>
+              No vehicle assigned — contact admin to assign a vehicle before uploading registration or insurance.
+            </Text>
+          )}
         </View>
       </ScrollView>
     );
@@ -3079,7 +3083,7 @@ export default function App() {
 
     console.log(`📡 Response Status: ${response.status} ${response.statusText}`);
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await response.clone().text();
       console.log(`❌ Error Response: ${errorText}`);
     }
 

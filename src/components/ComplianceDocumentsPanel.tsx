@@ -12,6 +12,7 @@ import type { AuthenticatedRequest } from '../services/vehicleService';
 import {
   CreateDocumentPayload,
   DOCUMENT_TYPE_LABELS,
+  DOCUMENT_TYPES_REQUIRING_EXPIRY,
   DRIVER_DOCUMENT_TYPES,
   LegalDocument,
   PdfFileSelection,
@@ -84,12 +85,14 @@ export function ComplianceDocumentsPanel({
   const [saving, setSaving] = useState(false);
   const [rejectingId, setRejectingId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [approveExpiryDocId, setApproveExpiryDocId] = useState<number | null>(null);
+  const [approveExpiryDate, setApproveExpiryDate] = useState('');
   const [selectedPdf, setSelectedPdf] = useState<PdfFileSelection | null>(null);
   const [viewingFileId, setViewingFileId] = useState<number | null>(null);
   const [verifyingId, setVerifyingId] = useState<number | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [form, setForm] = useState<CreateDocumentPayload>({
-    document_type: subjectType === 'driver' ? 'DRIVER_LICENSE' : 'COMMERCIAL_INSURANCE',
+    document_type: subjectType === 'driver' ? 'DRIVER_LICENSE' : 'VEHICLE_REGISTRATION',
     issuer: '',
     policy_number: '',
     coverage_type: 'COMMERCIAL',
@@ -98,14 +101,23 @@ export function ComplianceDocumentsPanel({
   });
 
   const allowedTypes = subjectType === 'driver' ? DRIVER_DOCUMENT_TYPES : VEHICLE_DOCUMENT_TYPES;
+  const panelSubtitle = subtitle ?? (
+    subjectType === 'driver'
+      ? 'Upload your driver license only. Registration and insurance go under Legal documents — Vehicle below.'
+      : 'Upload vehicle registration and commercial insurance here (not driver license).'
+  );
 
   const loadDocuments = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const list = subjectType === 'driver'
-        ? await listDriverDocuments(request, subjectId)
-        : await listVehicleDocuments(request, subjectId);
+        ? (await listDriverDocuments(request, subjectId)).filter(
+          (doc) => DRIVER_DOCUMENT_TYPES.includes(doc.document_type),
+        )
+        : (await listVehicleDocuments(request, subjectId)).filter(
+          (doc) => VEHICLE_DOCUMENT_TYPES.includes(doc.document_type),
+        );
       setDocuments(list);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load documents');
@@ -187,6 +199,14 @@ export function ComplianceDocumentsPanel({
       setError('Document type is required');
       return;
     }
+    if (!allowedTypes.includes(form.document_type)) {
+      setError(
+        subjectType === 'driver'
+          ? 'Only driver license can be uploaded here. Use Legal documents — Vehicle for registration and insurance.'
+          : 'Invalid document type for vehicle uploads.',
+      );
+      return;
+    }
     if (form.document_type === 'COMMERCIAL_INSURANCE') {
       if (!form.issuer?.trim() || !form.policy_number?.trim()) {
         setError('Carrier and policy number are required for commercial insurance');
@@ -196,6 +216,13 @@ export function ComplianceDocumentsPanel({
         setError('Coverage type must be COMMERCIAL for delivery use');
         return;
       }
+    }
+    if (
+      DOCUMENT_TYPES_REQUIRING_EXPIRY.includes(form.document_type)
+      && !form.expiry_date?.trim()
+    ) {
+      setError('Expiry date is required (YYYY-MM-DD)');
+      return;
     }
     setSaving(true);
     setError(null);
@@ -231,11 +258,35 @@ export function ComplianceDocumentsPanel({
   };
 
   const handleVerify = async (doc: LegalDocument) => {
+    const needsExpiry = DOCUMENT_TYPES_REQUIRING_EXPIRY.includes(doc.document_type);
+    if (needsExpiry && !doc.expiry_date) {
+      if (approveExpiryDocId !== doc.id) {
+        setApproveExpiryDocId(doc.id);
+        setApproveExpiryDate('');
+        setRejectingId(null);
+        setError(null);
+        setSuccessMessage(null);
+        return;
+      }
+      if (!approveExpiryDate.trim()) {
+        setError('Enter expiry date (YYYY-MM-DD) before approving');
+        return;
+      }
+    }
+
     setVerifyingId(doc.id);
     setError(null);
     setSuccessMessage(null);
     try {
-      await verifyDocument(request, doc.id);
+      await verifyDocument(
+        request,
+        doc.id,
+        needsExpiry && !doc.expiry_date
+          ? { expiry_date: approveExpiryDate.trim() }
+          : undefined,
+      );
+      setApproveExpiryDocId(null);
+      setApproveExpiryDate('');
       await refreshDocuments();
       setSuccessMessage(`${DOCUMENT_TYPE_LABELS[doc.document_type]} approved.`);
     } catch (e) {
@@ -271,8 +322,8 @@ export function ComplianceDocumentsPanel({
   return (
     <View style={{ marginTop: 16 }}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      {subtitle ? (
-        <Text style={{ color: theme.textMuted, marginBottom: 8 }}>{subtitle}</Text>
+      {panelSubtitle ? (
+        <Text style={{ color: theme.textMuted, marginBottom: 8 }}>{panelSubtitle}</Text>
       ) : null}
       {error ? <Text style={{ color: theme.error, marginBottom: 8 }}>{error}</Text> : null}
       {successMessage ? (
@@ -315,9 +366,29 @@ export function ComplianceDocumentsPanel({
             ) : null}
             {isAdmin && doc.status === 'PENDING' ? (
               <View style={{ marginTop: 8 }}>
+                {approveExpiryDocId === doc.id ? (
+                  <>
+                    <Text style={[styles.label, { marginTop: 8 }]}>
+                      Expiry date required to approve (YYYY-MM-DD)
+                    </Text>
+                    <TextInput
+                      style={styles.input}
+                      value={approveExpiryDate}
+                      onChangeText={setApproveExpiryDate}
+                      placeholder="2026-12-31"
+                      placeholderTextColor={theme.textMuted}
+                    />
+                  </>
+                ) : null}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
                   <Button
-                    title={verifyingId === doc.id ? 'Approving…' : 'Approve'}
+                    title={
+                      verifyingId === doc.id
+                        ? 'Approving…'
+                        : approveExpiryDocId === doc.id
+                          ? 'Confirm approve'
+                          : 'Approve'
+                    }
                     onPress={() => handleVerify(doc)}
                     disabled={verifyingId === doc.id}
                   />
@@ -327,6 +398,15 @@ export function ComplianceDocumentsPanel({
                     onPress={() => handleReject(doc)}
                   />
                 </View>
+                {approveExpiryDocId === doc.id ? (
+                  <Button
+                    title="Cancel approve"
+                    onPress={() => {
+                      setApproveExpiryDocId(null);
+                      setApproveExpiryDate('');
+                    }}
+                  />
+                ) : null}
                 {rejectingId === doc.id ? (
                   <>
                     <Text style={[styles.label, { marginTop: 8 }]}>Rejection reason</Text>
@@ -354,13 +434,19 @@ export function ComplianceDocumentsPanel({
           ) : (
             <View style={[styles.itemContainer, { marginTop: 8 }]}>
               <Text style={styles.label}>Document type</Text>
-              {allowedTypes.map((type) => (
-                <Button
-                  key={type}
-                  title={`${form.document_type === type ? '✓ ' : ''}${DOCUMENT_TYPE_LABELS[type]}`}
-                  onPress={() => setForm((f) => ({ ...f, document_type: type as DocumentType }))}
-                />
-              ))}
+              {allowedTypes.length === 1 ? (
+                <Text style={{ color: theme.text, marginBottom: 8 }}>
+                  {DOCUMENT_TYPE_LABELS[allowedTypes[0]]}
+                </Text>
+              ) : (
+                allowedTypes.map((type) => (
+                  <Button
+                    key={type}
+                    title={`${form.document_type === type ? '✓ ' : ''}${DOCUMENT_TYPE_LABELS[type]}`}
+                    onPress={() => setForm((f) => ({ ...f, document_type: type as DocumentType }))}
+                  />
+                ))
+              )}
               <Text style={styles.label}>Issuer / carrier</Text>
               <TextInput
                 style={styles.input}
