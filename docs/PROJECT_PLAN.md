@@ -2,8 +2,8 @@
 
 **Last updated:** July 17, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟢 Phase 1–4A **complete**; Phase 4B **implemented** — **current focus: finish compliance polish** (approve/expiry UX, test PDFs, nightly job on Heroku); Phase 4C–4D **next**  
-**Current focus:** Complete compliance (4B close-out + Jack Frost retest) before dispatch gates (4C) or vehicle make/model dropdown (4E).  
+**Overall status:** 🟢 Phase 1–4B **complete**; Phase 4C **implemented**; Phase 4D **next**  
+**Current focus:** Phase 4D compliance ops UX (admin inbox, expiry reminders).  
 **Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
 **Latest status report:** `docs/PROJECT_LOG.md` + `docs/PROJECT_STATUS_20260603.md`  
@@ -149,20 +149,23 @@ Commercial delivery requires **commercial insurance** (personal auto excludes de
 | `reactivate_vehicle()` checks registration + commercial insurance | Done |
 | `GET /api/vehicles/{id}/compliance-status/` for admin checklist | Done |
 | Mobile expiry banners + admin reactivate checklist | Done |
-| Admin approve: prompt/set **expiry_date** when missing (registration, insurance, licence) | Todo — local fix in progress (Jack Frost retest) |
-| Admin driver panel: show **driver licence only** (not vehicle docs duplicated) | Todo — local fix in progress |
-| Mobile: surface API error body on compliance verify failure (not generic “request failed”) | Todo — local fix in progress |
-| Driver upload: require **expiry date** on submit for licence / registration / insurance | Todo — local fix in progress |
+| Admin approve: prompt/set **expiry_date** when missing (registration, insurance, licence) | Done — prod verified July 2026 |
+| Admin driver panel: show **driver licence only** (not vehicle docs duplicated) | Done |
+| Mobile: surface API error body on compliance verify failure (not generic “request failed”) | Done |
+| Driver upload: require **expiry date** on submit for licence / registration / insurance | Done |
+| Cleanup misclassified test uploads (`cleanup_misclassified_driver_documents`) | Done — run on Heroku after deploy |
 
-**4B exit criteria:** Inactive vehicle cannot reactivate without verified, non-expired registration + commercial insurance; expired verified docs flip to `EXPIRED` via nightly job; admin approve + upload flows require expiry; Jack Frost E2E passes on prod.
+**4B exit criteria:** ✅ Inactive vehicle cannot reactivate without verified, non-expired registration + commercial insurance; expired verified docs flip to `EXPIRED` via nightly job; admin approve + upload flows require expiry; Jack Frost E2E passes on prod.
 
-### Phase 4C — Dispatch assignment gate *(after 4B)*
+### Phase 4C — Dispatch assignment gate *(implemented July 2026)*
 
 | Item | Status |
 |------|--------|
-| `is_driver_eligible_for_dispatch()` real enforcement | Todo |
-| Block `DeliveryAssignment` when non-compliant | Todo |
-| Admin assign UI shows eligibility before save | Todo |
+| `is_driver_eligible_for_dispatch()` real enforcement | Done |
+| Block `DeliveryAssignment` when non-compliant | Done |
+| Admin assign UI shows eligibility before save | Done — Admin Deliveries → detail → Assign driver |
+| `GET /api/drivers/{id}/dispatch-eligibility/` | Done |
+| `cleanup_misclassified_driver_documents` management command | Done — dry-run by default; `--apply` to reject |
 
 ### Phase 4D — Compliance ops UX & notifications *(after 4B)*
 

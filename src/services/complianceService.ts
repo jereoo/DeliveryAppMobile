@@ -61,7 +61,18 @@ export const COMPLIANCE_BLOCKER_LABELS: Record<string, string> = {
   vehicle_registration_expired: 'Vehicle registration expired — upload and verify a new document',
   commercial_insurance_missing: 'Verified commercial insurance required',
   commercial_insurance_expired: 'Commercial insurance expired — upload and verify a new policy',
+  driver_license_missing: 'Verified driver license required',
+  driver_license_expired: 'Driver license expired — upload and verify a new document',
+  driver_inactive: 'Driver is inactive',
+  vehicle_inactive: 'Assigned vehicle is inactive',
+  no_vehicle_assigned: 'No vehicle assigned to driver',
 };
+
+export interface DispatchEligibility {
+  eligible: boolean;
+  blockers: string[];
+  summary: ComplianceSummary;
+}
 
 export interface CreateDocumentPayload {
   document_type: DocumentType;
@@ -342,6 +353,31 @@ export async function getMyComplianceStatus(
   request: AuthenticatedRequest,
 ): Promise<ComplianceSummary> {
   const response = await request('/drivers/me/compliance-status/');
+  if (!response.ok) {
+    throw new Error(await parseComplianceError(response));
+  }
+  return response.json();
+}
+
+export async function getDriverDispatchEligibility(
+  request: AuthenticatedRequest,
+  driverId: number,
+): Promise<DispatchEligibility> {
+  const response = await request(`/drivers/${driverId}/dispatch-eligibility/`);
+  if (!response.ok) {
+    throw new Error(await parseComplianceError(response));
+  }
+  return response.json();
+}
+
+export async function createDeliveryAssignment(
+  request: AuthenticatedRequest,
+  payload: { delivery: number; driver: number },
+): Promise<{ id: number }> {
+  const response = await request('/assignments/', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
   if (!response.ok) {
     throw new Error(await parseComplianceError(response));
   }

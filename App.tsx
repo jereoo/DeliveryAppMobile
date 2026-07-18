@@ -29,8 +29,14 @@ import { ComplianceDocumentsPanel } from './src/components/ComplianceDocumentsPa
 import { ComplianceStatusCard } from './src/components/ComplianceStatusCard';
 import { VehicleReactivationChecklist } from './src/components/VehicleReactivationChecklist';
 import { checkBackendHealth, getApiDebugInfo, getApiUrl } from './src/config/api';
-import type { ComplianceSummary, VehicleComplianceStatus } from './src/services/complianceService';
-import { getMyComplianceStatus, getVehicleComplianceStatus } from './src/services/complianceService';
+import type { ComplianceSummary, DispatchEligibility, VehicleComplianceStatus } from './src/services/complianceService';
+import {
+  COMPLIANCE_BLOCKER_LABELS,
+  createDeliveryAssignment,
+  getDriverDispatchEligibility,
+  getMyComplianceStatus,
+  getVehicleComplianceStatus,
+} from './src/services/complianceService';
 import {
   buildVehicleUpdatePayload,
   createVehicleByApi,
@@ -1154,6 +1160,60 @@ export default function App() {
     });
     const [error, setError] = useState<string | null>(null);
     const [localLoading, setLocalLoading] = useState(false);
+    const [assignDriverId, setAssignDriverId] = useState<string>('');
+    const [dispatchEligibility, setDispatchEligibility] = useState<DispatchEligibility | null>(null);
+    const [eligibilityLoading, setEligibilityLoading] = useState(false);
+    const [assigning, setAssigning] = useState(false);
+
+    const existingAssignment = selected
+      ? assignments.find((row: any) => row.delivery === selected.id)
+      : null;
+
+    const loadDispatchEligibility = async (driverId: string) => {
+      if (!driverId) {
+        setDispatchEligibility(null);
+        return;
+      }
+      setEligibilityLoading(true);
+      try {
+        const result = await getDriverDispatchEligibility(
+          makeAuthenticatedRequest,
+          parseInt(driverId, 10),
+        );
+        setDispatchEligibility(result);
+        setError(null);
+      } catch (e) {
+        setDispatchEligibility(null);
+        setError(e instanceof Error ? e.message : 'Could not load dispatch eligibility');
+      }
+      setEligibilityLoading(false);
+    };
+
+    const handleAssignDriver = async () => {
+      if (!selected || !assignDriverId) {
+        setError('Select a driver to assign');
+        return;
+      }
+      if (dispatchEligibility && !dispatchEligibility.eligible) {
+        setError('Driver is not eligible for dispatch');
+        return;
+      }
+      setAssigning(true);
+      setError(null);
+      try {
+        await createDeliveryAssignment(makeAuthenticatedRequest, {
+          delivery: selected.id,
+          driver: parseInt(assignDriverId, 10),
+        });
+        await loadAssignments();
+        Alert.alert('Success', 'Driver assigned to delivery.');
+        setAssignDriverId('');
+        setDispatchEligibility(null);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Assignment failed');
+      }
+      setAssigning(false);
+    };
 
     // Handlers
     const handleSelect = (delivery: any) => {
@@ -1313,6 +1373,77 @@ export default function App() {
             <Text style={{ color: theme.text }}>Item: {selected.item_description}</Text>
             <Text style={{ color: theme.text }}>Status: {selected.status}</Text>
             <Text style={{ color: theme.text }}>Created: {selected.created_at ? new Date(selected.created_at).toLocaleDateString() : 'N/A'}</Text>
+
+            <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Assign driver</Text>
+            {existingAssignment ? (
+              <>
+                <Text style={{ color: theme.text }}>
+                  Assigned: {existingAssignment.driver_name || `Driver #${existingAssignment.driver}`}
+                </Text>
+                {existingAssignment.vehicle_license_plate ? (
+                  <Text style={{ color: theme.text }}>
+                    Vehicle: {existingAssignment.vehicle_license_plate}
+                  </Text>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <Text style={{ color: theme.textMuted, marginBottom: 8 }}>
+                  Only compliant drivers (verified license, registration, insurance) can be assigned.
+                </Text>
+                {drivers.length === 0 ? (
+                  <Text style={{ color: theme.textMuted }}>No drivers loaded.</Text>
+                ) : (
+                  drivers.map((driver: any) => (
+                    <Button
+                      key={driver.id}
+                      title={`${assignDriverId === driver.id.toString() ? '✓ ' : ''}${driver.first_name} ${driver.last_name}`}
+                      onPress={() => {
+                        const id = driver.id.toString();
+                        setAssignDriverId(id);
+                        loadDispatchEligibility(id);
+                      }}
+                    />
+                  ))
+                )}
+                {eligibilityLoading ? (
+                  <ActivityIndicator size="small" color={theme.border} style={{ marginTop: 8 }} />
+                ) : null}
+                {dispatchEligibility ? (
+                  <View style={{ marginTop: 8 }}>
+                    <Text style={{
+                      color: dispatchEligibility.eligible ? '#5cb85c' : theme.error,
+                      fontWeight: '600',
+                    }}>
+                      {dispatchEligibility.eligible
+                        ? 'Eligible for dispatch'
+                        : 'Not eligible for dispatch'}
+                    </Text>
+                    {!dispatchEligibility.eligible && dispatchEligibility.blockers.length > 0 ? (
+                      dispatchEligibility.blockers.map((code) => (
+                        <Text key={code} style={{ color: theme.error }}>
+                          • {COMPLIANCE_BLOCKER_LABELS[code] || code}
+                        </Text>
+                      ))
+                    ) : null}
+                  </View>
+                ) : null}
+                <View style={styles.buttonContainer}>
+                  <Button
+                    title={assigning ? 'Assigning…' : 'Assign driver to delivery'}
+                    onPress={handleAssignDriver}
+                    disabled={
+                      assigning
+                      || !assignDriverId
+                      || eligibilityLoading
+                      || (dispatchEligibility !== null && !dispatchEligibility.eligible)
+                    }
+                  />
+                </View>
+              </>
+            )}
+
+            {error ? <Text style={{ color: theme.error, marginTop: 8 }}>{error}</Text> : null}
             <View style={styles.buttonContainer}>
               <Button title="Edit" onPress={() => handleEdit(selected)} />
             </View>
