@@ -38,6 +38,12 @@ import {
   getVehicleComplianceStatus,
 } from './src/services/complianceService';
 import {
+  approveDriver,
+  DRIVER_APPROVAL_LABELS,
+  rejectDriver,
+  type DriverApprovalStatus,
+} from './src/services/driverService';
+import {
   buildVehicleUpdatePayload,
   createVehicleByApi,
   updateVehicleById,
@@ -1721,6 +1727,49 @@ export default function App() {
     });
     const [error, setError] = useState<string | null>(null);
     const [localLoading, setLocalLoading] = useState(false);
+    const [rejectReason, setRejectReason] = useState('');
+    const [showRejectForm, setShowRejectForm] = useState(false);
+    const [approvalActionLoading, setApprovalActionLoading] = useState(false);
+
+    const handleApproveDriver = async (driver: any) => {
+      setApprovalActionLoading(true);
+      setError(null);
+      try {
+        const updated = await approveDriver(makeAuthenticatedRequest, driver.id);
+        await loadDrivers();
+        setSelectedDriver(updated);
+        Alert.alert('Approved', `${driver.first_name} ${driver.last_name} can now be assigned deliveries.`);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Approve failed');
+      }
+      setApprovalActionLoading(false);
+    };
+
+    const handleRejectDriver = async (driver: any) => {
+      if (!showRejectForm) {
+        setShowRejectForm(true);
+        setRejectReason('');
+        setError(null);
+        return;
+      }
+      if (!rejectReason.trim()) {
+        setError('Rejection reason is required');
+        return;
+      }
+      setApprovalActionLoading(true);
+      setError(null);
+      try {
+        const updated = await rejectDriver(makeAuthenticatedRequest, driver.id, rejectReason.trim());
+        await loadDrivers();
+        setSelectedDriver(updated);
+        setShowRejectForm(false);
+        setRejectReason('');
+        Alert.alert('Rejected', 'Driver registration was rejected.');
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Reject failed');
+      }
+      setApprovalActionLoading(false);
+    };
 
     // Note: Drivers are loaded by parent component, no need for useEffect here
 
@@ -1823,6 +1872,8 @@ export default function App() {
 
     const handleDetail = (driver: any) => {
       setSelectedDriver(driver);
+      setShowRejectForm(false);
+      setRejectReason('');
       setMode('detail');
     };
 
@@ -1931,7 +1982,56 @@ export default function App() {
             <Text style={styles.itemTitle}>{selectedDriver.first_name} {selectedDriver.last_name}</Text>
             <Text style={{ color: theme.text }}>License: {selectedDriver.license_number}</Text>
             {selectedDriver.phone_number && <Text style={{ color: theme.text }}>Phone: {formatPhoneForDisplay(selectedDriver.phone_number)}</Text>}
-            <Text style={{ color: theme.text }}>Status: {selectedDriver.active ? 'Active' : 'Inactive'}</Text>
+            <Text style={{ color: theme.text }}>
+              Account: {selectedDriver.active ? 'Active' : 'Inactive'}
+            </Text>
+            <Text style={{
+              color: selectedDriver.approval_status === 'APPROVED'
+                ? '#5cb85c'
+                : selectedDriver.approval_status === 'PENDING'
+                  ? '#f0ad4e'
+                  : theme.error,
+              fontWeight: '600',
+            }}>
+              Approval: {DRIVER_APPROVAL_LABELS[selectedDriver.approval_status as DriverApprovalStatus]
+                || selectedDriver.approval_status
+                || 'Approved'}
+            </Text>
+            {selectedDriver.approval_rejection_reason ? (
+              <Text style={{ color: theme.error }}>
+                Rejected: {selectedDriver.approval_rejection_reason}
+              </Text>
+            ) : null}
+            {selectedDriver.approval_status === 'PENDING' ? (
+              <View style={{ marginTop: 12 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                  <Button
+                    title={approvalActionLoading ? 'Approving…' : 'Approve driver'}
+                    onPress={() => handleApproveDriver(selectedDriver)}
+                    disabled={approvalActionLoading}
+                  />
+                  <Button
+                    title={showRejectForm ? 'Confirm reject' : 'Reject'}
+                    color="#d9534f"
+                    onPress={() => handleRejectDriver(selectedDriver)}
+                    disabled={approvalActionLoading}
+                  />
+                </View>
+                {showRejectForm ? (
+                  <>
+                    <Text style={[styles.label, { marginTop: 8 }]}>Rejection reason</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={rejectReason}
+                      onChangeText={setRejectReason}
+                      placeholder="Reason for rejection"
+                      placeholderTextColor={theme.textMuted}
+                    />
+                    <Button title="Cancel" onPress={() => { setShowRejectForm(false); setRejectReason(''); }} />
+                  </>
+                ) : null}
+              </View>
+            ) : null}
 
             {selectedDriver.current_vehicle && (
               <View style={{ marginTop: 15 }}>
@@ -2015,9 +2115,22 @@ export default function App() {
                 <Text style={styles.itemTitle}>{driver.first_name} {driver.last_name}</Text>
                 <Text style={{ color: theme.text }}>License: {driver.license_number}</Text>
                 {driver.phone_number && <Text style={{ color: theme.text }}>Phone: {formatPhoneForDisplay(driver.phone_number)}</Text>}
-                <Text style={{ color: theme.text }}>Status: <Text style={{ color: driver.active ? 'green' : 'red' }}>
-                  {driver.active ? 'Active' : 'Inactive'}
-                </Text></Text>
+                <Text style={{ color: theme.text }}>
+                  Account: <Text style={{ color: driver.active ? 'green' : 'red' }}>
+                    {driver.active ? 'Active' : 'Inactive'}
+                  </Text>
+                </Text>
+                <Text style={{
+                  color: driver.approval_status === 'APPROVED'
+                    ? '#5cb85c'
+                    : driver.approval_status === 'PENDING'
+                      ? '#f0ad4e'
+                      : theme.error,
+                }}>
+                  Approval: {DRIVER_APPROVAL_LABELS[driver.approval_status as DriverApprovalStatus]
+                    || driver.approval_status
+                    || 'Approved'}
+                </Text>
                 {driver.current_vehicle_plate && (
                   <Text style={{ color: theme.text }}>Vehicle: {driver.current_vehicle_plate}</Text>
                 )}
@@ -2874,11 +2987,10 @@ export default function App() {
         console.log('[DEBUG] RegisterAsDriverScreen: Success response:', result);
 
         Alert.alert(
-          'Registration Successful!',
-          'Your driver account has been created. You can now login.',
-          [
-            { text: 'OK', onPress: () => onBack() }
-          ]
+          'Registration submitted',
+          result.message
+            || 'Your driver account was created and is pending admin approval. You can log in to upload compliance documents while you wait.',
+          [{ text: 'OK', onPress: () => onBack() }],
         );
 
         resetForm();
@@ -3104,6 +3216,10 @@ export default function App() {
     active: boolean;
   } | null>(null);
   const [driverMeId, setDriverMeId] = useState<number | null>(null);
+  const [driverMeApproval, setDriverMeApproval] = useState<{
+    status: DriverApprovalStatus;
+    rejectionReason?: string | null;
+  } | null>(null);
   const [driverVehicleId, setDriverVehicleId] = useState<number | null>(null);
   const [driverComplianceSummary, setDriverComplianceSummary] = useState<ComplianceSummary | null>(null);
   const [driversLoading, setDriversLoading] = useState(false);
@@ -3394,7 +3510,12 @@ export default function App() {
       });
 
       if (response.ok) {
-        Alert.alert('Success', 'Driver registered successfully! You can now login.');
+        const data = await response.json();
+        Alert.alert(
+          'Registration submitted',
+          data.message
+            || 'Your driver account was created and is pending admin approval. You can log in to upload compliance documents while you wait.',
+        );
         setDriverForm({
           username: '', email: '', password: '', first_name: '', last_name: '', phone_number: '',
           license_number: '', vehicle_license_plate: '', vehicle_make: '', vehicle_model: '',
@@ -3564,6 +3685,10 @@ export default function App() {
       if (profileResponse.ok) {
         const profile = await profileResponse.json();
         setDriverMeId(profile.id ?? null);
+        setDriverMeApproval({
+          status: profile.approval_status || 'APPROVED',
+          rejectionReason: profile.approval_rejection_reason,
+        });
       }
       const summary = await getMyComplianceStatus(makeAuthenticatedRequest);
       setDriverComplianceSummary(summary);
@@ -4922,6 +5047,31 @@ export default function App() {
           {userType === 'driver' && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>🚚 Driver Services</Text>
+              {driverMeApproval?.status === 'PENDING' ? (
+                <View style={[styles.itemContainer, { marginBottom: 12, borderColor: '#f0ad4e' }]}>
+                  <Text style={{ color: '#f0ad4e', fontWeight: '600' }}>
+                    Registration pending admin approval
+                  </Text>
+                  <Text style={{ color: theme.textMuted, marginTop: 6 }}>
+                    You can upload compliance documents now. You cannot be assigned deliveries until an admin approves your account.
+                  </Text>
+                </View>
+              ) : null}
+              {driverMeApproval?.status === 'REJECTED' ? (
+                <View style={[styles.itemContainer, { marginBottom: 12, borderColor: theme.error }]}>
+                  <Text style={{ color: theme.error, fontWeight: '600' }}>
+                    Registration rejected
+                  </Text>
+                  {driverMeApproval.rejectionReason ? (
+                    <Text style={{ color: theme.error, marginTop: 6 }}>
+                      {driverMeApproval.rejectionReason}
+                    </Text>
+                  ) : null}
+                  <Text style={{ color: theme.textMuted, marginTop: 6 }}>
+                    Contact admin if you need to re-register or appeal this decision.
+                  </Text>
+                </View>
+              ) : null}
               {driverVehicleSummary ? (
                 <View style={[styles.itemContainer, { marginBottom: 12 }]}>
                   <Text style={styles.itemTitle}>

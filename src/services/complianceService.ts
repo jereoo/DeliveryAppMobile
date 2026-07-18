@@ -66,6 +66,8 @@ export const COMPLIANCE_BLOCKER_LABELS: Record<string, string> = {
   driver_inactive: 'Driver is inactive',
   vehicle_inactive: 'Assigned vehicle is inactive',
   no_vehicle_assigned: 'No vehicle assigned to driver',
+  driver_pending_approval: 'Driver registration pending admin approval',
+  driver_registration_rejected: 'Driver registration was rejected by admin',
 };
 
 export interface DispatchEligibility {
