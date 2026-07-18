@@ -27,7 +27,9 @@ import {
 } from 'react-native';
 import { ComplianceDocumentsPanel } from './src/components/ComplianceDocumentsPanel';
 import { ComplianceStatusCard } from './src/components/ComplianceStatusCard';
+import { DriverLicenseFields } from './src/components/DriverLicenseFields';
 import { VehicleReactivationChecklist } from './src/components/VehicleReactivationChecklist';
+import { validateDriverLicenseNumber } from './src/utils/driverLicenseValidation';
 import { checkBackendHealth, getApiDebugInfo, getApiUrl } from './src/config/api';
 import type { ComplianceSummary, DispatchEligibility, VehicleComplianceStatus } from './src/services/complianceService';
 import {
@@ -2862,6 +2864,7 @@ export default function App() {
       first_name: '',
       last_name: '',
       phone_number: '',
+      license_issuing_region: 'CA-BC',
       license_number: '',
       // Vehicle information
       vehicle_license_plate: '',
@@ -2872,6 +2875,7 @@ export default function App() {
       vehicle_capacity: 1000
     });
     const [error, setError] = useState<string | null>(null);
+    const [licenseFieldError, setLicenseFieldError] = useState<string | null>(null);
     const [localLoading, setLocalLoading] = useState(false);
 
     const resetForm = () => {
@@ -2883,6 +2887,7 @@ export default function App() {
         first_name: '',
         last_name: '',
         phone_number: '',
+        license_issuing_region: 'CA-BC',
         license_number: '',
         // Vehicle information
         vehicle_license_plate: '',
@@ -2893,17 +2898,11 @@ export default function App() {
         vehicle_capacity: 1000
       });
       setError(null);
+      setLicenseFieldError(null);
     };
 
     const handleRegister = async () => {
-      console.log('[DEBUG] RegisterAsDriverScreen: Form data before validation:', JSON.stringify(formData, null, 2));
-
-      // Specific debug for license_number
-      console.log('[DEBUG] RegisterAsDriverScreen: license_number value:', `"${formData.license_number}"`);
-      console.log('[DEBUG] RegisterAsDriverScreen: license_number type:', typeof formData.license_number);
-      console.log('[DEBUG] RegisterAsDriverScreen: license_number trimmed:', `"${formData.license_number?.trim()}"`);
-      console.log('[DEBUG] RegisterAsDriverScreen: license_number exists?', !!formData.license_number);
-      console.log('[DEBUG] RegisterAsDriverScreen: license_number trim exists?', !!formData.license_number?.trim());
+      setLicenseFieldError(null);
 
       // Check each field individually for better debugging
       const missingFields = [];
@@ -2911,6 +2910,7 @@ export default function App() {
       if (!formData.password?.trim()) missingFields.push('password');
       if (!formData.first_name?.trim()) missingFields.push('first_name');
       if (!formData.last_name?.trim()) missingFields.push('last_name');
+      if (!formData.license_issuing_region?.trim()) missingFields.push('license_issuing_region');
       if (!formData.license_number?.trim()) missingFields.push('license_number');
       if (!formData.vehicle_license_plate?.trim()) missingFields.push('vehicle_license_plate');
       if (!formData.vehicle_make?.trim()) missingFields.push('vehicle_make');
@@ -2922,10 +2922,18 @@ export default function App() {
         missingFields.push('vehicle_year (must be between 2000-2100, not default)');
       }
 
-      console.log('[DEBUG] RegisterAsDriverScreen: Missing fields:', missingFields);
-
       if (missingFields.length > 0) {
         setError(`Missing required fields: ${missingFields.join(', ')}`);
+        return;
+      }
+
+      const licenseValidation = validateDriverLicenseNumber(
+        formData.license_issuing_region,
+        formData.license_number,
+      );
+      if (!licenseValidation.ok) {
+        setLicenseFieldError(licenseValidation.message);
+        setError(licenseValidation.message);
         return;
       }
 
@@ -2934,7 +2942,6 @@ export default function App() {
         return;
       }
 
-      console.log('[DEBUG] RegisterAsDriverScreen: Starting registration process');
       setLocalLoading(true);
       try {
         // Register as driver with vehicle information (backend expects flat structure)
@@ -2946,7 +2953,8 @@ export default function App() {
           first_name: formData.first_name,
           last_name: formData.last_name,
           phone_number: formData.phone_number,
-          license_number: formData.license_number,
+          license_issuing_region: formData.license_issuing_region,
+          license_number: licenseValidation.normalized,
           // Vehicle information (flat structure as expected by backend)
           vehicle_license_plate: formData.vehicle_license_plate,
           vehicle_make: formData.vehicle_make,
@@ -2957,9 +2965,6 @@ export default function App() {
           vehicle_capacity_unit: 'kg' // Default unit
         };
 
-        console.log('[DEBUG] RegisterAsDriverScreen: Registration payload:', JSON.stringify(registrationData, null, 2));
-        console.log('[DEBUG] RegisterAsDriverScreen: API endpoint:', `${API_BASE}/drivers/register/`);
-
         const response = await fetch(`${API_BASE}/drivers/register/`, {
           method: 'POST',
           headers: {
@@ -2968,23 +2973,17 @@ export default function App() {
           body: JSON.stringify(registrationData)
         });
 
-        console.log('[DEBUG] RegisterAsDriverScreen: Response status:', response.status);
-        console.log('[DEBUG] RegisterAsDriverScreen: Response headers:', Object.fromEntries(response.headers.entries()));
-
         if (!response.ok) {
           let errorData;
           try {
             errorData = await response.clone().json();
-            console.log('[DEBUG] RegisterAsDriverScreen: Error response JSON:', errorData);
           } catch (e) {
             errorData = await response.clone().text();
-            console.log('[DEBUG] RegisterAsDriverScreen: Error response text:', errorData);
           }
           throw new Error(`Registration failed (${response.status}): ${JSON.stringify(errorData)}`);
         }
 
         const result = await response.json();
-        console.log('[DEBUG] RegisterAsDriverScreen: Success response:', result);
 
         Alert.alert(
           'Registration submitted',
@@ -3076,19 +3075,20 @@ export default function App() {
             keyboardType="phone-pad"
           />
 
-          <Text style={styles.label}>License Number *</Text>
-          <TextInput
-            style={styles.input}
-            placeholderTextColor={theme.placeholder} placeholder="Enter driver's license number"
-            value={formData.license_number}
-            onChangeText={(text) => {
-              console.log('[DEBUG] RegisterAsDriverScreen: License number changing to:', `"${text}"`);
-              setFormData(prev => {
-                const newData = { ...prev, license_number: text };
-                console.log('[DEBUG] RegisterAsDriverScreen: Updated form data license_number:', `"${newData.license_number}"`);
-                return newData;
-              });
+          <DriverLicenseFields
+            licenseIssuingRegion={formData.license_issuing_region}
+            licenseNumber={formData.license_number}
+            onRegionChange={(code) => {
+              setLicenseFieldError(null);
+              setFormData((prev) => ({ ...prev, license_issuing_region: code }));
             }}
+            onLicenseNumberChange={(text) => {
+              setLicenseFieldError(null);
+              setFormData((prev) => ({ ...prev, license_number: text }));
+            }}
+            theme={theme}
+            styles={styles}
+            fieldError={licenseFieldError}
           />
 
           <Text style={styles.sectionTitle}>Vehicle Information</Text>
@@ -3245,6 +3245,7 @@ export default function App() {
     preferred_pickup_address: ''
   });
 
+  const [driverLicenseFieldError, setDriverLicenseFieldError] = useState<string | null>(null);
   const [driverForm, setDriverForm] = useState({
     username: '',
     email: '',
@@ -3252,6 +3253,7 @@ export default function App() {
     first_name: '',
     last_name: '',
     phone_number: '',
+    license_issuing_region: 'CA-BC',
     license_number: '',
     vehicle_license_plate: '',
     vehicle_make: '',
@@ -3474,12 +3476,25 @@ export default function App() {
   };
 
   const registerDriver = async () => {
+    setDriverLicenseFieldError(null);
+
     // Validate required fields
     if (!driverForm.username || !driverForm.email || !driverForm.password ||
       !driverForm.first_name || !driverForm.last_name || !driverForm.phone_number || !driverForm.license_number ||
+      !driverForm.license_issuing_region ||
       !driverForm.vehicle_license_plate || !driverForm.vehicle_make || !driverForm.vehicle_model ||
       !driverForm.year || !driverForm.vehicle_vin) {
       Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    const licenseValidation = validateDriverLicenseNumber(
+      driverForm.license_issuing_region,
+      driverForm.license_number,
+    );
+    if (!licenseValidation.ok) {
+      setDriverLicenseFieldError(licenseValidation.message);
+      Alert.alert('Invalid driver license', licenseValidation.message);
       return;
     }
 
@@ -3493,7 +3508,8 @@ export default function App() {
         first_name: driverForm.first_name,
         last_name: driverForm.last_name,
         phone_number: driverForm.phone_number,
-        license_number: driverForm.license_number,
+        license_issuing_region: driverForm.license_issuing_region,
+        license_number: licenseValidation.normalized,
         vehicle_license_plate: driverForm.vehicle_license_plate,
         vehicle_make: driverForm.vehicle_make,
         vehicle_model: driverForm.vehicle_model,
@@ -3518,9 +3534,11 @@ export default function App() {
         );
         setDriverForm({
           username: '', email: '', password: '', first_name: '', last_name: '', phone_number: '',
+          license_issuing_region: 'CA-BC',
           license_number: '', vehicle_license_plate: '', vehicle_make: '', vehicle_model: '',
           year: new Date().getFullYear(), vehicle_vin: '', vehicle_capacity: 1000
         });
+        setDriverLicenseFieldError(null);
         setCurrentScreen('login');
       } else {
         const errorData = await response.json();
@@ -4069,6 +4087,7 @@ export default function App() {
       // Reset form
       setDriverForm({
         username: '', email: '', password: '', first_name: '', last_name: '', phone_number: '',
+        license_issuing_region: 'CA-BC',
         license_number: '', vehicle_license_plate: '', vehicle_make: '', vehicle_model: '',
         year: new Date().getFullYear(), vehicle_vin: '', vehicle_capacity: 1000
       });
@@ -4931,11 +4950,20 @@ export default function App() {
               keyboardType="phone-pad"
             />
 
-            <TextInput
-              style={styles.input}
-              value={driverForm.license_number}
-              onChangeText={(text) => setDriverForm({ ...driverForm, license_number: text })}
-              placeholderTextColor={theme.placeholder} placeholder="Driver License Number *"
+            <DriverLicenseFields
+              licenseIssuingRegion={driverForm.license_issuing_region}
+              licenseNumber={driverForm.license_number}
+              onRegionChange={(code) => {
+                setDriverLicenseFieldError(null);
+                setDriverForm({ ...driverForm, license_issuing_region: code });
+              }}
+              onLicenseNumberChange={(text) => {
+                setDriverLicenseFieldError(null);
+                setDriverForm({ ...driverForm, license_number: text });
+              }}
+              theme={theme}
+              styles={styles}
+              fieldError={driverLicenseFieldError}
             />
 
             <Text style={styles.sectionTitle}>Vehicle Information</Text>
