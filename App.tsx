@@ -28,6 +28,7 @@ import {
 import { ComplianceDocumentsPanel } from './src/components/ComplianceDocumentsPanel';
 import { ComplianceStatusCard } from './src/components/ComplianceStatusCard';
 import { DriverLicenseFields } from './src/components/DriverLicenseFields';
+import { VehicleCatalogFields } from './src/components/VehicleCatalogFields';
 import { VehicleReactivationChecklist } from './src/components/VehicleReactivationChecklist';
 import { validateDriverLicenseNumber } from './src/utils/driverLicenseValidation';
 import { checkBackendHealth, getApiDebugInfo, getApiUrl } from './src/config/api';
@@ -2866,16 +2867,16 @@ export default function App() {
       phone_number: '',
       license_issuing_region: 'CA-BC',
       license_number: '',
-      // Vehicle information
+      vehicle_model_spec_id: null as number | null,
+      vehicle_capacity_max_kg: MAX_VEHICLE_CAPACITY_KG,
       vehicle_license_plate: '',
-      vehicle_make: '',
-      vehicle_model: '',
       vehicle_year: 2000,
       vehicle_vin: '',
       vehicle_capacity: 1000
     });
     const [error, setError] = useState<string | null>(null);
     const [licenseFieldError, setLicenseFieldError] = useState<string | null>(null);
+    const [vehicleCatalogError, setVehicleCatalogError] = useState<string | null>(null);
     const [localLoading, setLocalLoading] = useState(false);
 
     const resetForm = () => {
@@ -2889,20 +2890,21 @@ export default function App() {
         phone_number: '',
         license_issuing_region: 'CA-BC',
         license_number: '',
-        // Vehicle information
+        vehicle_model_spec_id: null as number | null,
+        vehicle_capacity_max_kg: MAX_VEHICLE_CAPACITY_KG,
         vehicle_license_plate: '',
-        vehicle_make: '',
-        vehicle_model: '',
         vehicle_year: 2000,
         vehicle_vin: '',
         vehicle_capacity: 1000
       });
       setError(null);
       setLicenseFieldError(null);
+      setVehicleCatalogError(null);
     };
 
     const handleRegister = async () => {
       setLicenseFieldError(null);
+      setVehicleCatalogError(null);
 
       // Check each field individually for better debugging
       const missingFields = [];
@@ -2912,9 +2914,8 @@ export default function App() {
       if (!formData.last_name?.trim()) missingFields.push('last_name');
       if (!formData.license_issuing_region?.trim()) missingFields.push('license_issuing_region');
       if (!formData.license_number?.trim()) missingFields.push('license_number');
+      if (!formData.vehicle_model_spec_id) missingFields.push('vehicle_model_spec_id');
       if (!formData.vehicle_license_plate?.trim()) missingFields.push('vehicle_license_plate');
-      if (!formData.vehicle_make?.trim()) missingFields.push('vehicle_make');
-      if (!formData.vehicle_model?.trim()) missingFields.push('vehicle_model');
       if (!formData.vehicle_vin?.trim()) missingFields.push('vehicle_vin');
 
       // Validate vehicle year (2000 is treated as empty/default)
@@ -2937,6 +2938,12 @@ export default function App() {
         return;
       }
 
+      if (!formData.vehicle_model_spec_id) {
+        setError('Select a vehicle manufacturer and model from the catalog.');
+        setVehicleCatalogError('Select a vehicle manufacturer and model from the catalog.');
+        return;
+      }
+
       if (formData.password !== formData.confirm_password) {
         setError('Passwords do not match');
         return;
@@ -2955,10 +2962,9 @@ export default function App() {
           phone_number: formData.phone_number,
           license_issuing_region: formData.license_issuing_region,
           license_number: licenseValidation.normalized,
+          vehicle_model_spec_id: formData.vehicle_model_spec_id,
           // Vehicle information (flat structure as expected by backend)
           vehicle_license_plate: formData.vehicle_license_plate,
-          vehicle_make: formData.vehicle_make,
-          vehicle_model: formData.vehicle_model,
           vehicle_year: formData.vehicle_year,
           vehicle_vin: formData.vehicle_vin,
           vehicle_capacity: formData.vehicle_capacity,
@@ -3092,31 +3098,26 @@ export default function App() {
           />
 
           <Text style={styles.sectionTitle}>Vehicle Information</Text>
-          <Text style={styles.infoText}>As a driver, you must register a vehicle</Text>
+          <Text style={styles.infoText}>As a driver, you must register a vehicle from the approved pickup catalog</Text>
 
-          <Text style={styles.label}>Vehicle License Plate *</Text>
-          <TextInput
-            style={styles.input}
-            placeholderTextColor={theme.placeholder} placeholder="Enter vehicle license plate"
-            value={formData.vehicle_license_plate}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, vehicle_license_plate: text.toUpperCase() }))}
-            autoCapitalize="characters"
-          />
-
-          <Text style={styles.label}>Vehicle Make *</Text>
-          <TextInput
-            style={styles.input}
-            placeholderTextColor={theme.placeholder} placeholder="Enter vehicle make (e.g., Ford, Toyota)"
-            value={formData.vehicle_make}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, vehicle_make: text }))}
-          />
-
-          <Text style={styles.label}>Vehicle Model *</Text>
-          <TextInput
-            style={styles.input}
-            placeholderTextColor={theme.placeholder} placeholder="Enter vehicle model (e.g., Transit, Hiace)"
-            value={formData.vehicle_model}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, vehicle_model: text }))}
+          <VehicleCatalogFields
+            apiBase={API_BASE}
+            vehicleModelSpecId={formData.vehicle_model_spec_id}
+            vehicleYear={formData.vehicle_year === 2000 ? 0 : formData.vehicle_year}
+            onSpecChange={(specId) => {
+              setVehicleCatalogError(null);
+              setFormData((prev) => ({ ...prev, vehicle_model_spec_id: specId }));
+            }}
+            onMaxCapacityChange={(maxKg) => {
+              setFormData((prev) => ({
+                ...prev,
+                vehicle_capacity_max_kg: maxKg,
+                vehicle_capacity: Math.min(prev.vehicle_capacity, maxKg),
+              }));
+            }}
+            theme={theme}
+            styles={styles}
+            fieldError={vehicleCatalogError}
           />
 
           <Text style={styles.label}>Vehicle Year *</Text>
@@ -3125,26 +3126,32 @@ export default function App() {
             placeholderTextColor={theme.placeholder} placeholder="Enter vehicle year"
             value={formData.vehicle_year === 2000 ? '' : formData.vehicle_year.toString()}
             onChangeText={(text) => {
-              // Allow empty input while typing
               if (text === '') {
                 setFormData(prev => ({ ...prev, vehicle_year: 2000 }));
                 return;
               }
 
-              // Only allow numeric characters
               const numericText = text.replace(/[^0-9]/g, '');
               if (numericText.length <= 4) {
                 const year = parseInt(numericText);
-                if (!isNaN(year) && year >= 2000 && year <= 2100) {
+                if (!isNaN(year) && year >= 1999 && year <= 2100) {
                   setFormData(prev => ({ ...prev, vehicle_year: year }));
                 } else if (numericText.length < 4) {
-                  // Allow partial input while typing (e.g., "20" for "2023")
                   setFormData(prev => ({ ...prev, vehicle_year: parseInt(numericText) || 2000 }));
                 }
               }
             }}
             keyboardType="numeric"
             maxLength={4}
+          />
+
+          <Text style={styles.label}>Vehicle License Plate *</Text>
+          <TextInput
+            style={styles.input}
+            placeholderTextColor={theme.placeholder} placeholder="Enter vehicle license plate"
+            value={formData.vehicle_license_plate}
+            onChangeText={(text) => setFormData(prev => ({ ...prev, vehicle_license_plate: text.toUpperCase() }))}
+            autoCapitalize="characters"
           />
 
           <Text style={styles.label}>Vehicle VIN *</Text>
@@ -3160,11 +3167,11 @@ export default function App() {
           <Text style={styles.label}>Vehicle Capacity (kg) *</Text>
           <TextInput
             style={styles.input}
-            placeholderTextColor={theme.placeholder} placeholder={`Enter vehicle capacity (1–${MAX_VEHICLE_CAPACITY_KG} kg)`}
+            placeholderTextColor={theme.placeholder} placeholder={`Enter vehicle capacity (1–${formData.vehicle_capacity_max_kg} kg)`}
             value={formData.vehicle_capacity.toString()}
             onChangeText={(text) => {
               const capacity = parseInt(text) || 1000;
-              if (capacity >= 1 && capacity <= MAX_VEHICLE_CAPACITY_KG) {
+              if (capacity >= 1 && capacity <= formData.vehicle_capacity_max_kg) {
                 setFormData(prev => ({ ...prev, vehicle_capacity: capacity }));
               }
             }}
@@ -3246,6 +3253,7 @@ export default function App() {
   });
 
   const [driverLicenseFieldError, setDriverLicenseFieldError] = useState<string | null>(null);
+  const [driverVehicleCatalogError, setDriverVehicleCatalogError] = useState<string | null>(null);
   const [driverForm, setDriverForm] = useState({
     username: '',
     email: '',
@@ -3255,10 +3263,10 @@ export default function App() {
     phone_number: '',
     license_issuing_region: 'CA-BC',
     license_number: '',
+    vehicle_model_spec_id: null as number | null,
+    vehicle_capacity_max_kg: MAX_VEHICLE_CAPACITY_KG,
     vehicle_license_plate: '',
-    vehicle_make: '',
-    vehicle_model: '',
-    year: new Date().getFullYear(),
+    vehicle_year: new Date().getFullYear(),
     vehicle_vin: '',
     vehicle_capacity: 1000
   });
@@ -3477,13 +3485,14 @@ export default function App() {
 
   const registerDriver = async () => {
     setDriverLicenseFieldError(null);
+    setDriverVehicleCatalogError(null);
 
     // Validate required fields
     if (!driverForm.username || !driverForm.email || !driverForm.password ||
       !driverForm.first_name || !driverForm.last_name || !driverForm.phone_number || !driverForm.license_number ||
-      !driverForm.license_issuing_region ||
-      !driverForm.vehicle_license_plate || !driverForm.vehicle_make || !driverForm.vehicle_model ||
-      !driverForm.year || !driverForm.vehicle_vin) {
+      !driverForm.license_issuing_region || !driverForm.vehicle_model_spec_id ||
+      !driverForm.vehicle_license_plate ||
+      !driverForm.vehicle_year || !driverForm.vehicle_vin) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
@@ -3510,10 +3519,9 @@ export default function App() {
         phone_number: driverForm.phone_number,
         license_issuing_region: driverForm.license_issuing_region,
         license_number: licenseValidation.normalized,
+        vehicle_model_spec_id: driverForm.vehicle_model_spec_id,
         vehicle_license_plate: driverForm.vehicle_license_plate,
-        vehicle_make: driverForm.vehicle_make,
-        vehicle_model: driverForm.vehicle_model,
-        vehicle_year: driverForm.year ? Number(driverForm.year) : new Date().getFullYear(),
+        vehicle_year: driverForm.vehicle_year ? Number(driverForm.vehicle_year) : new Date().getFullYear(),
         vehicle_vin: driverForm.vehicle_vin,
         vehicle_capacity: driverForm.vehicle_capacity,
         vehicle_capacity_unit: 'kg',
@@ -3535,8 +3543,8 @@ export default function App() {
         setDriverForm({
           username: '', email: '', password: '', first_name: '', last_name: '', phone_number: '',
           license_issuing_region: 'CA-BC',
-          license_number: '', vehicle_license_plate: '', vehicle_make: '', vehicle_model: '',
-          year: new Date().getFullYear(), vehicle_vin: '', vehicle_capacity: 1000
+          license_number: '', vehicle_model_spec_id: null, vehicle_capacity_max_kg: MAX_VEHICLE_CAPACITY_KG,
+          vehicle_license_plate: '', vehicle_year: new Date().getFullYear(), vehicle_vin: '', vehicle_capacity: 1000
         });
         setDriverLicenseFieldError(null);
         setCurrentScreen('login');
@@ -4088,8 +4096,8 @@ export default function App() {
       setDriverForm({
         username: '', email: '', password: '', first_name: '', last_name: '', phone_number: '',
         license_issuing_region: 'CA-BC',
-        license_number: '', vehicle_license_plate: '', vehicle_make: '', vehicle_model: '',
-        year: new Date().getFullYear(), vehicle_vin: '', vehicle_capacity: 1000
+        license_number: '', vehicle_model_spec_id: null, vehicle_capacity_max_kg: MAX_VEHICLE_CAPACITY_KG,
+        vehicle_license_plate: '', vehicle_year: new Date().getFullYear(), vehicle_vin: '', vehicle_capacity: 1000
       });
 
     } catch (error) {
@@ -4967,44 +4975,50 @@ export default function App() {
             />
 
             <Text style={styles.sectionTitle}>Vehicle Information</Text>
-            <TextInput
-              style={styles.input}
-              value={driverForm.vehicle_license_plate}
-              onChangeText={(text) => setDriverForm({ ...driverForm, vehicle_license_plate: text.toUpperCase() })}
-              placeholderTextColor={theme.placeholder} placeholder="Vehicle License Plate *"
-              autoCapitalize="characters"
+            <VehicleCatalogFields
+              apiBase={API_BASE}
+              vehicleModelSpecId={driverForm.vehicle_model_spec_id}
+              vehicleYear={driverForm.vehicle_year}
+              onSpecChange={(specId) => {
+                setDriverVehicleCatalogError(null);
+                setDriverForm({ ...driverForm, vehicle_model_spec_id: specId });
+              }}
+              onMaxCapacityChange={(maxKg) => {
+                setDriverForm({
+                  ...driverForm,
+                  vehicle_capacity_max_kg: maxKg,
+                  vehicle_capacity: Math.min(driverForm.vehicle_capacity, maxKg),
+                });
+              }}
+              theme={theme}
+              styles={styles}
+              fieldError={driverVehicleCatalogError}
             />
 
             <TextInput
               style={styles.input}
-              value={driverForm.vehicle_make}
-              onChangeText={(text) => setDriverForm({ ...driverForm, vehicle_make: text })}
-              placeholderTextColor={theme.placeholder} placeholder="Vehicle Make (e.g., Ford, Toyota) *"
-            />
-
-            <TextInput
-              style={styles.input}
-              value={driverForm.vehicle_model}
-              onChangeText={(text) => setDriverForm({ ...driverForm, vehicle_model: text })}
-              placeholderTextColor={theme.placeholder} placeholder="Vehicle Model (e.g., Transit, Hiace) *"
-            />
-
-            <TextInput
-              style={styles.input}
-              value={driverForm.year ? driverForm.year.toString() : ''}
+              value={driverForm.vehicle_year ? driverForm.vehicle_year.toString() : ''}
               onChangeText={(text) => {
                 if (text === '') {
-                  setDriverForm({ ...driverForm, year: new Date().getFullYear() });
+                  setDriverForm({ ...driverForm, vehicle_year: new Date().getFullYear() });
                 } else {
                   const year = parseInt(text);
-                  if (!isNaN(year) && year >= 1900 && year <= 2100) {
-                    setDriverForm({ ...driverForm, year });
+                  if (!isNaN(year) && year >= 1999 && year <= 2100) {
+                    setDriverForm({ ...driverForm, vehicle_year: year });
                   }
                 }
               }}
               placeholderTextColor={theme.placeholder} placeholder="Vehicle Year (e.g., 2024) *"
               keyboardType="numeric"
               maxLength={4}
+            />
+
+            <TextInput
+              style={styles.input}
+              value={driverForm.vehicle_license_plate}
+              onChangeText={(text) => setDriverForm({ ...driverForm, vehicle_license_plate: text.toUpperCase() })}
+              placeholderTextColor={theme.placeholder} placeholder="Vehicle License Plate *"
+              autoCapitalize="characters"
             />
 
             <TextInput
@@ -5021,11 +5035,11 @@ export default function App() {
               value={driverForm.vehicle_capacity.toString()}
               onChangeText={(text) => {
                 const capacity = parseInt(text) || 1000;
-                if (capacity >= 1 && capacity <= MAX_VEHICLE_CAPACITY_KG) {
+                if (capacity >= 1 && capacity <= driverForm.vehicle_capacity_max_kg) {
                   setDriverForm({ ...driverForm, vehicle_capacity: capacity });
                 }
               }}
-              placeholderTextColor={theme.placeholder} placeholder={`Vehicle Capacity (1–${MAX_VEHICLE_CAPACITY_KG} kg) *`}
+              placeholderTextColor={theme.placeholder} placeholder={`Vehicle Capacity (1–${driverForm.vehicle_capacity_max_kg} kg) *`}
               keyboardType="numeric"
             />
 
