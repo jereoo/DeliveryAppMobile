@@ -1,9 +1,9 @@
 # DeliveryApp — Project Plan
 
-**Last updated:** July 18, 2026  
+**Last updated:** July 23, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟢 Phase 1–4B **complete**; Phase 4C **implemented**; Phase 4D **next**  
-**Current focus:** Phase 4D compliance ops UX (admin inbox, expiry reminders). Phase 4G (staff RBAC) **backlog**.  
+**Overall status:** 🟢 Phase 1–4C **complete**; Phase 4D **in progress** (backend admin API shipped; mobile inbox + email Todo)  
+**Current focus:** Phase 4D compliance ops UX (admin inbox UI, expiry reminders). Phase 4G (staff RBAC) **backlog**.  
 **Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
 **Latest status report:** `docs/PROJECT_LOG.md` + `docs/PROJECT_STATUS_20260603.md`  
@@ -147,7 +147,7 @@ See `docs/ARCHITECTURE.md` for layered architecture rules and v1.0 feature gate.
 
 | Item | Status |
 |------|--------|
-| Seed / demo data strategy for staging/production | Done — `DeliveryAppBackend/docs/SEED_DATA.md`, `seed_demo_data` command |
+| Seed / demo data strategy for staging/production | Done — `SEED_DATA.md`, `seed_demo_data`, `seed_driver_vehicle_test_data` (Heroku QA accounts) |
 | Clear API validation messages for duplicate registration fields | Done |
 | Logging for auth and registration failures | Done |
 | Optional: staging Heroku app | Done (documented) — `DeliveryAppBackend/docs/STAGING.md`; provisioning optional |
@@ -247,11 +247,11 @@ From BC requirements doc: admin visibility + expiry reminders. **MVP-recommended
 
 | Item | Status | Priority |
 |------|--------|----------|
-| Admin compliance inbox (pending approvals across all drivers) | Todo | High |
-| Admin list: drivers/vehicles with **expired** or **expiring soon** docs | Todo | High |
+| Admin compliance inbox (pending approvals across all drivers) | **Backend API Done** — `GET /api/compliance/admin/inbox/`; mobile UI Todo | High |
+| Admin list: drivers/vehicles with **expired** or **expiring soon** docs | **Backend API Done** — `GET /api/compliance/admin/expiring/`; mobile UI Todo | High |
+| Compliance summary on admin home (counts: pending / expired / active) | **Backend API Done** — `GET /api/compliance/admin/summary/`; mobile UI Todo | Medium |
 | Email reminders: 30 / 14 / 0 days before document expiry | Todo | High |
-| Driver dashboard: explicit expiry dates per doc type | Todo | Medium |
-| Compliance summary on admin home (counts: pending / expired / active) | Todo | Medium |
+| Driver dashboard: explicit expiry dates per doc type | Partial — driver compliance card shows counts; per-doc dates Todo | Medium |
 
 **Not in 4D:** SMS/push (defer until notification service chosen).
 
@@ -259,8 +259,8 @@ From BC requirements doc: admin visibility + expiry reminders. **MVP-recommended
 
 | Item | Status | Priority |
 |------|--------|----------|
-| Vehicle **make / model** dropdowns (replace free text) — NA pickup trucks only | Todo | High — **after 4B close-out** |
-| Seed **vehicle make/model reference data** (Ford, GMC, Chevrolet, Toyota) | Todo | High — backend fixture or lookup table + mobile dropdowns |
+| Vehicle **make / model** dropdowns (replace free text) — NA pickup trucks only | **Done** — catalog API + registration (July 2026) | High |
+| Seed **vehicle make/model reference data** (Ford, GMC, Chevrolet, Toyota) | **Done** — `VehicleModelSpec` migration `0007` + `seed_demo_data` / `seed_driver_vehicle_test_data` | High |
 | Vehicle **colour** field (customer/driver identification) | Todo | Medium |
 | Driver **emergency contact** (name + phone) | Todo | Medium |
 | BC/ICBC-aware consent copy on insurance upload | Todo | Low (copy only) |
