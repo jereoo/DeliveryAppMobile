@@ -25,6 +25,7 @@ import {
   TextInput,
   View
 } from 'react-native';
+import { AdminComplianceScreen } from './src/components/AdminComplianceScreen';
 import { ComplianceDocumentsPanel } from './src/components/ComplianceDocumentsPanel';
 import { ComplianceStatusCard } from './src/components/ComplianceStatusCard';
 import { DriverLicenseFields } from './src/components/DriverLicenseFields';
@@ -32,11 +33,12 @@ import { VehicleCatalogFields } from './src/components/VehicleCatalogFields';
 import { VehicleReactivationChecklist } from './src/components/VehicleReactivationChecklist';
 import { validateDriverLicenseNumber } from './src/utils/driverLicenseValidation';
 import { checkBackendHealth, getApiDebugInfo, getApiUrl } from './src/config/api';
-import type { ComplianceSummary, DispatchEligibility, VehicleComplianceStatus } from './src/services/complianceService';
+import type { ComplianceSummary, DispatchEligibility, FleetComplianceSummary, VehicleComplianceStatus } from './src/services/complianceService';
 import {
   COMPLIANCE_BLOCKER_LABELS,
   createDeliveryAssignment,
   getDriverDispatchEligibility,
+  getFleetComplianceSummary,
   getMyComplianceStatus,
   getVehicleComplianceStatus,
 } from './src/services/complianceService';
@@ -3229,6 +3231,7 @@ export default function App() {
   } | null>(null);
   const [driverVehicleId, setDriverVehicleId] = useState<number | null>(null);
   const [driverComplianceSummary, setDriverComplianceSummary] = useState<ComplianceSummary | null>(null);
+  const [fleetComplianceSummary, setFleetComplianceSummary] = useState<FleetComplianceSummary | null>(null);
   const [driversLoading, setDriversLoading] = useState(false);
   const [adminScreen, setAdminScreen] = useState<string | null>(null); // e.g. 'driver_vehicles'
 
@@ -3574,6 +3577,7 @@ export default function App() {
           loadAssignments(),
           loadDriverVehicles(),
           ...(userType === 'driver' ? [loadDriverMyVehicle(), loadDriverCompliance()] : []),
+          ...(userType === 'admin' ? [loadFleetComplianceSummary()] : []),
         ]);
       } else if (userType === 'customer') {
         await loadMyDeliveries();
@@ -3721,6 +3725,16 @@ export default function App() {
     } catch (error) {
       console.error('Error loading driver compliance:', error);
       setDriverComplianceSummary(null);
+    }
+  };
+
+  const loadFleetComplianceSummary = async () => {
+    try {
+      const summary = await getFleetComplianceSummary(makeAuthenticatedRequest);
+      setFleetComplianceSummary(summary);
+    } catch (error) {
+      console.error('Error loading fleet compliance summary:', error);
+      setFleetComplianceSummary(null);
     }
   };
 
@@ -4557,7 +4571,7 @@ export default function App() {
 
   // CIO MARCH 2026: Guard admin-only screens - redirect non-admins to dashboard
   useEffect(() => {
-    const adminScreens = ['admin_customers', 'admin_vehicles', 'admin_deliveries', 'admin_drivers', 'admin_driver_vehicles'];
+    const adminScreens = ['admin_customers', 'admin_vehicles', 'admin_deliveries', 'admin_drivers', 'admin_driver_vehicles', 'admin_compliance'];
     if (adminScreens.includes(currentScreen) && userType !== 'admin' && userType !== null) {
       setCurrentScreen('dashboard');
     }
@@ -4589,6 +4603,18 @@ export default function App() {
   // Admin Driver-Vehicles Screen
   if (currentScreen === 'admin_driver_vehicles' && userType === 'admin') {
     return <AdminDriverVehiclesScreen onBack={() => setCurrentScreen('dashboard')} />;
+  }
+
+  // Admin Compliance Ops (Phase 4D)
+  if (currentScreen === 'admin_compliance' && userType === 'admin') {
+    return (
+      <AdminComplianceScreen
+        onBack={() => setCurrentScreen('dashboard')}
+        request={makeAuthenticatedRequest}
+        theme={theme}
+        styles={styles}
+      />
+    );
   }
 
   // Delivery Request Screen (customer + driver)
@@ -5162,6 +5188,24 @@ export default function App() {
             <ScrollView style={styles.container}>
               <View style={styles.content}>
                 <Text style={styles.sectionTitle}>🛠️ Admin Management</Text>
+                {fleetComplianceSummary ? (
+                  <View style={[styles.itemContainer, { marginBottom: 16 }]}>
+                    <Text style={styles.sectionTitle}>📋 Compliance overview</Text>
+                    <Text style={{ color: theme.text }}>
+                      Pending docs: {fleetComplianceSummary.documents_pending}
+                      {' · '}
+                      Expired: {fleetComplianceSummary.documents_expired}
+                      {' · '}
+                      Expiring soon: {fleetComplianceSummary.documents_expiring_soon}
+                    </Text>
+                    <Text style={{ color: theme.text, marginTop: 4 }}>
+                      Drivers pending approval: {fleetComplianceSummary.drivers_pending_approval}
+                    </Text>
+                  </View>
+                ) : null}
+                <View style={styles.buttonContainer}>
+                  <Button title="📋 Compliance inbox" onPress={() => setCurrentScreen('admin_compliance')} />
+                </View>
                 <View style={styles.buttonContainer}>
                   <Button title="👥 Manage Customers" onPress={() => setCurrentScreen('admin_customers')} />
                 </View>

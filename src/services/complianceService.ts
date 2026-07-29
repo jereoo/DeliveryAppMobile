@@ -76,6 +76,31 @@ export interface DispatchEligibility {
   summary: ComplianceSummary;
 }
 
+/** Fleet-wide counts from GET /compliance/admin/summary/ (Phase 4D). */
+export interface FleetComplianceSummary {
+  documents_pending: number;
+  documents_expired: number;
+  documents_expiring_soon: number;
+  drivers_pending_approval: number;
+  drivers_rejected: number;
+  expiring_within_days: number;
+}
+
+/** Row from admin inbox / expiring endpoints (Phase 4D). */
+export interface AdminComplianceDocumentRow {
+  document_id: number;
+  document_type: DocumentType;
+  status: DocumentStatus;
+  created_at?: string | null;
+  expiry_date?: string | null;
+  effective_date?: string | null;
+  file_name?: string | null;
+  driver_id?: number | null;
+  driver_name?: string | null;
+  vehicle_id?: number | null;
+  vehicle_plate?: string | null;
+}
+
 export interface CreateDocumentPayload {
   document_type: DocumentType;
   policy_number?: string;
@@ -368,6 +393,45 @@ export async function getDriverDispatchEligibility(
   const response = await request(`/drivers/${driverId}/dispatch-eligibility/`);
   if (!response.ok) {
     throw new Error(await parseComplianceError(response));
+  }
+  return response.json();
+}
+
+export async function getFleetComplianceSummary(
+  request: AuthenticatedRequest,
+  options?: { days?: number },
+): Promise<FleetComplianceSummary> {
+  const days = options?.days ?? 30;
+  const response = await request(`/compliance/admin/summary/?days=${days}`);
+  if (!response.ok) {
+    throw new Error(await parseComplianceError(response, 'Could not load compliance summary'));
+  }
+  return response.json();
+}
+
+export async function listAdminComplianceInbox(
+  request: AuthenticatedRequest,
+): Promise<AdminComplianceDocumentRow[]> {
+  const response = await request('/compliance/admin/inbox/');
+  if (!response.ok) {
+    throw new Error(await parseComplianceError(response, 'Could not load compliance inbox'));
+  }
+  return response.json();
+}
+
+export async function listAdminExpiringDocuments(
+  request: AuthenticatedRequest,
+  options?: { days?: number; includeExpired?: boolean },
+): Promise<AdminComplianceDocumentRow[]> {
+  const days = options?.days ?? 30;
+  const includeExpired = options?.includeExpired !== false;
+  const params = new URLSearchParams({
+    days: String(days),
+    include_expired: includeExpired ? 'true' : 'false',
+  });
+  const response = await request(`/compliance/admin/expiring/?${params.toString()}`);
+  if (!response.ok) {
+    throw new Error(await parseComplianceError(response, 'Could not load expiring documents'));
   }
   return response.json();
 }

@@ -4,7 +4,10 @@ import {
   MAX_COMPLIANCE_PDF_BYTES,
   VEHICLE_DOCUMENT_TYPES,
   getDocumentDownloadUrl,
+  getFleetComplianceSummary,
   getPresignedUploadUrl,
+  listAdminComplianceInbox,
+  listAdminExpiringDocuments,
   listDriverDocuments,
   parseComplianceError,
   uploadCompliancePdf,
@@ -161,5 +164,43 @@ describe('getDocumentDownloadUrl', () => {
     const result = await getDocumentDownloadUrl(request, 99);
     expect(request).toHaveBeenCalledWith('/documents/99/download/');
     expect(result.download_url).toContain('s3.example');
+  });
+});
+
+describe('Phase 4D admin compliance API', () => {
+  it('loads fleet summary', async () => {
+    const request = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        documents_pending: 2,
+        documents_expired: 1,
+        documents_expiring_soon: 3,
+        drivers_pending_approval: 1,
+        drivers_rejected: 0,
+        expiring_within_days: 30,
+      }),
+    });
+    const summary = await getFleetComplianceSummary(request);
+    expect(request).toHaveBeenCalledWith('/compliance/admin/summary/?days=30');
+    expect(summary.documents_pending).toBe(2);
+  });
+
+  it('loads admin inbox', async () => {
+    const request = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [{ document_id: 5, document_type: 'DRIVER_LICENSE', status: 'PENDING' }],
+    });
+    const rows = await listAdminComplianceInbox(request);
+    expect(request).toHaveBeenCalledWith('/compliance/admin/inbox/');
+    expect(rows[0].document_id).toBe(5);
+  });
+
+  it('loads expiring documents with query params', async () => {
+    const request = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    });
+    await listAdminExpiringDocuments(request, { days: 14, includeExpired: false });
+    expect(request).toHaveBeenCalledWith('/compliance/admin/expiring/?days=14&include_expired=false');
   });
 });

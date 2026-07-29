@@ -1,14 +1,40 @@
 # DeliveryApp — Project Plan
 
-**Last updated:** July 23, 2026  
+**Last updated:** July 29, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟢 Phase 1–4C **complete**; Phase 4D **in progress** (backend admin API shipped; mobile inbox + email Todo)  
-**Current focus:** Phase 4D compliance ops UX (admin inbox UI, expiry reminders). Phase 4G (staff RBAC) **backlog**.  
+**Overall status:** 🟢 Phase 1–4C **complete**; Phase 4D **in progress** (backend API **Done** + prod verified; mobile admin compliance UI **implemented locally**, pending commit/deploy; email reminders + Heroku Scheduler **Todo**)  
+**Current focus:** Commit/deploy Phase 4D mobile admin compliance screen; then email expiry reminders + schedule `expire_compliance_documents` on Heroku. Phase 4G (staff RBAC) **backlog**.  
 **Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
 **Latest status report:** `docs/PROJECT_LOG.md` + `docs/PROJECT_STATUS_20260603.md`  
 **Architecture:** `docs/ARCHITECTURE.md` + `.cursor/rules/layered-architecture.mdc`  
 **Development process:** [`docs/DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md) — plan → build → test → done
+
+---
+
+## Development environment *(July 2026)*
+
+| Topic | Current setup |
+|-------|----------------|
+| **Primary database** | **Heroku Postgres** on app `truck-buddy` — all migrations, seeds, and QA run here (app not public yet) |
+| **Local PostgreSQL** | `delivery_app` @ localhost exists but **not in use**; refresh/sync **TBD** |
+| **Workspace** | Open `C:\Users\360WEB\DeliveryApp.code-workspace` (3 roots: docs, backend, mobile) |
+| **DB admin** | pgAdmin → Heroku Postgres connection |
+| **Heroku ops** | Dashboard → **Run console** (local Heroku CLI often not logged in) |
+| **Seed on Heroku** | `ALLOW_DEMO_SEED=1 python manage.py seed_demo_data --force` · `seed_driver_vehicle_test_data --force` (wipes all drivers first) |
+| **Cursor rule** | `DeliveryAppBackend/.cursor/rules/heroku-production-db.mdc` |
+
+**Heroku QA accounts (July 22, 2026 — re-seed after deploy `dde64d8`):**
+
+| Account | Password | Purpose |
+|---------|----------|---------|
+| `demo.driver` | `DemoPass1234!` | Approved driver, Ford F-150 `DEMO001`, 3 verified compliance docs |
+| `demo.customer` | `DemoPass1234!` | One pending delivery |
+| `test.driver.approved` … `test.driver.inactive` | `TestPass1234!` | CRUD/compliance scenarios — see `DeliveryAppBackend/docs/SEED_DATA.md` |
+
+**Recent backend commits:** `dde64d8` (catalog-compliant seeds) · `1e37511` (Phase 4D admin API)
+
+**Prod checks (July 22–29, 2026):** API health ✅ · Vercel web ✅ · `demo.driver` compliance UI ✅ (3 verified) · Phase 4D `/api/compliance/admin/*` ✅ (401/403 without staff JWT as expected)
 
 ---
 
@@ -147,7 +173,7 @@ See `docs/ARCHITECTURE.md` for layered architecture rules and v1.0 feature gate.
 
 | Item | Status |
 |------|--------|
-| Seed / demo data strategy for staging/production | Done — `SEED_DATA.md`, `seed_demo_data`, `seed_driver_vehicle_test_data` (Heroku QA accounts) |
+| Seed / demo data strategy for staging/production | Done — `DeliveryAppBackend/docs/SEED_DATA.md`, `seed_demo_data`, `seed_driver_vehicle_test_data`; **Heroku QA seeded July 2026** |
 | Clear API validation messages for duplicate registration fields | Done |
 | Logging for auth and registration failures | Done |
 | Optional: staging Heroku app | Done (documented) — `DeliveryAppBackend/docs/STAGING.md`; provisioning optional |
@@ -247,11 +273,14 @@ From BC requirements doc: admin visibility + expiry reminders. **MVP-recommended
 
 | Item | Status | Priority |
 |------|--------|----------|
-| Admin compliance inbox (pending approvals across all drivers) | **Backend API Done** — `GET /api/compliance/admin/inbox/`; mobile UI Todo | High |
-| Admin list: drivers/vehicles with **expired** or **expiring soon** docs | **Backend API Done** — `GET /api/compliance/admin/expiring/`; mobile UI Todo | High |
-| Compliance summary on admin home (counts: pending / expired / active) | **Backend API Done** — `GET /api/compliance/admin/summary/`; mobile UI Todo | Medium |
+| Admin compliance inbox (pending approvals across all drivers) | **Backend Done** (`GET /api/compliance/admin/inbox/`, commit `1e37511`) · **Mobile Done locally** (`AdminComplianceScreen` inbox tab — commit/deploy pending) | High |
+| Admin list: drivers/vehicles with **expired** or **expiring soon** docs | **Backend Done** (`GET /api/compliance/admin/expiring/`) · **Mobile Done locally** (expiring tab) | High |
+| Compliance summary on admin home (counts: pending / expired / active) | **Backend Done** (`GET /api/compliance/admin/summary/`) · **Mobile Done locally** (overview card on admin compliance screen) | Medium |
 | Email reminders: 30 / 14 / 0 days before document expiry | Todo | High |
-| Driver dashboard: explicit expiry dates per doc type | Partial — driver compliance card shows counts; per-doc dates Todo | Medium |
+| Driver dashboard: explicit expiry dates per doc type | Partial — driver compliance card shows counts + expiry on verified docs; full per-type list Todo | Medium |
+| Schedule nightly `expire_compliance_documents` on Heroku Scheduler | Todo — command exists; not scheduled yet (`DeliveryAppBackend/docs/PHASE_4D_COMPLIANCE_OPS.md`) | High |
+
+**Phase 4D backend docs:** `DeliveryAppBackend/docs/PHASE_4D_COMPLIANCE_OPS.md`
 
 **Not in 4D:** SMS/push (defer until notification service chosen).
 
@@ -259,8 +288,9 @@ From BC requirements doc: admin visibility + expiry reminders. **MVP-recommended
 
 | Item | Status | Priority |
 |------|--------|----------|
-| Vehicle **make / model** dropdowns (replace free text) — NA pickup trucks only | **Done** — catalog API + registration (July 2026) | High |
-| Seed **vehicle make/model reference data** (Ford, GMC, Chevrolet, Toyota) | **Done** — `VehicleModelSpec` migration `0007` + `seed_demo_data` / `seed_driver_vehicle_test_data` | High |
+| Driver `license_issuing_region` + format validation | **Done** — migration `0006`, registration API + mobile (`3b32091` / `e2aa00d`) | High |
+| Vehicle **make / model** catalog dropdowns (NA pickup trucks) | **Done** — `VehicleModelSpec` migration `0007`, `/api/vehicle-catalog/`, mobile `VehicleCatalogFields` (`19f8f2d` / `af7b229`) | High |
+| Seed **vehicle make/model reference data** | **Done** — `vehicle_catalog_data.py` + `seed_demo_data` / `seed_driver_vehicle_test_data` | High |
 | Vehicle **colour** field (customer/driver identification) | Todo | Medium |
 | Driver **emergency contact** (name + phone) | Todo | Medium |
 | BC/ICBC-aware consent copy on insurance upload | Todo | Low (copy only) |
@@ -275,7 +305,7 @@ From BC requirements doc: admin visibility + expiry reminders. **MVP-recommended
 | Chevrolet | Silverado 1500, Silverado 2500HD, Silverado 3500HD |
 | Toyota | Tundra (1500-class; align trim/GVWR with F-150 tier) |
 
-Registration and compliance flows stay on current free-text make/model until this data load ships.
+Catalog enforced on **driver registration** (`vehicle_model_spec_id` required). Admin/driver vehicle edit still uses catalog-backed make/model from spec.
 
 ### Phase 4G — Staff accounts & RBAC *(backlog — see requirements section above)*
 
@@ -361,7 +391,7 @@ Do not add org or dispatcher abstractions until Phase 5 begins. See `project-doc
 | `jereoo/DeliveryAppBackend` | Django API — `main` → Heroku `truck-buddy` |
 | `jereoo/DeliveryAppMobile` | Expo app — `main` → Vercel |
 
-Local: `C:\Users\360WEB\DeliveryAppBackend` (backend), `C:\Users\360WEB\DeliveryAppMobile` (mobile).
+Local workspace: `C:\Users\360WEB\DeliveryApp.code-workspace` → **DeliveryApp** (docs), **DeliveryAppBackend**, **DeliveryAppMobile**.
 
 ---
 
