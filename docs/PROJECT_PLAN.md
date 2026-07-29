@@ -2,11 +2,11 @@
 
 **Last updated:** July 29, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟢 Phase 1–4C **complete**; Phase 4D **in progress** (backend API **Done** + prod verified; mobile admin compliance UI **implemented locally**, pending commit/deploy; email reminders + Heroku Scheduler **Todo**)  
-**Current focus:** Commit/deploy Phase 4D mobile admin compliance screen; then email expiry reminders + schedule `expire_compliance_documents` on Heroku. Phase 4G (staff RBAC) **backlog**.  
+**Overall status:** 🟢 Phase 1–4C **complete**; Phase 4D **in progress** (backend + mobile admin compliance UI **Done** on prod; email reminders + Heroku Scheduler **Todo**)  
+**Current focus:** Phase 4D email expiry reminders + schedule `expire_compliance_documents` on Heroku. Phase 4G (staff RBAC) **backlog**.  
 **Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
-**Latest status report:** `docs/PROJECT_LOG.md` + `docs/PROJECT_STATUS_20260603.md`  
+**Latest status report:** `docs/PROJECT_STATUS_20260729.md` + `docs/PROJECT_LOG.md`  
 **Architecture:** `docs/ARCHITECTURE.md` + `.cursor/rules/layered-architecture.mdc`  
 **Development process:** [`docs/DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md) — plan → build → test → done
 
@@ -34,7 +34,9 @@
 
 **Recent backend commits:** `dde64d8` (catalog-compliant seeds) · `1e37511` (Phase 4D admin API)
 
-**Prod checks (July 22–29, 2026):** API health ✅ · Vercel web ✅ · `demo.driver` compliance UI ✅ (3 verified) · Phase 4D `/api/compliance/admin/*` ✅ (401/403 without staff JWT as expected)
+**Recent mobile commits:** `262df0d` (Phase 4D admin compliance UI) · `9118dec` (admin driver list filters)
+
+**Prod checks (July 29, 2026):** API health ✅ · Vercel web ✅ · `demo.driver` compliance UI ✅ · Phase 4D `/api/compliance/admin/*` ✅ · Admin compliance inbox UI ✅ · Admin driver list filters (last name, account, approval) ✅
 
 ---
 
@@ -273,9 +275,9 @@ From BC requirements doc: admin visibility + expiry reminders. **MVP-recommended
 
 | Item | Status | Priority |
 |------|--------|----------|
-| Admin compliance inbox (pending approvals across all drivers) | **Backend Done** (`GET /api/compliance/admin/inbox/`, commit `1e37511`) · **Mobile Done locally** (`AdminComplianceScreen` inbox tab — commit/deploy pending) | High |
-| Admin list: drivers/vehicles with **expired** or **expiring soon** docs | **Backend Done** (`GET /api/compliance/admin/expiring/`) · **Mobile Done locally** (expiring tab) | High |
-| Compliance summary on admin home (counts: pending / expired / active) | **Backend Done** (`GET /api/compliance/admin/summary/`) · **Mobile Done locally** (overview card on admin compliance screen) | Medium |
+| Admin compliance inbox (pending approvals across all drivers) | **Done** — API (`1e37511`) + mobile `AdminComplianceScreen` inbox tab (`262df0d`, prod verified) | High |
+| Admin list: drivers/vehicles with **expired** or **expiring soon** docs | **Done** — API + mobile expiring tab (prod verified) | High |
+| Compliance summary on admin home (counts: pending / expired / active) | **Done** — API + admin dashboard overview + compliance screen (`262df0d`) | Medium |
 | Email reminders: 30 / 14 / 0 days before document expiry | Todo | High |
 | Driver dashboard: explicit expiry dates per doc type | Partial — driver compliance card shows counts + expiry on verified docs; full per-type list Todo | Medium |
 | Schedule nightly `expire_compliance_documents` on Heroku Scheduler | Todo — command exists; not scheduled yet (`DeliveryAppBackend/docs/PHASE_4D_COMPLIANCE_OPS.md`) | High |
@@ -341,6 +343,7 @@ Document lists as good practice; **not required** for BC Class 5 local delivery 
 
 - Large-item domain (dimensions, capacity matching, estimates) — see workspace `project-docs/AUTOMATED_BUILD_PLAN.md`
 - **Vehicle `disposed` status** — third lifecycle state (distinct from inactive); staff-only
+- **Admin drivers list filters** — **Done** (`9118dec`) — dropdown filters: last name (Z→A sort), account status (active/inactive), approval status; prod verified July 29, 2026
 
 ---
 

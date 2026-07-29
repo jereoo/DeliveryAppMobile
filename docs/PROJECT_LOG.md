@@ -4,6 +4,40 @@ Chronological decisions and implementation notes. Latest status reports: `PROJEC
 
 ---
 
+## July 29, 2026 — Phase 4D mobile deploy + admin driver list filters
+
+**Environments:** Vercel web + Heroku `truck-buddy`
+
+### Shipped
+
+| Commit | Repo | Change |
+|--------|------|--------|
+| `262df0d` | Mobile | Phase 4D admin compliance ops UI — inbox, expiring docs, dashboard summary |
+| `9118dec` | Mobile | Admin **Manage Drivers** filters — last name dropdown (list sorted Z→A), account status, approval status |
+| `1e37511` | Backend | Phase 4D admin API (`/api/compliance/admin/summary|inbox|expiring/`) — already on prod |
+
+### Prod verification (July 29, 2026)
+
+| Test | Result |
+|------|--------|
+| Admin → Compliance inbox | ✅ Pass — pending/expiring tabs, approve/reject |
+| Admin → Dashboard compliance overview | ✅ Pass |
+| Admin → Manage Drivers → filter dropdowns | ✅ Pass — last name, account status, approval status |
+| CI + Vercel deploy | ✅ Pass — `9118dec` verified via GitHub Actions |
+
+### Implementation notes (driver filters)
+
+- Filter logic in `src/services/driverService.ts` (`filterAndSortAdminDrivers`, `getUniqueDriverLastNames`)
+- UI in `src/components/AdminDriverListFilters.tsx` (`@react-native-picker/picker`)
+- Unit tests: `src/__tests__/driverService.test.ts`
+
+### Open (Phase 4D)
+
+- Email reminders (30 / 14 / 0 days before expiry)
+- Heroku Scheduler: daily `python manage.py expire_compliance_documents`
+
+---
+
 ## June 3, 2026 — Phase 4A compliance file upload plan
 
 **Context:** Phase 4A shipped metadata-only compliance (register, verify, reject). No file picker or S3 upload yet. `LegalDocument.file_key` / `file_name` exist; `POST /api/documents/presigned-upload/` returns 400 until storage is wired.
