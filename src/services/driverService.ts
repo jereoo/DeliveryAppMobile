@@ -23,6 +23,78 @@ export const DRIVER_APPROVAL_LABELS: Record<DriverApprovalStatus, string> = {
   REJECTED: 'Rejected',
 };
 
+export type AdminDriverAccountFilter = 'all' | 'active' | 'inactive';
+export type AdminDriverApprovalFilter = 'all' | DriverApprovalStatus;
+
+export interface AdminDriverListFilters {
+  lastName: string;
+  accountStatus: AdminDriverAccountFilter;
+  approvalStatus: AdminDriverApprovalFilter;
+}
+
+export const DEFAULT_ADMIN_DRIVER_LIST_FILTERS: AdminDriverListFilters = {
+  lastName: '',
+  accountStatus: 'all',
+  approvalStatus: 'all',
+};
+
+type DriverListRow = Pick<DriverProfile, 'first_name' | 'last_name' | 'active' | 'approval_status'>;
+
+export function getUniqueDriverLastNames(drivers: DriverListRow[]): string[] {
+  const names = new Set<string>();
+  for (const driver of drivers) {
+    const lastName = (driver.last_name || '').trim();
+    if (lastName) {
+      names.add(lastName);
+    }
+  }
+  return Array.from(names).sort((a, b) => b.localeCompare(a, undefined, { sensitivity: 'base' }));
+}
+
+export function filterAndSortAdminDrivers<T extends DriverListRow>(
+  drivers: T[],
+  filters: AdminDriverListFilters,
+): T[] {
+  let result = [...drivers];
+
+  if (filters.lastName) {
+    const target = filters.lastName.toLowerCase();
+    result = result.filter(
+      (driver) => (driver.last_name || '').trim().toLowerCase() === target,
+    );
+  }
+
+  if (filters.accountStatus === 'active') {
+    result = result.filter((driver) => driver.active !== false);
+  } else if (filters.accountStatus === 'inactive') {
+    result = result.filter((driver) => driver.active === false);
+  }
+
+  if (filters.approvalStatus !== 'all') {
+    result = result.filter(
+      (driver) => (driver.approval_status || 'APPROVED') === filters.approvalStatus,
+    );
+  }
+
+  result.sort((a, b) => {
+    const lastCmp = (b.last_name || '').localeCompare(
+      a.last_name || '',
+      undefined,
+      { sensitivity: 'base' },
+    );
+    if (lastCmp !== 0) {
+      return lastCmp;
+    }
+    return (b.first_name || '').localeCompare(
+      a.first_name || '',
+      undefined,
+      { sensitivity: 'base' },
+    );
+  });
+
+  return result;
+}
+
 export async function approveDriver(
   request: AuthenticatedRequest,
   driverId: number,

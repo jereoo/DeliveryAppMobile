@@ -12,7 +12,7 @@ import 'react-native-gesture-handler';
  * 4. Test customer registration on phone - keyboard should no longer block fields
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -26,6 +26,7 @@ import {
   View
 } from 'react-native';
 import { AdminComplianceScreen } from './src/components/AdminComplianceScreen';
+import { AdminDriverListFilters } from './src/components/AdminDriverListFilters';
 import { ComplianceDocumentsPanel } from './src/components/ComplianceDocumentsPanel';
 import { ComplianceStatusCard } from './src/components/ComplianceStatusCard';
 import { DriverLicenseFields } from './src/components/DriverLicenseFields';
@@ -44,8 +45,11 @@ import {
 } from './src/services/complianceService';
 import {
   approveDriver,
+  DEFAULT_ADMIN_DRIVER_LIST_FILTERS,
   DRIVER_APPROVAL_LABELS,
+  filterAndSortAdminDrivers,
   rejectDriver,
+  type AdminDriverListFilters as AdminDriverListFiltersState,
   type DriverApprovalStatus,
 } from './src/services/driverService';
 import {
@@ -1735,6 +1739,14 @@ export default function App() {
     const [rejectReason, setRejectReason] = useState('');
     const [showRejectForm, setShowRejectForm] = useState(false);
     const [approvalActionLoading, setApprovalActionLoading] = useState(false);
+    const [listFilters, setListFilters] = useState<AdminDriverListFiltersState>(
+      DEFAULT_ADMIN_DRIVER_LIST_FILTERS,
+    );
+
+    const filteredDrivers = useMemo(
+      () => filterAndSortAdminDrivers(drivers, listFilters),
+      [drivers, listFilters],
+    );
 
     const handleApproveDriver = async (driver: any) => {
       setApprovalActionLoading(true);
@@ -2105,6 +2117,14 @@ export default function App() {
 
           <Button title="🔄 Refresh" onPress={refreshDrivers} />
 
+          <AdminDriverListFilters
+            drivers={drivers}
+            filters={listFilters}
+            onChange={setListFilters}
+            theme={theme}
+            styles={styles}
+          />
+
           {error && <Text style={{ color: 'red', marginBottom: 10 }}>{error}</Text>}
 
           {localLoading ? (
@@ -2114,8 +2134,19 @@ export default function App() {
               <Text style={styles.emptyText}>No drivers found.</Text>
               <Text style={styles.infoText}>Add your first driver to get started!</Text>
             </View>
+          ) : filteredDrivers.length === 0 ? (
+            <View style={{ alignItems: 'center', marginTop: 24 }}>
+              <Text style={styles.emptyText}>No drivers match the current filters.</Text>
+              <View style={{ marginTop: 8 }}>
+                <Button title="Clear filters" onPress={() => setListFilters(DEFAULT_ADMIN_DRIVER_LIST_FILTERS)} />
+              </View>
+            </View>
           ) : (
-            drivers.map((driver: any) => (
+            <>
+              <Text style={{ color: theme.textMuted, marginBottom: 8 }}>
+                Showing {filteredDrivers.length} of {drivers.length} drivers
+              </Text>
+              {filteredDrivers.map((driver: any) => (
               <View key={driver.id} style={styles.itemContainer}>
                 <Text style={styles.itemTitle}>{driver.first_name} {driver.last_name}</Text>
                 <Text style={{ color: theme.text }}>License: {driver.license_number}</Text>
@@ -2149,7 +2180,8 @@ export default function App() {
                   <Button title="Delete" onPress={() => handleDelete(driver)} color="red" />
                 </View>
               </View>
-            ))
+              ))}
+            </>
           )}
         </View>
       </ScrollView>
