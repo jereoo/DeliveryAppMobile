@@ -2,8 +2,8 @@
 
 **Last updated:** July 29, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟢 Phase 1–4C **complete**; Phase 4D **in progress** (backend + mobile admin compliance UI **Done** on prod; email reminders + Heroku Scheduler **Todo**)  
-**Current focus:** Phase 4D email expiry reminders + schedule `expire_compliance_documents` on Heroku. Phase 4G (staff RBAC) **backlog**.  
+**Overall status:** 🟢 Phase 1–4C **complete**; Phase 4D **near complete** (API + mobile UI + nightly jobs **shipped in backend**; Heroku Scheduler + SMTP config on truck-buddy **Todo after deploy**)  
+**Current focus:** Deploy backend `0008` migration, set Heroku email vars, add Scheduler job. Phase 4G (staff RBAC) **backlog**.  
 **Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
 **Latest status report:** `docs/PROJECT_STATUS_20260729.md` + `docs/PROJECT_LOG.md`  
@@ -247,7 +247,7 @@ Commercial delivery requires **commercial insurance** (personal auto excludes de
 
 | Item | Status |
 |------|--------|
-| Nightly job marks documents `EXPIRED` (`manage.py expire_compliance_documents`) | Done — **Todo:** schedule on Heroku Scheduler (daily) |
+| Nightly job marks documents `EXPIRED` (`manage.py expire_compliance_documents`) | Done — schedule via `run_compliance_daily_jobs` on Heroku Scheduler |
 | `reactivate_vehicle()` checks registration + commercial insurance | Done |
 | `GET /api/vehicles/{id}/compliance-status/` for admin checklist | Done |
 | Mobile expiry banners + admin reactivate checklist | Done |
@@ -278,9 +278,9 @@ From BC requirements doc: admin visibility + expiry reminders. **MVP-recommended
 | Admin compliance inbox (pending approvals across all drivers) | **Done** — API (`1e37511`) + mobile `AdminComplianceScreen` inbox tab (`262df0d`, prod verified) | High |
 | Admin list: drivers/vehicles with **expired** or **expiring soon** docs | **Done** — API + mobile expiring tab (prod verified) | High |
 | Compliance summary on admin home (counts: pending / expired / active) | **Done** — API + admin dashboard overview + compliance screen (`262df0d`) | Medium |
-| Email reminders: 30 / 14 / 0 days before document expiry | Todo | High |
+| Email reminders: 30 / 14 / 0 days before document expiry | **Done** — `send_compliance_expiry_reminders` + `run_compliance_daily_jobs`; requires SMTP on Heroku | High |
 | Driver dashboard: explicit expiry dates per doc type | Partial — driver compliance card shows counts + expiry on verified docs; full per-type list Todo | Medium |
-| Schedule nightly `expire_compliance_documents` on Heroku Scheduler | Todo — command exists; not scheduled yet (`DeliveryAppBackend/docs/PHASE_4D_COMPLIANCE_OPS.md`) | High |
+| Schedule nightly `run_compliance_daily_jobs` on Heroku Scheduler | **Todo (ops)** — see `DeliveryAppBackend/docs/PHASE_4D_COMPLIANCE_OPS.md` | High |
 
 **Phase 4D backend docs:** `DeliveryAppBackend/docs/PHASE_4D_COMPLIANCE_OPS.md`
 

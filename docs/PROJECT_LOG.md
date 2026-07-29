@@ -33,8 +33,17 @@ Chronological decisions and implementation notes. Latest status reports: `PROJEC
 
 ### Open (Phase 4D)
 
-- Email reminders (30 / 14 / 0 days before expiry)
-- Heroku Scheduler: daily `python manage.py expire_compliance_documents`
+- Heroku: migrate `0008`, set `EMAIL_*` SMTP vars, Scheduler job `python manage.py run_compliance_daily_jobs`
+
+---
+
+## July 29, 2026 — Phase 4D nightly jobs + email reminders (backend)
+
+| Item | Implementation |
+|------|----------------|
+| Email reminders 30/14/0 days | `compliance_reminder_service.py`, `send_compliance_expiry_reminders` |
+| Combined nightly job | `run_compliance_daily_jobs` |
+| Reminder dedup | Migration `0008` on `LegalDocument` |
 
 ---
 
