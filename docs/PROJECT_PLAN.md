@@ -280,7 +280,7 @@ From BC requirements doc: admin visibility + expiry reminders. **MVP-recommended
 | Compliance summary on admin home (counts: pending / expired / active) | **Done** — API + admin dashboard overview + compliance screen (`262df0d`) | Medium |
 | Email reminders: 30 / 14 / 0 days before document expiry | **Done** — `send_compliance_expiry_reminders` + `run_compliance_daily_jobs`; requires SMTP on Heroku | High |
 | Driver dashboard: explicit expiry dates per doc type | Partial — driver compliance card shows counts + expiry on verified docs; full per-type list Todo | Medium |
-| Schedule nightly `run_compliance_daily_jobs` on Heroku Scheduler | **Todo (ops)** — see `DeliveryAppBackend/docs/PHASE_4D_COMPLIANCE_OPS.md` | High |
+| Schedule nightly `run_compliance_daily_jobs` | **Done (ops)** — GitHub Actions `compliance-daily-jobs.yml` (06:00 UTC); needs `HEROKU_API_KEY` secret | High |
 
 **Phase 4D backend docs:** `DeliveryAppBackend/docs/PHASE_4D_COMPLIANCE_OPS.md`
 
