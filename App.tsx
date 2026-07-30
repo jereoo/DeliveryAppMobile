@@ -2213,7 +2213,7 @@ export default function App() {
           setFormData({
             first_name: data.first_name || '',
             last_name: data.last_name || '',
-            phone_number: data.phone_number || '',
+            phone_number: formatPhoneForDisplay(data.phone_number || ''),
             license_number: data.license_number || '',
           });
         } catch (e) {
@@ -2276,18 +2276,41 @@ export default function App() {
               <ActivityIndicator size="large" color={theme.border} />
             ) : (
               <>
-                <TextInput style={styles.input} value={formData.first_name}
+                <Text style={styles.label}>First Name *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.first_name}
                   onChangeText={(t) => setFormData({ ...formData, first_name: t })}
-                  placeholderTextColor={theme.placeholder} placeholder="First Name *" />
-                <TextInput style={styles.input} value={formData.last_name}
+                  placeholderTextColor={theme.placeholder}
+                  placeholder="Enter first name"
+                />
+                <Text style={styles.label}>Last Name *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.last_name}
                   onChangeText={(t) => setFormData({ ...formData, last_name: t })}
-                  placeholderTextColor={theme.placeholder} placeholder="Last Name *" />
-                <TextInput style={styles.input} value={formData.phone_number}
-                  onChangeText={(t) => setFormData({ ...formData, phone_number: t })}
-                  placeholderTextColor={theme.placeholder} placeholder="Phone (10 digits) *" keyboardType="phone-pad" />
-                <TextInput style={styles.input} value={formData.license_number}
+                  placeholderTextColor={theme.placeholder}
+                  placeholder="Enter last name"
+                />
+                <Text style={styles.label}>Phone Number (10 digits, no area code)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.phone_number}
+                  onChangeText={(t) => setFormData({ ...formData, phone_number: formatPhone10(t) })}
+                  placeholderTextColor={theme.placeholder}
+                  placeholder="(555) 555-5555"
+                  keyboardType="phone-pad"
+                  maxLength={14}
+                />
+                <Text style={styles.label}>License Number *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.license_number}
                   onChangeText={(t) => setFormData({ ...formData, license_number: t })}
-                  placeholderTextColor={theme.placeholder} placeholder="License Number *" autoCapitalize="characters" />
+                  placeholderTextColor={theme.placeholder}
+                  placeholder="Enter license number"
+                  autoCapitalize="characters"
+                />
                 <View style={styles.buttonContainer}>
                   <Button title={saving ? 'Saving...' : 'Save Profile'} onPress={handleSave} disabled={saving} />
                 </View>
