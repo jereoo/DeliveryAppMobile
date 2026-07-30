@@ -1,9 +1,9 @@
 # DeliveryApp — Project Plan
 
-**Last updated:** July 29, 2026  
+**Last updated:** July 30, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟢 Phase 1–4C **complete**; Phase 4D **near complete** (API + mobile UI + nightly jobs **shipped in backend**; Heroku Scheduler + SMTP config on truck-buddy **Todo after deploy**)  
-**Current focus:** Deploy backend `0008` migration, set Heroku email vars, add Scheduler job. Phase 4G (staff RBAC) **backlog**.  
+**Overall status:** 🟢 Phase 1–4C **complete**; Phase 4D **near complete** (API + mobile UI + nightly jobs + GitHub cron **Done**; Heroku `EMAIL_*` SMTP **Todo**)  
+**Current focus:** Set Heroku email vars on `truck-buddy` so expiry reminders send (not console-only). Phase 4G (staff RBAC) **backlog**.  
 **Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
 **Latest status report:** `docs/PROJECT_STATUS_20260729.md` + `docs/PROJECT_LOG.md`  
@@ -32,11 +32,11 @@
 | `demo.customer` | `DemoPass1234!` | One pending delivery |
 | `test.driver.approved` … `test.driver.inactive` | `TestPass1234!` | CRUD/compliance scenarios — see `DeliveryAppBackend/docs/SEED_DATA.md` |
 
-**Recent backend commits:** `dde64d8` (catalog-compliant seeds) · `1e37511` (Phase 4D admin API)
+**Recent backend commits:** `ffdaae7` (compliance cron workflow fix) · `c13eec9` (nightly jobs + reminders) · `30b54a4` (Procfile auto-migrate) · `1e37511` (Phase 4D admin API)
 
 **Recent mobile commits:** `262df0d` (Phase 4D admin compliance UI) · `9118dec` (admin driver list filters)
 
-**Prod checks (July 29, 2026):** API health ✅ · Vercel web ✅ · `demo.driver` compliance UI ✅ · Phase 4D `/api/compliance/admin/*` ✅ · Admin compliance inbox UI ✅ · Admin driver list filters (last name, account, approval) ✅
+**Prod checks (July 30, 2026):** API health ✅ · Vercel web ✅ · Phase 4D `/api/compliance/admin/*` ✅ · Admin compliance inbox UI ✅ · Admin driver list filters ✅ · GitHub Actions compliance cron ✅ (dry-run verified `ffdaae7`)
 
 ---
 
@@ -247,7 +247,7 @@ Commercial delivery requires **commercial insurance** (personal auto excludes de
 
 | Item | Status |
 |------|--------|
-| Nightly job marks documents `EXPIRED` (`manage.py expire_compliance_documents`) | Done — schedule via `run_compliance_daily_jobs` on Heroku Scheduler |
+| Nightly job marks documents `EXPIRED` (`manage.py expire_compliance_documents`) | Done — via `run_compliance_daily_jobs` on GitHub Actions cron (06:00 UTC) |
 | `reactivate_vehicle()` checks registration + commercial insurance | Done |
 | `GET /api/vehicles/{id}/compliance-status/` for admin checklist | Done |
 | Mobile expiry banners + admin reactivate checklist | Done |
@@ -280,7 +280,7 @@ From BC requirements doc: admin visibility + expiry reminders. **MVP-recommended
 | Compliance summary on admin home (counts: pending / expired / active) | **Done** — API + admin dashboard overview + compliance screen (`262df0d`) | Medium |
 | Email reminders: 30 / 14 / 0 days before document expiry | **Done** — `send_compliance_expiry_reminders` + `run_compliance_daily_jobs`; requires SMTP on Heroku | High |
 | Driver dashboard: explicit expiry dates per doc type | Partial — driver compliance card shows counts + expiry on verified docs; full per-type list Todo | Medium |
-| Schedule nightly `run_compliance_daily_jobs` | **Done (ops)** — GitHub Actions `compliance-daily-jobs.yml` (06:00 UTC); needs `HEROKU_API_KEY` secret | High |
+| Schedule nightly `run_compliance_daily_jobs` | **Done** — GitHub Actions `compliance-daily-jobs.yml` (06:00 UTC); verified run `30509255544` (`ffdaae7`) | High |
 
 **Phase 4D backend docs:** `DeliveryAppBackend/docs/PHASE_4D_COMPLIANCE_OPS.md`
 

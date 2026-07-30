@@ -4,6 +4,36 @@ Chronological decisions and implementation notes. Latest status reports: `PROJEC
 
 ---
 
+## July 30, 2026 — Compliance daily jobs GitHub Actions cron verified
+
+**Environments:** GitHub Actions + Heroku `truck-buddy`
+
+### Shipped
+
+| Commit | Repo | Change |
+|--------|------|--------|
+| `b63a2b6` | Backend | GitHub Actions workflow `compliance-daily-jobs.yml` (06:00 UTC cron) |
+| `2ed039c` | Backend | Fix dyno polling — by name, handle 404 on ephemeral one-offs |
+| `ffdaae7` | Backend | Poll via dyno **list** endpoint; treat removed dyno as success |
+
+### Verification
+
+| Test | Result |
+|------|--------|
+| GitHub Actions → Compliance Daily Jobs (dry-run) | ✅ Pass — run [30509255544](https://github.com/jereoo/DeliveryAppBackend/actions/runs/30509255544) |
+| One-off dyno start on Heroku | ✅ Pass |
+| Wait step (dyno list poll) | ✅ Pass — `starting` → dyno removed from list → exit 0 |
+
+### Root cause (failed run `30508907891`)
+
+Initial workflow polled `GET /apps/.../dynos/{id}` with `curl -f`. One-off `run.*` dynos are deleted when finished → 404 → curl exit 22. Re-running **failed jobs** on old commit `b63a2b6` would still fail; must run from current `main`.
+
+### Open (Phase 4D)
+
+- Heroku: set `EMAIL_*` SMTP vars so reminders send (currently console-only without SMTP)
+
+---
+
 ## July 29, 2026 — Phase 4D mobile deploy + admin driver list filters
 
 **Environments:** Vercel web + Heroku `truck-buddy`
@@ -33,7 +63,7 @@ Chronological decisions and implementation notes. Latest status reports: `PROJEC
 
 ### Open (Phase 4D)
 
-- Heroku: migrate `0008`, set `EMAIL_*` SMTP vars, Scheduler job `python manage.py run_compliance_daily_jobs`
+- Heroku: set `EMAIL_*` SMTP vars (reminders code shipped; needs SendGrid or similar)
 
 ---
 
@@ -44,6 +74,8 @@ Chronological decisions and implementation notes. Latest status reports: `PROJEC
 | Email reminders 30/14/0 days | `compliance_reminder_service.py`, `send_compliance_expiry_reminders` |
 | Combined nightly job | `run_compliance_daily_jobs` |
 | Reminder dedup | Migration `0008` on `LegalDocument` |
+| GitHub Actions cron | `compliance-daily-jobs.yml` — verified `ffdaae7` |
+| Procfile release phase | Auto-migrate on deploy (`30b54a4`) |
 
 ---
 
