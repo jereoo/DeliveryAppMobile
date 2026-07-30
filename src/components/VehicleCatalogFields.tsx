@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Button, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Button, ScrollView, Text, TextInput, View } from 'react-native';
 
 import {
   fetchVehicleCatalog,
@@ -18,6 +18,7 @@ type Theme = {
 
 type Styles = {
   label: object;
+  input?: object;
   sectionTitle?: object;
 };
 
@@ -26,7 +27,8 @@ interface VehicleCatalogFieldsProps {
   vehicleModelSpecId: number | null;
   vehicleYear: number;
   onSpecChange: (specId: number | null) => void;
-  onMaxCapacityChange?: (maxKg: number) => void;
+  /** Called with catalog max_payload_lb when make/model is selected. */
+  onCatalogCapacityChange?: (maxPayloadLb: number) => void;
   theme: Theme;
   styles: Styles;
   fieldError?: string | null;
@@ -37,7 +39,7 @@ export function VehicleCatalogFields({
   vehicleModelSpecId,
   vehicleYear,
   onSpecChange,
-  onMaxCapacityChange,
+  onCatalogCapacityChange,
   theme,
   styles,
   fieldError,
@@ -86,10 +88,10 @@ export function VehicleCatalogFields({
   );
 
   useEffect(() => {
-    if (selectedSpec && onMaxCapacityChange) {
-      onMaxCapacityChange(selectedSpec.max_capacity_kg);
+    if (selectedSpec && onCatalogCapacityChange) {
+      onCatalogCapacityChange(selectedSpec.max_payload_lb);
     }
-  }, [selectedSpec, onMaxCapacityChange]);
+  }, [selectedSpec, onCatalogCapacityChange]);
 
   const yearWarning = selectedSpec && vehicleYear
     ? (isYearValidForSpec(selectedSpec, vehicleYear)
@@ -137,11 +139,18 @@ export function VehicleCatalogFields({
       ) : null}
 
       {selectedSpec ? (
-        <Text style={{ color: theme.textMuted, marginBottom: 8 }}>
-          Max payload: {selectedSpec.max_payload_lb} lb ({selectedSpec.max_payload_kg} kg).{' '}
-          Fleet limit for registration: {selectedSpec.max_capacity_kg} kg / {selectedSpec.max_capacity_lb} lb.
-          {selectedSpec.notes ? ` ${selectedSpec.notes}.` : ''}
-        </Text>
+        <>
+          <Text style={styles.label}>Vehicle capacity (lb) *</Text>
+          <TextInput
+            style={[styles.input, { color: theme.text }]}
+            value={String(selectedSpec.max_payload_lb)}
+            editable={false}
+          />
+          <Text style={{ color: theme.textMuted, marginBottom: 8 }}>
+            From vehicle catalog: {selectedSpec.max_payload_lb} lb ({selectedSpec.max_payload_kg} kg).
+            {selectedSpec.notes ? ` ${selectedSpec.notes}.` : ''}
+          </Text>
+        </>
       ) : null}
 
       {yearWarning ? (

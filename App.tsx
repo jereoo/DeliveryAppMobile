@@ -2329,10 +2329,9 @@ export default function App() {
       model: '',
       year: new Date().getFullYear(),
       vin: '',
-      capacity_unit: 'kg',
+      capacity: 0,
+      capacity_unit: 'lb' as 'kg' | 'lb',
     });
-    const [capacityText, setCapacityText] = useState('');
-    const [capacityFieldError, setCapacityFieldError] = useState<string | null>(null);
     const [vehicleActive, setVehicleActive] = useState(true);
     const [inService, setInService] = useState(true);
     const [vehicleId, setVehicleId] = useState<number | null>(null);
@@ -2362,10 +2361,9 @@ export default function App() {
             model: data.model || '',
             year: data.year || new Date().getFullYear(),
             vin: data.vin || '',
-            capacity_unit: data.capacity_unit || 'kg',
+            capacity: data.capacity ?? 0,
+            capacity_unit: data.capacity_unit || 'lb',
           });
-          setCapacityText(data.capacity != null ? String(data.capacity) : '');
-          setCapacityFieldError(null);
         } catch (e) {
           setError(e instanceof Error ? e.message : 'Failed to load vehicle');
         }
@@ -2373,28 +2371,6 @@ export default function App() {
       };
       loadVehicle();
     }, []);
-
-    const switchCapacityUnit = (nextUnit: 'kg' | 'lb') => {
-      if (formData.capacity_unit === nextUnit) {
-        return;
-      }
-      const converted = convertCapacityTextForUnit(capacityText, formData.capacity_unit, nextUnit);
-      setFormData({ ...formData, capacity_unit: nextUnit });
-      setCapacityText(converted.text);
-      setCapacityFieldError(converted.error);
-    };
-
-    const handleCapacityChange = (text: string) => {
-      const result = nextCapacityAfterInput(text, formData.capacity_unit);
-      if (result.rejected) {
-        if (result.error) {
-          setCapacityFieldError(result.error);
-        }
-        return;
-      }
-      setCapacityText(result.text);
-      setCapacityFieldError(result.error);
-    };
 
     const handleSave = async () => {
       if (!formData.license_plate.trim() || !formData.make.trim() || !formData.model.trim() || !formData.vin.trim()) {
@@ -2405,14 +2381,10 @@ export default function App() {
         setError('VIN must be exactly 17 characters');
         return;
       }
-      const capacityError = validateCapacityText(capacityText, formData.capacity_unit);
-      if (capacityError) {
-        setCapacityFieldError(capacityError);
-        setError(capacityError);
+      if (!formData.capacity || formData.capacity <= 0) {
+        setError('Vehicle capacity is missing. Contact admin if this looks wrong.');
         return;
       }
-      setCapacityFieldError(null);
-      const capacity = parseInt(capacityText, 10);
       setSaving(true);
       setError(null);
       try {
@@ -2424,8 +2396,8 @@ export default function App() {
             ...formData,
             vin: formData.vin.toUpperCase(),
             year: Number(formData.year),
-            capacity,
-            capacity_unit: formData.capacity_unit as 'kg' | 'lb',
+            capacity: formData.capacity,
+            capacity_unit: formData.capacity_unit,
           },
           { vehicleActive, inService },
         );
@@ -2500,19 +2472,20 @@ export default function App() {
                     <TextInput style={styles.input} value={formData.vin}
                       onChangeText={(t) => setFormData({ ...formData, vin: t.toUpperCase().slice(0, 17) })}
                       placeholderTextColor={theme.placeholder} placeholder="17 characters" autoCapitalize="characters" maxLength={17} />
-                    <VehicleCapacityFields
-                      capacityUnit={formData.capacity_unit}
-                      capacityText={capacityText}
-                      capacityFieldError={capacityFieldError}
-                      onCapacityTextChange={handleCapacityChange}
-                      onSwitchUnit={switchCapacityUnit}
-                      disabled={saving}
+                    <Text style={styles.label}>Vehicle capacity ({formData.capacity_unit}) *</Text>
+                    <TextInput
+                      style={[styles.input, { color: theme.text }]}
+                      value={formData.capacity > 0 ? String(formData.capacity) : ''}
+                      editable={false}
                     />
+                    <Text style={{ color: theme.textMuted, marginBottom: 8 }}>
+                      Capacity is set from the vehicle catalog at registration and cannot be edited here.
+                    </Text>
                     <View style={styles.buttonContainer}>
                       <Button
                         title={saving ? 'Saving...' : (inService ? 'Save Vehicle' : 'Save & Mark Inactive')}
                         onPress={handleSave}
-                        disabled={saving || !capacityText || !!capacityFieldError}
+                        disabled={saving || formData.capacity <= 0}
                       />
                     </View>
                     {inService && (
@@ -2925,11 +2898,11 @@ export default function App() {
       license_issuing_region: 'CA-BC',
       license_number: '',
       vehicle_model_spec_id: null as number | null,
-      vehicle_capacity_max_kg: MAX_VEHICLE_CAPACITY_KG,
       vehicle_license_plate: '',
       vehicle_year: 2000,
       vehicle_vin: '',
-      vehicle_capacity: 1000
+      vehicle_capacity: 0,
+      vehicle_capacity_unit: 'lb' as 'kg' | 'lb',
     });
     const [error, setError] = useState<string | null>(null);
     const [licenseFieldError, setLicenseFieldError] = useState<string | null>(null);
@@ -2948,11 +2921,11 @@ export default function App() {
         license_issuing_region: 'CA-BC',
         license_number: '',
         vehicle_model_spec_id: null as number | null,
-        vehicle_capacity_max_kg: MAX_VEHICLE_CAPACITY_KG,
         vehicle_license_plate: '',
         vehicle_year: 2000,
         vehicle_vin: '',
-        vehicle_capacity: 1000
+        vehicle_capacity: 0,
+        vehicle_capacity_unit: 'lb' as 'kg' | 'lb',
       });
       setError(null);
       setLicenseFieldError(null);
@@ -3001,6 +2974,11 @@ export default function App() {
         return;
       }
 
+      if (!formData.vehicle_capacity || formData.vehicle_capacity <= 0) {
+        setError('Vehicle capacity is set automatically when you select a catalog model.');
+        return;
+      }
+
       if (formData.password !== formData.confirm_password) {
         setError('Passwords do not match');
         return;
@@ -3025,7 +3003,7 @@ export default function App() {
           vehicle_year: formData.vehicle_year,
           vehicle_vin: formData.vehicle_vin,
           vehicle_capacity: formData.vehicle_capacity,
-          vehicle_capacity_unit: 'kg' // Default unit
+          vehicle_capacity_unit: formData.vehicle_capacity_unit,
         };
 
         const response = await fetch(`${API_BASE}/drivers/register/`, {
@@ -3163,13 +3141,17 @@ export default function App() {
             vehicleYear={formData.vehicle_year === 2000 ? 0 : formData.vehicle_year}
             onSpecChange={(specId) => {
               setVehicleCatalogError(null);
-              setFormData((prev) => ({ ...prev, vehicle_model_spec_id: specId }));
-            }}
-            onMaxCapacityChange={(maxKg) => {
               setFormData((prev) => ({
                 ...prev,
-                vehicle_capacity_max_kg: maxKg,
-                vehicle_capacity: Math.min(prev.vehicle_capacity, maxKg),
+                vehicle_model_spec_id: specId,
+                vehicle_capacity: 0,
+              }));
+            }}
+            onCatalogCapacityChange={(maxPayloadLb) => {
+              setFormData((prev) => ({
+                ...prev,
+                vehicle_capacity: maxPayloadLb,
+                vehicle_capacity_unit: 'lb',
               }));
             }}
             theme={theme}
@@ -3219,20 +3201,6 @@ export default function App() {
             onChangeText={(text) => setFormData(prev => ({ ...prev, vehicle_vin: text.toUpperCase() }))}
             autoCapitalize="characters"
             maxLength={17}
-          />
-
-          <Text style={styles.label}>Vehicle Capacity (kg) *</Text>
-          <TextInput
-            style={styles.input}
-            placeholderTextColor={theme.placeholder} placeholder={`Enter vehicle capacity (1–${formData.vehicle_capacity_max_kg} kg)`}
-            value={formData.vehicle_capacity.toString()}
-            onChangeText={(text) => {
-              const capacity = parseInt(text) || 1000;
-              if (capacity >= 1 && capacity <= formData.vehicle_capacity_max_kg) {
-                setFormData(prev => ({ ...prev, vehicle_capacity: capacity }));
-              }
-            }}
-            keyboardType="numeric"
           />
 
           <View style={styles.buttonContainer}>
@@ -3322,11 +3290,11 @@ export default function App() {
     license_issuing_region: 'CA-BC',
     license_number: '',
     vehicle_model_spec_id: null as number | null,
-    vehicle_capacity_max_kg: MAX_VEHICLE_CAPACITY_KG,
     vehicle_license_plate: '',
     vehicle_year: new Date().getFullYear(),
     vehicle_vin: '',
-    vehicle_capacity: 1000
+    vehicle_capacity: 0,
+    vehicle_capacity_unit: 'lb' as 'kg' | 'lb',
   });
 
   const [vehicleForm, setVehicleForm] = useState({
@@ -3565,6 +3533,17 @@ export default function App() {
       return;
     }
 
+    if (!driverForm.vehicle_model_spec_id) {
+      Alert.alert('Error', 'Select a vehicle manufacturer and model from the catalog.');
+      setDriverVehicleCatalogError('Select a vehicle manufacturer and model from the catalog.');
+      return;
+    }
+
+    if (!driverForm.vehicle_capacity || driverForm.vehicle_capacity <= 0) {
+      Alert.alert('Error', 'Vehicle capacity is set automatically when you select a catalog model.');
+      return;
+    }
+
     setLoading(true);
     try {
       // Must match DriverRegistrationSerializer (vehicle_year, not year)
@@ -3582,7 +3561,7 @@ export default function App() {
         vehicle_year: driverForm.vehicle_year ? Number(driverForm.vehicle_year) : new Date().getFullYear(),
         vehicle_vin: driverForm.vehicle_vin,
         vehicle_capacity: driverForm.vehicle_capacity,
-        vehicle_capacity_unit: 'kg',
+        vehicle_capacity_unit: driverForm.vehicle_capacity_unit,
       };
 
       const response = await fetch(`${API_BASE}/drivers/register/`, {
@@ -3601,8 +3580,9 @@ export default function App() {
         setDriverForm({
           username: '', email: '', password: '', first_name: '', last_name: '', phone_number: '',
           license_issuing_region: 'CA-BC',
-          license_number: '', vehicle_model_spec_id: null, vehicle_capacity_max_kg: MAX_VEHICLE_CAPACITY_KG,
-          vehicle_license_plate: '', vehicle_year: new Date().getFullYear(), vehicle_vin: '', vehicle_capacity: 1000
+          license_number: '', vehicle_model_spec_id: null,
+          vehicle_license_plate: '', vehicle_year: new Date().getFullYear(), vehicle_vin: '',
+          vehicle_capacity: 0, vehicle_capacity_unit: 'lb',
         });
         setDriverLicenseFieldError(null);
         setCurrentScreen('login');
@@ -4165,8 +4145,9 @@ export default function App() {
       setDriverForm({
         username: '', email: '', password: '', first_name: '', last_name: '', phone_number: '',
         license_issuing_region: 'CA-BC',
-        license_number: '', vehicle_model_spec_id: null, vehicle_capacity_max_kg: MAX_VEHICLE_CAPACITY_KG,
-        vehicle_license_plate: '', vehicle_year: new Date().getFullYear(), vehicle_vin: '', vehicle_capacity: 1000
+        license_number: '', vehicle_model_spec_id: null,
+        vehicle_license_plate: '', vehicle_year: new Date().getFullYear(), vehicle_vin: '',
+        vehicle_capacity: 0, vehicle_capacity_unit: 'lb',
       });
 
     } catch (error) {
@@ -5062,13 +5043,17 @@ export default function App() {
               vehicleYear={driverForm.vehicle_year}
               onSpecChange={(specId) => {
                 setDriverVehicleCatalogError(null);
-                setDriverForm({ ...driverForm, vehicle_model_spec_id: specId });
-              }}
-              onMaxCapacityChange={(maxKg) => {
                 setDriverForm({
                   ...driverForm,
-                  vehicle_capacity_max_kg: maxKg,
-                  vehicle_capacity: Math.min(driverForm.vehicle_capacity, maxKg),
+                  vehicle_model_spec_id: specId,
+                  vehicle_capacity: 0,
+                });
+              }}
+              onCatalogCapacityChange={(maxPayloadLb) => {
+                setDriverForm({
+                  ...driverForm,
+                  vehicle_capacity: maxPayloadLb,
+                  vehicle_capacity_unit: 'lb',
                 });
               }}
               theme={theme}
@@ -5109,19 +5094,6 @@ export default function App() {
               placeholderTextColor={theme.placeholder} placeholder="VIN (17 characters) *"
               autoCapitalize="characters"
               maxLength={17}
-            />
-
-            <TextInput
-              style={styles.input}
-              value={driverForm.vehicle_capacity.toString()}
-              onChangeText={(text) => {
-                const capacity = parseInt(text) || 1000;
-                if (capacity >= 1 && capacity <= driverForm.vehicle_capacity_max_kg) {
-                  setDriverForm({ ...driverForm, vehicle_capacity: capacity });
-                }
-              }}
-              placeholderTextColor={theme.placeholder} placeholder={`Vehicle Capacity (1–${driverForm.vehicle_capacity_max_kg} kg) *`}
-              keyboardType="numeric"
             />
 
             <View style={styles.buttonContainer}>
