@@ -2663,23 +2663,23 @@ export default function App() {
                   </View>
                 ) : null}
 
-                {driverVehicleId ? (
-                  <ComplianceDocumentsPanel
-                    subjectType="vehicle"
-                    subjectId={driverVehicleId}
-                    request={makeAuthenticatedRequest}
-                    isAdmin={false}
-                    canUpload
-                    theme={theme}
-                    styles={styles}
-                    title="Legal documents - Vehicle"
-                    subtitle={
-                      vehicle.approval_status === 'PENDING'
-                        ? 'Upload registration and insurance while your vehicle awaits admin approval.'
-                        : undefined
-                    }
-                  />
-                ) : null}
+                <ComplianceDocumentsPanel
+                  key={`vehicle-docs-${vehicle.id}`}
+                  subjectType="vehicle"
+                  subjectId={vehicle.id}
+                  request={makeAuthenticatedRequest}
+                  isAdmin={false}
+                  canUpload
+                  theme={theme}
+                  styles={styles}
+                  title="Legal documents - Vehicle"
+                  subtitle={
+                    vehicle.approval_status === 'PENDING'
+                      ? 'Upload registration and insurance while your vehicle awaits admin approval.'
+                      : undefined
+                  }
+                  onDocumentsChanged={loadDriverCompliance}
+                />
 
                 <ComplianceStatusCard
                   summary={driverComplianceSummary}

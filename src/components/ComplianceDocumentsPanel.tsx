@@ -136,17 +136,25 @@ export function ComplianceDocumentsPanel({
     loadDocuments();
   }, [loadDocuments]);
 
+  const emptyForm = (documentType: DocumentType = allowedTypes[0]): CreateDocumentPayload => ({
+    document_type: documentType,
+    issuer: '',
+    policy_number: '',
+    coverage_type: 'COMMERCIAL',
+    expiry_date: '',
+    notes: '',
+  });
+
   const resetForm = () => {
     setShowForm(false);
     setSelectedPdf(null);
-    setForm({
-      document_type: allowedTypes[0],
-      issuer: '',
-      policy_number: '',
-      coverage_type: 'COMMERCIAL',
-      expiry_date: '',
-      notes: '',
-    });
+    setForm(emptyForm());
+  };
+
+  const handleDocumentTypeChange = (type: DocumentType) => {
+    setSelectedPdf(null);
+    setForm(emptyForm(type));
+    setError(null);
   };
 
   const handleChoosePdf = () => {
@@ -443,26 +451,45 @@ export function ComplianceDocumentsPanel({
                   <Button
                     key={type}
                     title={`${form.document_type === type ? '✓ ' : ''}${DOCUMENT_TYPE_LABELS[type]}`}
-                    onPress={() => setForm((f) => ({ ...f, document_type: type as DocumentType }))}
+                    onPress={() => handleDocumentTypeChange(type as DocumentType)}
                   />
                 ))
               )}
-              <Text style={styles.label}>Issuer / carrier</Text>
+              <Text style={styles.label}>
+                {form.document_type === 'COMMERCIAL_INSURANCE'
+                  ? 'Insurance carrier *'
+                  : form.document_type === 'VEHICLE_REGISTRATION'
+                    ? 'Issuing authority (DMV)'
+                    : 'Issuer'}
+              </Text>
               <TextInput
                 style={styles.input}
                 value={form.issuer || ''}
                 onChangeText={(t) => setForm((f) => ({ ...f, issuer: t }))}
-                placeholder="DMV, insurance carrier…"
+                placeholder={
+                  form.document_type === 'COMMERCIAL_INSURANCE'
+                    ? 'Insurance company name'
+                    : 'DMV or licensing authority'
+                }
                 placeholderTextColor={theme.textMuted}
               />
               {(form.document_type === 'COMMERCIAL_INSURANCE'
                 || form.document_type === 'VEHICLE_REGISTRATION') && (
                 <>
-                  <Text style={styles.label}>Policy / registration #</Text>
+                  <Text style={styles.label}>
+                    {form.document_type === 'COMMERCIAL_INSURANCE'
+                      ? 'Policy number *'
+                      : 'Registration number'}
+                  </Text>
                   <TextInput
                     style={styles.input}
                     value={form.policy_number || ''}
                     onChangeText={(t) => setForm((f) => ({ ...f, policy_number: t }))}
+                    placeholder={
+                      form.document_type === 'COMMERCIAL_INSURANCE'
+                        ? 'Policy number'
+                        : 'Registration or plate document number'
+                    }
                     placeholderTextColor={theme.textMuted}
                   />
                 </>
