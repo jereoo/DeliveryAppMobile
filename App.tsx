@@ -30,6 +30,7 @@ import { AdminDriverListFilters } from './src/components/AdminDriverListFilters'
 import { ComplianceDocumentsPanel } from './src/components/ComplianceDocumentsPanel';
 import { ComplianceStatusCard } from './src/components/ComplianceStatusCard';
 import { DriverLicenseFields } from './src/components/DriverLicenseFields';
+import { DriverVehicleOnboardingForm } from './src/components/DriverVehicleOnboardingForm';
 import { VehicleCatalogFields } from './src/components/VehicleCatalogFields';
 import { VehicleReactivationChecklist } from './src/components/VehicleReactivationChecklist';
 import { validateDriverLicenseNumber } from './src/utils/driverLicenseValidation';
@@ -53,9 +54,19 @@ import {
   type DriverApprovalStatus,
 } from './src/services/driverService';
 import {
+  approveVehicleById,
+  buildVehicleOnboardingPayload,
   buildVehicleUpdatePayload,
   createVehicleByApi,
+  deactivateDriverVehicle,
+  fetchDriverCurrentVehicle,
+  replaceDriverVehicle,
+  requestVehicleResubmit,
+  resubmitDriverVehicle,
   updateVehicleById,
+  VEHICLE_APPROVAL_LABELS,
+  type DriverVehicleRecord,
+  type VehicleApprovalStatus,
 } from './src/services/vehicleService';
 
 /** Max vehicle load capacity by unit. */
@@ -773,6 +784,7 @@ export default function App() {
     });
     const [capacityText, setCapacityText] = useState('');
     const [capacityFieldError, setCapacityFieldError] = useState<string | null>(null);
+    const [resubmitReason, setResubmitReason] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [localLoading, setLocalLoading] = useState(false);
     const [vehicleCompliance, setVehicleCompliance] = useState<VehicleComplianceStatus | null>(null);
@@ -937,6 +949,36 @@ export default function App() {
       }
       setLocalLoading(false);
     };
+    const handleApproveVehicle = async (vehicle: any) => {
+      setLocalLoading(true);
+      setError(null);
+      try {
+        const updated = await approveVehicleById(makeAuthenticatedRequest, vehicle.id);
+        Alert.alert('Success', 'Vehicle approved.');
+        setSelected(updated);
+        await loadVehicles();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to approve vehicle');
+      }
+      setLocalLoading(false);
+    };
+    const handleRequestVehicleResubmit = async (vehicle: any) => {
+      if (!resubmitReason.trim()) {
+        setError('Enter a message for the driver explaining what to fix.');
+        return;
+      }
+      setLocalLoading(true);
+      setError(null);
+      try {
+        await requestVehicleResubmit(makeAuthenticatedRequest, vehicle.id, resubmitReason.trim());
+        Alert.alert('Success', 'Driver must update and resubmit this vehicle.');
+        setResubmitReason('');
+        await loadVehicles();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to request resubmit');
+      }
+      setLocalLoading(false);
+    };
     const handleCreate = async () => {
       if (!validateVehicleForm()) {
         return;
@@ -992,7 +1034,10 @@ export default function App() {
                   <Text style={styles.itemTitle}>{vehicle.make} {vehicle.model} ({vehicle.license_plate})</Text>
                   <Text style={{ color: theme.text }}>Year: {vehicle.year}</Text>
                   <Text style={{ color: theme.text }}>Capacity: {vehicle.capacity} {vehicle.capacity_unit || 'kg'}</Text>
-                  <Text style={{ color: theme.text }}>Status: {vehicle.active ? 'Active' : 'Inactive'}</Text>
+                  <Text style={{ color: theme.text }}>Operational: {vehicle.active ? 'Active' : 'Inactive'}</Text>
+                  <Text style={{ color: theme.text }}>
+                    Approval: {VEHICLE_APPROVAL_LABELS[vehicle.approval_status as VehicleApprovalStatus] || vehicle.approval_status || 'Unknown'}
+                  </Text>
                   <View style={{ flexDirection: 'row', marginTop: 8 }}>
                     <View style={{ flex: 1, marginRight: 4 }}>
                       <Button title="View" onPress={() => handleSelect(vehicle)} />
@@ -1105,7 +1150,40 @@ export default function App() {
             <Text style={{ color: theme.text }}>Year: {selected.year}</Text>
             <Text style={{ color: theme.text }}>VIN: {selected.vin}</Text>
             <Text style={{ color: theme.text }}>Capacity: {selected.capacity} {selected.capacity_unit || 'kg'}</Text>
-            <Text style={{ color: theme.text }}>Status: {selected.active ? 'Active' : 'Inactive'}</Text>
+            <Text style={{ color: theme.text }}>Operational: {selected.active ? 'Active' : 'Inactive'}</Text>
+            <Text style={{ color: theme.text }}>
+              Approval: {VEHICLE_APPROVAL_LABELS[selected.approval_status as VehicleApprovalStatus] || selected.approval_status || 'Unknown'}
+            </Text>
+            {selected.resubmit_reason ? (
+              <Text style={{ color: theme.textMuted, marginBottom: 8 }}>
+                Resubmit note: {selected.resubmit_reason}
+              </Text>
+            ) : null}
+            {(selected.approval_status === 'PENDING' || selected.approval_status === 'RESUBMIT') ? (
+              <View style={styles.buttonContainer}>
+                <Button title="Approve vehicle" color="#5cb85c" onPress={() => handleApproveVehicle(selected)} />
+              </View>
+            ) : null}
+            {selected.approval_status === 'APPROVED' ? (
+              <>
+                <Text style={styles.label}>Request driver resubmit</Text>
+                <TextInput
+                  style={styles.input}
+                  value={resubmitReason}
+                  onChangeText={setResubmitReason}
+                  placeholderTextColor={theme.placeholder}
+                  placeholder="Tell the driver which field(s) to fix"
+                  multiline
+                />
+                <View style={styles.buttonContainer}>
+                  <Button
+                    title="Send resubmit request"
+                    color="#f0ad4e"
+                    onPress={() => handleRequestVehicleResubmit(selected)}
+                  />
+                </View>
+              </>
+            ) : null}
             <ComplianceDocumentsPanel
               subjectType="vehicle"
               subjectId={selected.id}
@@ -1134,7 +1212,13 @@ export default function App() {
               />
             )}
             <View style={styles.buttonContainer}>
-              <Button title="Edit" onPress={() => handleEdit(selected)} />
+              {selected.approval_status !== 'APPROVED' ? (
+                <Button title="Edit" onPress={() => handleEdit(selected)} />
+              ) : (
+                <Text style={{ color: theme.textMuted, marginBottom: 8 }}>
+                  Approved vehicle identity cannot be edited here. Use resubmit request above.
+                </Text>
+              )}
             </View>
             <View style={styles.buttonContainer}>
               {selected.active ? (
@@ -2323,97 +2407,90 @@ export default function App() {
   }
 
   function DriverVehicleEditScreen({ onBack }: { onBack: () => void }) {
-    const [formData, setFormData] = useState({
-      license_plate: '',
-      make: '',
-      model: '',
-      year: new Date().getFullYear(),
-      vin: '',
-      capacity: 0,
-      capacity_unit: 'lb' as 'kg' | 'lb',
-    });
-    const [vehicleActive, setVehicleActive] = useState(true);
+    const [vehicle, setVehicle] = useState<DriverVehicleRecord | null>(null);
+    const [mode, setMode] = useState<'view' | 'replace' | 'resubmit'>('view');
     const [inService, setInService] = useState(true);
-    const [vehicleId, setVehicleId] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [localLoading, setLocalLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
     const [deactivating, setDeactivating] = useState(false);
 
-    useEffect(() => {
-      const loadVehicle = async () => {
-        setLocalLoading(true);
-        setError(null);
-        try {
-          const response = await makeAuthenticatedRequest('/drivers/me/vehicle/');
-          if (!response.ok) {
-            const body = await response.json().catch(() => ({}));
-            throw new Error(body.error || body.detail || 'Failed to load vehicle');
-          }
-          const data = await response.json();
-          const isActive = data.active !== false;
-          setVehicleId(data.id ?? null);
-          setVehicleActive(isActive);
-          setInService(isActive);
-          setFormData({
-            license_plate: data.license_plate || '',
-            make: data.make || '',
-            model: data.model || '',
-            year: data.year || new Date().getFullYear(),
-            vin: data.vin || '',
-            capacity: data.capacity ?? 0,
-            capacity_unit: data.capacity_unit || 'lb',
-          });
-        } catch (e) {
-          setError(e instanceof Error ? e.message : 'Failed to load vehicle');
+    const loadVehicle = async () => {
+      setLocalLoading(true);
+      setError(null);
+      try {
+        const data = await fetchDriverCurrentVehicle(makeAuthenticatedRequest);
+        setVehicle(data);
+        if (data) {
+          setInService(data.active !== false);
         }
-        setLocalLoading(false);
-      };
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to load vehicle');
+        setVehicle(null);
+      }
+      setLocalLoading(false);
+    };
+
+    useEffect(() => {
       loadVehicle();
     }, []);
 
-    const handleSave = async () => {
-      if (!formData.license_plate.trim() || !formData.make.trim() || !formData.model.trim() || !formData.vin.trim()) {
-        setError('License plate, make, model, and VIN are required');
-        return;
-      }
-      if (formData.vin.length !== 17) {
-        setError('VIN must be exactly 17 characters');
-        return;
-      }
-      if (!formData.capacity || formData.capacity <= 0) {
-        setError('Vehicle capacity is missing. Contact admin if this looks wrong.');
-        return;
-      }
-      setSaving(true);
+    const handleMarkInactive = async () => {
+      if (!vehicle) return;
+      setSubmitting(true);
       setError(null);
       try {
-        if (vehicleId == null) {
-          throw new Error('Vehicle ID not loaded. Go back and try again.');
-        }
-        const payload = buildVehicleUpdatePayload(
-          {
-            ...formData,
-            vin: formData.vin.toUpperCase(),
-            year: Number(formData.year),
-            capacity: formData.capacity,
-            capacity_unit: formData.capacity_unit,
-          },
-          { vehicleActive, inService },
-        );
-        const updated = await updateVehicleById(makeAuthenticatedRequest, vehicleId, payload);
-        if (updated.active === false) {
-          Alert.alert('Success', 'Vehicle marked inactive. Contact admin to reactivate or assign a new vehicle.');
-        } else {
-          Alert.alert('Success', 'Vehicle updated successfully!');
-        }
+        await updateVehicleById(makeAuthenticatedRequest, vehicle.id, { active: false });
+        Alert.alert('Success', 'Vehicle marked inactive.');
         await loadDriverMyVehicle();
         onBack();
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to update vehicle');
+        setError(e instanceof Error ? e.message : 'Failed to mark vehicle inactive');
       }
-      setSaving(false);
+      setSubmitting(false);
     };
+
+    const handleDeactivate = async () => {
+      setDeactivating(true);
+      setError(null);
+      try {
+        await deactivateDriverVehicle(makeAuthenticatedRequest);
+        Alert.alert('Success', 'Your vehicle has been marked inactive.');
+        await loadDriverMyVehicle();
+        onBack();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to deactivate vehicle');
+      }
+      setDeactivating(false);
+    };
+
+    const handleOnboardingSubmit = async (
+      fields: Parameters<typeof buildVehicleOnboardingPayload>[0],
+      action: 'replace' | 'resubmit',
+    ) => {
+      setSubmitting(true);
+      setError(null);
+      try {
+        const payload = buildVehicleOnboardingPayload(fields);
+        const result = action === 'replace'
+          ? await replaceDriverVehicle(makeAuthenticatedRequest, payload)
+          : await resubmitDriverVehicle(makeAuthenticatedRequest, payload);
+        Alert.alert(
+          action === 'replace' ? 'Vehicle replaced' : 'Vehicle resubmitted',
+          result.detail,
+        );
+        setMode('view');
+        await loadDriverMyVehicle();
+        await loadVehicle();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to submit vehicle');
+      }
+      setSubmitting(false);
+    };
+
+    const approvalLabel = vehicle
+      ? (VEHICLE_APPROVAL_LABELS[vehicle.approval_status as VehicleApprovalStatus] || vehicle.approval_status)
+      : '';
 
     return (
       <KeyboardAvoidingView
@@ -2424,115 +2501,192 @@ export default function App() {
           <View style={styles.content}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
               <Button title="← Back" onPress={onBack} />
-              <Text style={[styles.title, { flex: 1, textAlign: 'center' }]}>Edit My Vehicle</Text>
+              <Text style={[styles.title, { flex: 1, textAlign: 'center' }]}>My Vehicle & Compliance</Text>
             </View>
             {error && <Text style={{ color: theme.error, marginBottom: 10 }}>{error}</Text>}
             {localLoading ? (
               <ActivityIndicator size="large" color={theme.border} />
+            ) : !vehicle ? (
+              <>
+                <Text style={{ color: theme.text, marginBottom: 12 }}>
+                  No active vehicle assignment. Register a vehicle or contact admin.
+                </Text>
+                <View style={styles.buttonContainer}>
+                  <Button title="Back" onPress={onBack} />
+                </View>
+              </>
+            ) : mode === 'replace' ? (
+              <>
+                <Text style={styles.sectionTitle}>Replace vehicle</Text>
+                <Text style={{ color: theme.textMuted, marginBottom: 12 }}>
+                  Your current truck will be deactivated. The new vehicle stays inactive and pending until admin approves it.
+                </Text>
+                <DriverVehicleOnboardingForm
+                  apiBase={API_BASE}
+                  submitLabel="Submit replacement"
+                  submitting={submitting}
+                  onSubmit={(fields) => handleOnboardingSubmit(fields, 'replace')}
+                  theme={theme}
+                  styles={styles}
+                />
+                <View style={styles.buttonContainer}>
+                  <Button title="Cancel" onPress={() => setMode('view')} disabled={submitting} />
+                </View>
+              </>
+            ) : mode === 'resubmit' ? (
+              <>
+                <Text style={styles.sectionTitle}>Resubmit vehicle</Text>
+                {vehicle.resubmit_reason ? (
+                  <>
+                    <Text style={styles.label}>Staff message</Text>
+                    <TextInput
+                      style={[styles.input, { color: theme.text, minHeight: 80 }]}
+                      value={vehicle.resubmit_reason}
+                      editable={false}
+                      multiline
+                    />
+                  </>
+                ) : null}
+                <DriverVehicleOnboardingForm
+                  apiBase={API_BASE}
+                  initialValues={{
+                    vehicle_model_spec_id: vehicle.model_spec_id ?? undefined,
+                    vehicle_license_plate: vehicle.license_plate,
+                    vehicle_year: vehicle.year,
+                    vehicle_vin: vehicle.vin,
+                    vehicle_capacity: vehicle.capacity,
+                    vehicle_capacity_unit: vehicle.capacity_unit,
+                  }}
+                  lockVinAndPlate={vehicle.registration_verified}
+                  submitLabel="Resubmit for approval"
+                  submitting={submitting}
+                  onSubmit={(fields) => handleOnboardingSubmit(fields, 'resubmit')}
+                  theme={theme}
+                  styles={styles}
+                />
+                <View style={styles.buttonContainer}>
+                  <Button title="Cancel" onPress={() => setMode('view')} disabled={submitting} />
+                </View>
+              </>
             ) : (
               <>
-                <Text style={styles.label}>Vehicle status</Text>
+                <Text style={styles.label}>Approval status</Text>
                 <TextInput
                   style={[styles.input, { color: theme.text }]}
-                  value={vehicleActive && inService ? 'Active' : 'Inactive'}
+                  value={approvalLabel}
+                  editable={false}
+                />
+                <Text style={styles.label}>Operational status</Text>
+                <TextInput
+                  style={[styles.input, { color: theme.text }]}
+                  value={vehicle.active ? 'Active' : 'Inactive (pending approval or out of service)'}
                   editable={false}
                 />
 
-                {vehicleActive && inService ? (
+                {vehicle.approval_status === 'RESUBMIT' && vehicle.resubmit_reason ? (
+                  <>
+                    <Text style={styles.label}>Staff correction request</Text>
+                    <TextInput
+                      style={[styles.input, { color: theme.text, minHeight: 80 }]}
+                      value={vehicle.resubmit_reason}
+                      editable={false}
+                      multiline
+                    />
+                  </>
+                ) : null}
+
+                <Text style={styles.sectionTitle}>Vehicle identity</Text>
+                <Text style={styles.label}>License plate</Text>
+                <TextInput style={[styles.input, { color: theme.text }]} value={vehicle.license_plate} editable={false} />
+                <Text style={styles.label}>Make / model</Text>
+                <TextInput style={[styles.input, { color: theme.text }]} value={`${vehicle.make} ${vehicle.model}`} editable={false} />
+                <Text style={styles.label}>Year</Text>
+                <TextInput style={[styles.input, { color: theme.text }]} value={String(vehicle.year)} editable={false} />
+                <Text style={styles.label}>VIN</Text>
+                <TextInput style={[styles.input, { color: theme.text }]} value={vehicle.vin} editable={false} />
+                <Text style={styles.label}>Capacity ({vehicle.capacity_unit})</Text>
+                <TextInput style={[styles.input, { color: theme.text }]} value={String(vehicle.capacity)} editable={false} />
+
+                {vehicle.identity_locked ? (
+                  <Text style={{ color: theme.textMuted, marginBottom: 8 }}>
+                    Identity fields are locked after approval. Staff will send you back with a resubmit request if changes are needed.
+                  </Text>
+                ) : null}
+
+                {vehicle.approval_status === 'APPROVED' && vehicle.active ? (
                   <>
                     <View style={styles.switchContainer}>
                       <Text style={styles.switchLabel}>Vehicle in service</Text>
                       <Switch value={inService} onValueChange={setInService} />
                     </View>
-                    {!inService && (
+                    {!inService ? (
                       <Text style={{ color: theme.error, marginBottom: 10 }}>
-                        Save will mark this vehicle inactive (sold, repair, or out of service).
+                        Confirm below to mark this vehicle inactive (sold, repair, or out of service).
                       </Text>
-                    )}
-                    <Text style={styles.label}>License Plate *</Text>
-                    <TextInput style={styles.input} value={formData.license_plate}
-                      onChangeText={(t) => setFormData({ ...formData, license_plate: t.toUpperCase() })}
-                      placeholderTextColor={theme.placeholder} placeholder="Enter license plate" autoCapitalize="characters" />
-                    <Text style={styles.label}>Make *</Text>
-                    <TextInput style={styles.input} value={formData.make}
-                      onChangeText={(t) => setFormData({ ...formData, make: t })}
-                      placeholderTextColor={theme.placeholder} placeholder="e.g., Ford, Toyota" />
-                    <Text style={styles.label}>Model *</Text>
-                    <TextInput style={styles.input} value={formData.model}
-                      onChangeText={(t) => setFormData({ ...formData, model: t })}
-                      placeholderTextColor={theme.placeholder} placeholder="e.g., Transit, Hiace" />
-                    <Text style={styles.label}>Year *</Text>
-                    <TextInput style={styles.input} value={String(formData.year)}
-                      onChangeText={(t) => {
-                        const year = parseInt(t, 10);
-                        if (!isNaN(year)) setFormData({ ...formData, year });
-                      }}
-                      placeholderTextColor={theme.placeholder} placeholder="Enter year" keyboardType="numeric" maxLength={4} />
-                    <Text style={styles.label}>VIN *</Text>
-                    <TextInput style={styles.input} value={formData.vin}
-                      onChangeText={(t) => setFormData({ ...formData, vin: t.toUpperCase().slice(0, 17) })}
-                      placeholderTextColor={theme.placeholder} placeholder="17 characters" autoCapitalize="characters" maxLength={17} />
-                    <Text style={styles.label}>Vehicle capacity ({formData.capacity_unit}) *</Text>
-                    <TextInput
-                      style={[styles.input, { color: theme.text }]}
-                      value={formData.capacity > 0 ? String(formData.capacity) : ''}
-                      editable={false}
-                    />
-                    <Text style={{ color: theme.textMuted, marginBottom: 8 }}>
-                      Capacity is set from the vehicle catalog at registration and cannot be edited here.
-                    </Text>
-                    <View style={styles.buttonContainer}>
-                      <Button
-                        title={saving ? 'Saving...' : (inService ? 'Save Vehicle' : 'Save & Mark Inactive')}
-                        onPress={handleSave}
-                        disabled={saving || formData.capacity <= 0}
-                      />
-                    </View>
-                    {inService && (
+                    ) : null}
+                    {!inService ? (
                       <View style={styles.buttonContainer}>
                         <Button
-                          title={deactivating ? 'Working...' : 'Mark Inactive Now'}
-                          color="#f0ad4e"
-                          onPress={async () => {
-                            setDeactivating(true);
-                            setError(null);
-                            try {
-                              if (vehicleId == null) {
-                                throw new Error('Vehicle ID not loaded. Go back and try again.');
-                              }
-                              await updateVehicleById(makeAuthenticatedRequest, vehicleId, { active: false });
-                              Alert.alert('Success', 'Your vehicle has been marked inactive.');
-                              await loadDriverMyVehicle();
-                              onBack();
-                            } catch (e) {
-                              setError(e instanceof Error ? e.message : 'Failed to deactivate vehicle');
-                            }
-                            setDeactivating(false);
-                          }}
-                          disabled={deactivating || saving}
+                          title={submitting ? 'Working...' : 'Save & Mark Inactive'}
+                          onPress={handleMarkInactive}
+                          disabled={submitting || deactivating}
                         />
                       </View>
-                    )}
-                    <ComplianceStatusCard
-                      summary={driverComplianceSummary}
-                      theme={theme}
-                      styles={styles}
-                      title="Vehicle compliance"
+                    ) : null}
+                  </>
+                ) : null}
+
+                {vehicle.approval_status === 'RESUBMIT' ? (
+                  <View style={styles.buttonContainer}>
+                    <Button title="Update & resubmit" onPress={() => setMode('resubmit')} />
+                  </View>
+                ) : null}
+
+                {vehicle.can_replace_vehicle && vehicle.approval_status !== 'RESUBMIT' ? (
+                  <View style={styles.buttonContainer}>
+                    <Button
+                      title="Replace vehicle"
+                      color="#f0ad4e"
+                      onPress={() => setMode('replace')}
                     />
-                  </>
-                ) : (
-                  <>
-                    <Text style={{ color: theme.text, marginBottom: 8 }}>
-                      {formData.make} {formData.model} ({formData.license_plate})
-                    </Text>
-                    <Text style={{ color: theme.text, marginBottom: 12 }}>
-                      This vehicle is inactive. Contact admin to reactivate or assign a new vehicle.
-                    </Text>
-                    <View style={styles.buttonContainer}>
-                      <Button title="Back" onPress={onBack} />
-                    </View>
-                  </>
-                )}
+                  </View>
+                ) : null}
+
+                {vehicle.approval_status === 'APPROVED' && vehicle.active && inService ? (
+                  <View style={styles.buttonContainer}>
+                    <Button
+                      title={deactivating ? 'Working...' : 'Mark inactive now'}
+                      color="#f0ad4e"
+                      onPress={handleDeactivate}
+                      disabled={deactivating || submitting}
+                    />
+                  </View>
+                ) : null}
+
+                {driverVehicleId ? (
+                  <ComplianceDocumentsPanel
+                    subjectType="vehicle"
+                    subjectId={driverVehicleId}
+                    request={makeAuthenticatedRequest}
+                    isAdmin={false}
+                    canUpload
+                    theme={theme}
+                    styles={styles}
+                    title="Legal documents - Vehicle"
+                    subtitle={
+                      vehicle.approval_status === 'PENDING'
+                        ? 'Upload registration and insurance while your vehicle awaits admin approval.'
+                        : undefined
+                    }
+                  />
+                ) : null}
+
+                <ComplianceStatusCard
+                  summary={driverComplianceSummary}
+                  theme={theme}
+                  styles={styles}
+                  title="Vehicle compliance"
+                />
               </>
             )}
           </View>
@@ -5191,7 +5345,7 @@ export default function App() {
                 <Button title="👤 Edit My Profile" onPress={() => setCurrentScreen('driver_profile_edit')} />
               </View>
               <View style={styles.buttonContainer}>
-                <Button title="🚛 Edit My Vehicle" onPress={() => setCurrentScreen('driver_vehicle_edit')} />
+                <Button title="🚛 My Vehicle & Compliance" onPress={() => setCurrentScreen('driver_vehicle_edit')} />
               </View>
               <View style={styles.buttonContainer}>
                 <Button title="📦 My Deliveries" onPress={() => setCurrentScreen('my_deliveries')} />
