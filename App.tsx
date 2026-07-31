@@ -2696,6 +2696,41 @@ export default function App() {
   }
 
   function DriverComplianceScreen({ onBack }: { onBack: () => void }) {
+    const [currentVehicleId, setCurrentVehicleId] = useState<number | null>(null);
+    const [currentVehicleLabel, setCurrentVehicleLabel] = useState<string | null>(null);
+    const [vehicleLoading, setVehicleLoading] = useState(true);
+
+    useEffect(() => {
+      let cancelled = false;
+      const loadCurrentVehicle = async () => {
+        setVehicleLoading(true);
+        try {
+          const vehicle = await fetchDriverCurrentVehicle(makeAuthenticatedRequest);
+          if (!cancelled) {
+            if (vehicle) {
+              setCurrentVehicleId(vehicle.id);
+              setCurrentVehicleLabel(
+                `${vehicle.make} ${vehicle.model} (${vehicle.license_plate})`,
+              );
+            } else {
+              setCurrentVehicleId(null);
+              setCurrentVehicleLabel(null);
+            }
+          }
+        } catch {
+          if (!cancelled) {
+            setCurrentVehicleId(null);
+            setCurrentVehicleLabel(null);
+          }
+        }
+        if (!cancelled) setVehicleLoading(false);
+      };
+      loadCurrentVehicle();
+      return () => {
+        cancelled = true;
+      };
+    }, []);
+
     return (
       <ScrollView style={styles.container}>
         <View style={styles.content}>
@@ -2710,31 +2745,37 @@ export default function App() {
           />
           {driverMeId ? (
             <ComplianceDocumentsPanel
+              key={`driver-docs-${driverMeId}`}
               subjectType="driver"
               subjectId={driverMeId}
               request={makeAuthenticatedRequest}
               isAdmin={false}
-              canUpload
+              canUpload={driverMeApproval?.status !== 'REJECTED'}
               theme={theme}
               styles={styles}
               title="Legal documents - Driver"
+              onDocumentsChanged={loadDriverCompliance}
             />
           ) : null}
-          {driverVehicleId ? (
+          {vehicleLoading ? (
+            <ActivityIndicator size="small" color={theme.border} style={{ marginTop: 16 }} />
+          ) : currentVehicleId ? (
             <ComplianceDocumentsPanel
+              key={`vehicle-docs-${currentVehicleId}`}
               subjectType="vehicle"
-              subjectId={driverVehicleId}
+              subjectId={currentVehicleId}
               request={makeAuthenticatedRequest}
               isAdmin={false}
-              canUpload
+              canUpload={driverMeApproval?.status !== 'REJECTED'}
               theme={theme}
               styles={styles}
               title="Legal documents - Vehicle"
               subtitle={
-                driverVehicleSummary
-                  ? `Assigned vehicle: ${driverVehicleSummary.make} ${driverVehicleSummary.model} (${driverVehicleSummary.license_plate}). Upload registration and commercial insurance here.`
+                currentVehicleLabel
+                  ? `Assigned vehicle: ${currentVehicleLabel}. Upload registration and commercial insurance here.`
                   : 'Assigned vehicle — upload registration and commercial insurance here.'
               }
+              onDocumentsChanged={loadDriverCompliance}
             />
           ) : (
             <Text style={{ color: theme.textMuted, marginTop: 16 }}>

@@ -23,6 +23,7 @@ import {
   listVehicleDocuments,
   openDocumentDownload,
   rejectDocument,
+  updateDocument,
   uploadCompliancePdf,
   validatePdfSelection,
   verifyDocument,
@@ -91,6 +92,7 @@ export function ComplianceDocumentsPanel({
   const [viewingFileId, setViewingFileId] = useState<number | null>(null);
   const [verifyingId, setVerifyingId] = useState<number | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [resubmitDocId, setResubmitDocId] = useState<number | null>(null);
   const [form, setForm] = useState<CreateDocumentPayload>({
     document_type: subjectType === 'driver' ? 'DRIVER_LICENSE' : 'VEHICLE_REGISTRATION',
     issuer: '',
@@ -148,7 +150,23 @@ export function ComplianceDocumentsPanel({
   const resetForm = () => {
     setShowForm(false);
     setSelectedPdf(null);
+    setResubmitDocId(null);
     setForm(emptyForm());
+  };
+
+  const startResubmit = (doc: LegalDocument) => {
+    setResubmitDocId(doc.id);
+    setShowForm(true);
+    setSelectedPdf(null);
+    setError(null);
+    setForm({
+      document_type: doc.document_type,
+      issuer: doc.issuer || '',
+      policy_number: doc.policy_number || '',
+      coverage_type: doc.coverage_type || 'COMMERCIAL',
+      expiry_date: doc.expiry_date || '',
+      notes: doc.notes || '',
+    });
   };
 
   const handleDocumentTypeChange = (type: DocumentType) => {
@@ -250,15 +268,28 @@ export function ComplianceDocumentsPanel({
         file_name: fileMeta?.file_name,
       };
       if (subjectType === 'driver') {
-        await createDriverDocument(request, subjectId, payload);
+        if (resubmitDocId != null) {
+          await updateDocument(request, resubmitDocId, payload);
+        } else {
+          await createDriverDocument(request, subjectId, payload);
+        }
+      } else if (resubmitDocId != null) {
+        await updateDocument(request, resubmitDocId, payload);
       } else {
         await createVehicleDocument(request, subjectId, payload);
       }
       resetForm();
       await refreshDocuments();
-      Alert.alert('Success', fileMeta
-        ? 'Document and PDF submitted for review.'
-        : 'Document submitted for review.');
+      Alert.alert(
+        'Success',
+        resubmitDocId != null
+          ? (fileMeta
+            ? 'Replacement document and PDF submitted for review.'
+            : 'Replacement document submitted for review.')
+          : (fileMeta
+            ? 'Document and PDF submitted for review.'
+            : 'Document submitted for review.'),
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to submit document');
     }
@@ -372,6 +403,11 @@ export function ComplianceDocumentsPanel({
             {doc.rejection_reason ? (
               <Text style={{ color: theme.error }}>Rejected: {doc.rejection_reason}</Text>
             ) : null}
+            {!isAdmin && doc.status === 'REJECTED' && canUpload ? (
+              <View style={{ marginTop: 6 }}>
+                <Button title="Submit replacement" onPress={() => startResubmit(doc)} />
+              </View>
+            ) : null}
             {isAdmin && doc.status === 'PENDING' ? (
               <View style={{ marginTop: 8 }}>
                 {approveExpiryDocId === doc.id ? (
@@ -441,10 +477,19 @@ export function ComplianceDocumentsPanel({
             </View>
           ) : (
             <View style={[styles.itemContainer, { marginTop: 8 }]}>
+              {resubmitDocId != null ? (
+                <Text style={{ color: theme.textMuted, marginBottom: 8 }}>
+                  Correct the fields below and resubmit. Staff will review this as a new submission.
+                </Text>
+              ) : null}
               <Text style={styles.label}>Document type</Text>
               {allowedTypes.length === 1 ? (
                 <Text style={{ color: theme.text, marginBottom: 8 }}>
                   {DOCUMENT_TYPE_LABELS[allowedTypes[0]]}
+                </Text>
+              ) : resubmitDocId != null ? (
+                <Text style={{ color: theme.text, marginBottom: 8 }}>
+                  {DOCUMENT_TYPE_LABELS[form.document_type]}
                 </Text>
               ) : (
                 allowedTypes.map((type) => (
@@ -548,7 +593,7 @@ export function ComplianceDocumentsPanel({
               ) : null}
               <View style={styles.buttonContainer}>
                 <Button
-                  title={saving ? 'Submitting…' : 'Submit for review'}
+                  title={saving ? 'Submitting…' : (resubmitDocId != null ? 'Resubmit for review' : 'Submit for review')}
                   onPress={handleCreate}
                   disabled={saving}
                 />

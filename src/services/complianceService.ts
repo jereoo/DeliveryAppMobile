@@ -332,6 +332,21 @@ export async function createVehicleDocument(
   return response.json();
 }
 
+export async function updateDocument(
+  request: AuthenticatedRequest,
+  documentId: number,
+  payload: Partial<CreateDocumentPayload>,
+): Promise<LegalDocument> {
+  const response = await request(`/documents/${documentId}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error(await parseComplianceError(response));
+  }
+  return response.json();
+}
+
 export async function verifyDocument(
   request: AuthenticatedRequest,
   documentId: number,
