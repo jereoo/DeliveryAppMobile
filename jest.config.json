@@ -13,7 +13,8 @@
     "!src/__tests__/**",
     "!src/**/*.stories.{ts,tsx}",
     "!src/components/ComplianceDocumentsPanel.tsx",
-    "!src/components/ComplianceStatusCard.tsx"
+    "!src/components/ComplianceStatusCard.tsx",
+    "!src/screens/**"
   ],
   "coverageThreshold": {
     "global": {

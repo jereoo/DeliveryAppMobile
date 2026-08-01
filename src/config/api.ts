@@ -44,6 +44,7 @@ export const getApiEndpoints = async () => {
   return {
     TOKEN: `${apiUrl}/token/`,
     TOKEN_REFRESH: `${apiUrl}/token/refresh/`,
+    ME: `${apiUrl}/me/`,
     HEALTH: `${apiUrl}/health/`,
     ADDRESS_VALIDATION: `${apiUrl}/address-validation/validate/`,
     DELIVERIES: `${apiUrl}/deliveries/`,
