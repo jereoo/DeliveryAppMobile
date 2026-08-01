@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Button, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from 'react-native';
 import { theme, styles } from '../theme';
-import { formatPhone10, getPhoneDigits } from '../utils/phoneFormatting';
+import { formatPhone10, formatPhoneForDisplay, getPhoneDigits } from '../utils/phoneFormatting';
 import type { AuthenticatedRequest } from './types';
 
 export interface DriverProfileEditScreenProps {
