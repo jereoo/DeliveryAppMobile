@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Button,
   ScrollView,
   Text,
@@ -88,6 +87,7 @@ export function AdminComplianceScreen({
   const [expiring, setExpiring] = useState<AdminComplianceDocumentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [viewingId, setViewingId] = useState<number | null>(null);
   const [verifyingId, setVerifyingId] = useState<number | null>(null);
   const [rejectingId, setRejectingId] = useState<number | null>(null);
@@ -146,13 +146,15 @@ export function AdminComplianceScreen({
 
     setVerifyingId(row.document_id);
     setError(null);
+    setSuccessMessage(null);
     try {
       await verifyDocument(request, row.document_id, {
         expiry_date: needsExpiry && !row.expiry_date ? approveExpiryDate.trim() : undefined,
       });
       setApproveExpiryDocId(null);
       setApproveExpiryDate('');
-      Alert.alert('Verified', `${DOCUMENT_TYPE_LABELS[row.document_type]} approved.`);
+      setInbox((current) => current.filter((item) => item.document_id !== row.document_id));
+      setSuccessMessage(`${DOCUMENT_TYPE_LABELS[row.document_type]} approved.`);
       await loadAll();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Verify failed');
@@ -166,6 +168,7 @@ export function AdminComplianceScreen({
       setRejectReason('');
       setApproveExpiryDocId(null);
       setError(null);
+      setSuccessMessage(null);
       return;
     }
     if (!rejectReason.trim()) {
@@ -174,11 +177,13 @@ export function AdminComplianceScreen({
     }
     setVerifyingId(row.document_id);
     setError(null);
+    setSuccessMessage(null);
     try {
       await rejectDocument(request, row.document_id, rejectReason.trim());
       setRejectingId(null);
       setRejectReason('');
-      Alert.alert('Rejected', 'Document was rejected.');
+      setInbox((current) => current.filter((item) => item.document_id !== row.document_id));
+      setSuccessMessage(`${DOCUMENT_TYPE_LABELS[row.document_type]} rejected.`);
       await loadAll();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Reject failed');
@@ -311,6 +316,9 @@ export function AdminComplianceScreen({
         </View>
 
         {error ? <Text style={{ color: theme.error, marginBottom: 10 }}>{error}</Text> : null}
+        {successMessage ? (
+          <Text style={{ color: '#5cb85c', marginBottom: 10 }}>{successMessage}</Text>
+        ) : null}
 
         {loading && !summary ? (
           <ActivityIndicator size="large" color={theme.border} />

@@ -39,6 +39,7 @@ Select → Specify → Implement → Verify → Record → Next
 | [`docs/PROJECT_PLAN.md`](PROJECT_PLAN.md) | Ordered backlog and phase status |
 | [`docs/PHASE_4A_LEGAL_COMPLIANCE.md`](PHASE_4A_LEGAL_COMPLIANCE.md) | Detailed spec for active product work |
 | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) | Layered architecture, v1.0 vs v2.0 scope |
+| [`docs/USE_CASES.md`](USE_CASES.md) | Business use cases — auth, compliance, dispatch flows |
 | [`.cursor/rules/layered-architecture.mdc`](../.cursor/rules/layered-architecture.mdc) | Coding standards for AI/humans |
 | [`docs/PROJECT_STATUS_YYYYMMDD.md`](PROJECT_STATUS_20260612.md) | Prod QA log after release |
 | [`DeliveryAppBackend/docs/ROLLBACK.md`](https://github.com/jereoo/DeliveryAppBackend/blob/main/docs/ROLLBACK.md) | Rollback if deploy fails |

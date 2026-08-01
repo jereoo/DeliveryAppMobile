@@ -2,7 +2,8 @@
 
 **Last updated:** June 12, 2026  
 **Product focus:** **v1.0** — single fleet, single-driver context  
-**Cursor rules:** `.cursor/rules/layered-architecture.mdc`  
+**Cursor rules:** `.cursor/rules/layered-architecture.mdc` · `.cursor/rules/use-cases.mdc` (DeliveryApp workspace)  
+**Business use cases:** [`USE_CASES.md`](USE_CASES.md) → canonical [`DeliveryApp/project-docs/USE_CASES.md`](../../DeliveryApp/project-docs/USE_CASES.md)  
 **Latest prod QA:** `docs/PROJECT_STATUS_20260612.md` — admin + driver vehicle CRUD pass
 
 ---
@@ -118,6 +119,7 @@ Design v1.0 services so org scope can be added later **without rewriting busines
 
 | Doc | Purpose |
 |-----|---------|
+| `docs/USE_CASES.md` | Business use cases (links to `DeliveryApp/project-docs/USE_CASES.md`) |
 | `docs/PROJECT_PLAN.md` | Phase roadmap |
 | `docs/DEVELOPMENT_PROCESS.md` | Plan → build → test → done (DoR/DoD) |
 | `docs/PHASE_4A_LEGAL_COMPLIANCE.md` | Driver/vehicle legal docs — full Phase 4A plan |

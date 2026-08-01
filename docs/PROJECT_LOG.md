@@ -4,6 +4,29 @@ Chronological decisions and implementation notes. Latest status reports: `PROJEC
 
 ---
 
+## July 31, 2026 — Compliance resubmit → admin approve (prod verified)
+
+**Environments:** Vercel web + Heroku `truck-buddy`
+
+### Prod verification
+
+| Test | Result |
+|------|--------|
+| Driver resubmits rejected compliance document | ✅ Pass — status **PENDING** |
+| Admin approves from Compliance ops inbox | ✅ Pass |
+| Status **PENDING → VERIFIED** (admin + driver) | ✅ Pass |
+
+**Use cases:** UC-13 (re-submit document) · UC-06 (review & verify)
+
+**Status report:** `docs/PROJECT_STATUS_20260731.md`
+
+### Still open (vehicle lifecycle QA)
+
+- Driver My Vehicle replace flow
+- Compliance upload after vehicle replace
+
+---
+
 ## July 30, 2026 — Compliance daily jobs GitHub Actions cron verified
 
 **Environments:** GitHub Actions + Heroku `truck-buddy`

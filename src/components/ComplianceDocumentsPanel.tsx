@@ -103,6 +103,10 @@ export function ComplianceDocumentsPanel({
   });
 
   const allowedTypes = subjectType === 'driver' ? DRIVER_DOCUMENT_TYPES : VEHICLE_DOCUMENT_TYPES;
+  const hasPendingForType = (docType: DocumentType) => documents.some(
+    (doc) => doc.document_type === docType && doc.status === 'PENDING',
+  );
+  const canAddNewDocument = canUpload && allowedTypes.some((docType) => !hasPendingForType(docType));
   const panelSubtitle = subtitle ?? (
     subjectType === 'driver'
       ? 'Upload your driver license only. Registration and insurance go under Legal documents — Vehicle below.'
@@ -248,6 +252,10 @@ export function ComplianceDocumentsPanel({
       && !form.expiry_date?.trim()
     ) {
       setError('Expiry date is required (YYYY-MM-DD)');
+      return;
+    }
+    if (hasPendingForType(form.document_type) && resubmitDocId == null) {
+      setError('A document of this type is already pending admin review.');
       return;
     }
     setSaving(true);
@@ -469,7 +477,7 @@ export function ComplianceDocumentsPanel({
           </View>
         ))
       )}
-      {canUpload ? (
+      {canAddNewDocument ? (
         <>
           {!showForm ? (
             <View style={styles.buttonContainer}>
@@ -604,6 +612,10 @@ export function ComplianceDocumentsPanel({
             </View>
           )}
         </>
+      ) : canUpload && documents.some((doc) => doc.status === 'PENDING') ? (
+        <Text style={{ color: theme.textMuted, marginTop: 8 }}>
+          A document is pending admin review. Use Submit replacement on a rejected row, or wait for approval.
+        </Text>
       ) : null}
     </View>
   );

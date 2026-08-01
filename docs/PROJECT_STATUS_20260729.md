@@ -33,6 +33,7 @@
 | 2 | Compliance inbox — pending tab | ✅ Pass |
 | 3 | Compliance inbox — expiring tab | ✅ Pass |
 | 4 | Approve/reject from inbox | ✅ Pass (prior sessions) |
+| 5 | Approve resubmitted doc (PENDING → VERIFIED) | ✅ Pass — see `PROJECT_STATUS_20260731.md` |
 
 ### Admin — Manage Drivers filters
 

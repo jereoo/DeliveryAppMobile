@@ -362,7 +362,11 @@ export async function verifyDocument(
   if (!response.ok) {
     throw new Error(await parseComplianceError(response));
   }
-  return response.json();
+  const document: LegalDocument = await response.json();
+  if (document.status !== 'VERIFIED') {
+    throw new Error(`Approve did not complete (status is still ${document.status}).`);
+  }
+  return document;
 }
 
 export async function rejectDocument(
