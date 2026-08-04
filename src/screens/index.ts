@@ -5,6 +5,7 @@ export { DeliveryRequestScreen } from './DeliveryRequestScreen';
 export { MyDeliveriesScreen } from './MyDeliveriesScreen';
 export { AdminDriversScreen } from './AdminDriversScreen';
 export { DriverProfileEditScreen } from './DriverProfileEditScreen';
+export { CustomerProfileEditScreen } from './CustomerProfileEditScreen';
 export { DriverVehicleEditScreen } from './DriverVehicleEditScreen';
 export { DriverComplianceScreen } from './DriverComplianceScreen';
 export { AdminDriverVehiclesScreen } from './AdminDriverVehiclesScreen';

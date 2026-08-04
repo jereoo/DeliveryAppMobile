@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Button, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { ComplianceDocumentsPanel } from '../components/ComplianceDocumentsPanel';
 import { VehicleCapacityFields } from '../components/VehicleCapacityFields';
+import { VehicleCatalogFields } from '../components/VehicleCatalogFields';
 import { VehicleReactivationChecklist } from '../components/VehicleReactivationChecklist';
+import { findModelSpec, fetchVehicleCatalog } from '../services/vehicleCatalogService';
 import type { VehicleComplianceStatus } from '../services/complianceService';
 import { getVehicleComplianceStatus } from '../services/complianceService';
 import { approveVehicleById, requestVehicleResubmit, VEHICLE_APPROVAL_LABELS, type VehicleApprovalStatus } from '../services/vehicleService';
@@ -12,6 +14,7 @@ import type { AuthenticatedRequest } from './types';
 
 export interface AdminVehiclesScreenProps {
   onBack: () => void;
+  API_BASE: string;
   vehicles: any[];
   loadVehicles: () => Promise<void>;
   makeAuthenticatedRequest: AuthenticatedRequest;
@@ -22,12 +25,12 @@ export interface AdminVehiclesScreenProps {
   reactivateVehicle: (id: number) => Promise<void>;
 }
 
-  export function AdminVehiclesScreen({ onBack, vehicles, loadVehicles, makeAuthenticatedRequest, createVehicle, updateVehicle, deleteVehicle, deactivateVehicle, reactivateVehicle }: AdminVehiclesScreenProps) {
+  export function AdminVehiclesScreen({ onBack, API_BASE, vehicles, loadVehicles, makeAuthenticatedRequest, createVehicle, updateVehicle, deleteVehicle, deactivateVehicle, reactivateVehicle }: AdminVehiclesScreenProps) {
     const [mode, setMode] = useState<'list' | 'create' | 'edit' | 'detail'>('list');
     const [selected, setSelected] = useState<any>(null);
     const [form, setForm] = useState<any>({
       license_plate: '', make: '', model: '', year: 0,
-      vin: '', capacity_unit: 'kg', active: true
+      vin: '', capacity_unit: 'kg', active: true, vehicle_model_spec_id: null as number | null,
     });
     const [capacityText, setCapacityText] = useState('');
     const [capacityFieldError, setCapacityFieldError] = useState<string | null>(null);
@@ -69,10 +72,32 @@ export interface AdminVehiclesScreenProps {
     const resetVehicleForm = () => {
       setForm({
         license_plate: '', make: '', model: '', year: 0,
-        vin: '', capacity_unit: 'kg', active: true
+        vin: '', capacity_unit: 'kg', active: true, vehicle_model_spec_id: null,
       });
       setCapacityText('');
       setCapacityFieldError(null);
+    };
+
+    const handleCatalogSpecChange = async (specId: number | null) => {
+      setForm((f: typeof form) => ({ ...f, vehicle_model_spec_id: specId }));
+      if (!specId) return;
+      try {
+        const catalog = await fetchVehicleCatalog(API_BASE);
+        const spec = findModelSpec(catalog, specId);
+        if (spec) {
+          setForm((f: typeof form) => ({
+            ...f,
+            vehicle_model_spec_id: specId,
+            make: spec.manufacturer_name,
+            model: spec.name,
+            capacity_unit: 'lb',
+          }));
+          setCapacityText(String(spec.max_capacity_lb));
+          setCapacityFieldError(null);
+        }
+      } catch {
+        setError('Could not load catalog details for selected model');
+      }
     };
 
     const handleCapacityChange = (text: string) => {
@@ -318,6 +343,24 @@ export interface AdminVehiclesScreenProps {
           <View style={styles.content}>
             <Text style={styles.title}>{mode === 'create' ? 'Add Vehicle' : 'Edit Vehicle'}</Text>
             {error && <Text style={{ color: theme.error, marginBottom: 10 }}>{error}</Text>}
+
+            {mode === 'create' ? (
+              <>
+                <Text style={styles.sectionTitle}>Vehicle catalog</Text>
+                <VehicleCatalogFields
+                  apiBase={API_BASE}
+                  vehicleModelSpecId={form.vehicle_model_spec_id}
+                  vehicleYear={form.year === 0 ? 0 : form.year}
+                  onSpecChange={handleCatalogSpecChange}
+                  onCatalogCapacityChange={(maxPayloadLb) => {
+                    setCapacityText(String(maxPayloadLb));
+                    setForm((f: typeof form) => ({ ...f, capacity_unit: 'lb' }));
+                  }}
+                  theme={theme}
+                  styles={styles}
+                />
+              </>
+            ) : null}
 
             <Text style={styles.label}>License Plate *</Text>
             <TextInput style={styles.input} value={form.license_plate} onChangeText={t => setForm((f: typeof form) => ({ ...f, license_plate: t.toUpperCase() }))} placeholderTextColor={theme.placeholder} placeholder="Enter license plate" autoCapitalize="characters" />

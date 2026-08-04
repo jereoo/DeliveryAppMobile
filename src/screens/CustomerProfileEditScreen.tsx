@@ -1,29 +1,49 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Button, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Button,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Switch,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { AddressFields, emptyAddressFields } from '../components/AddressFields';
-import { DriverLicenseFields } from '../components/DriverLicenseFields';
+import AddressAutocomplete from '../components/AddressAutocomplete';
+import {
+  buildCustomerProfilePayload,
+  fetchCustomerMe,
+  updateCustomerMe,
+} from '../services/customerService';
 import { theme, styles } from '../theme';
 import { formatPhone10, formatPhoneForDisplay, getPhoneDigits } from '../utils/phoneFormatting';
 import type { AuthenticatedRequest } from './types';
 
-export interface DriverProfileEditScreenProps {
+export interface CustomerProfileEditScreenProps {
   onBack: () => void;
   API_BASE: string;
   makeAuthenticatedRequest: AuthenticatedRequest;
 }
 
-const emptyForm = {
-  first_name: '',
-  last_name: '',
-  phone_number: '',
-  license_issuing_region: 'CA-BC',
-  license_number: '',
-  password: '',
-  ...emptyAddressFields(),
-};
-
-export function DriverProfileEditScreen({ onBack, API_BASE, makeAuthenticatedRequest }: DriverProfileEditScreenProps) {
-  const [formData, setFormData] = useState(emptyForm);
+export function CustomerProfileEditScreen({
+  onBack,
+  API_BASE,
+  makeAuthenticatedRequest,
+}: CustomerProfileEditScreenProps) {
+  const [formData, setFormData] = useState({
+    email: '',
+    first_name: '',
+    last_name: '',
+    phone_number: '',
+    password: '',
+    company_name: '',
+    is_business: false,
+    preferred_pickup_address: '',
+    ...emptyAddressFields(),
+  });
   const [error, setError] = useState<string | null>(null);
   const [localLoading, setLocalLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -33,19 +53,16 @@ export function DriverProfileEditScreen({ onBack, API_BASE, makeAuthenticatedReq
       setLocalLoading(true);
       setError(null);
       try {
-        const response = await makeAuthenticatedRequest('/drivers/me/');
-        if (!response.ok) {
-          const body = await response.json().catch(() => ({}));
-          throw new Error(body.error || body.detail || 'Failed to load profile');
-        }
-        const data = await response.json();
+        const data = await fetchCustomerMe(makeAuthenticatedRequest);
         setFormData({
+          email: data.email || '',
           first_name: data.first_name || '',
           last_name: data.last_name || '',
           phone_number: formatPhoneForDisplay(data.phone_number || ''),
-          license_issuing_region: data.license_issuing_region || 'CA-BC',
-          license_number: data.license_number || '',
           password: '',
+          company_name: data.company_name || '',
+          is_business: data.is_business || false,
+          preferred_pickup_address: data.preferred_pickup_address || '',
           address_unit: data.address_unit || '',
           address_street: data.address_street || '',
           address_city: data.address_city || '',
@@ -62,8 +79,8 @@ export function DriverProfileEditScreen({ onBack, API_BASE, makeAuthenticatedReq
   }, []);
 
   const handleSave = async () => {
-    if (!formData.first_name.trim() || !formData.last_name.trim() || !formData.license_number.trim()) {
-      setError('First name, last name, and license number are required');
+    if (!formData.first_name.trim() || !formData.last_name.trim()) {
+      setError('First name and last name are required');
       return;
     }
     const phoneDigits = getPhoneDigits(formData.phone_number);
@@ -78,34 +95,11 @@ export function DriverProfileEditScreen({ onBack, API_BASE, makeAuthenticatedReq
     setSaving(true);
     setError(null);
     try {
-      const payload: Record<string, string> = {
-        first_name: formData.first_name,
-        last_name: formData.last_name,
+      const payload = buildCustomerProfilePayload({
+        ...formData,
         phone_number: phoneDigits,
-        license_issuing_region: formData.license_issuing_region,
-        license_number: formData.license_number,
-        address_unit: formData.address_unit,
-        address_street: formData.address_street,
-        address_city: formData.address_city,
-        address_state: formData.address_state,
-        address_postal_code: formData.address_postal_code,
-        address_country: formData.address_country,
-      };
-      if (formData.password.trim()) {
-        payload.password = formData.password;
-      }
-      const response = await makeAuthenticatedRequest('/drivers/me/', {
-        method: 'PATCH',
-        body: JSON.stringify(payload),
       });
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        const msg = body.error || body.detail
-          || (typeof body === 'object' && Object.keys(body).length
-            ? Object.entries(body).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join('; ') : v}`).join('\n')
-            : 'Failed to update profile');
-        throw new Error(msg);
-      }
+      await updateCustomerMe(makeAuthenticatedRequest, payload);
       Alert.alert('Success', 'Profile updated successfully!');
       onBack();
     } catch (e) {
@@ -130,13 +124,23 @@ export function DriverProfileEditScreen({ onBack, API_BASE, makeAuthenticatedReq
             <ActivityIndicator size="large" color={theme.border} />
           ) : (
             <>
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.email}
+                onChangeText={(t) => setFormData({ ...formData, email: t })}
+                placeholderTextColor={theme.placeholder}
+                placeholder="Email"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
               <Text style={styles.label}>First Name *</Text>
               <TextInput
                 style={styles.input}
                 value={formData.first_name}
                 onChangeText={(t) => setFormData({ ...formData, first_name: t })}
                 placeholderTextColor={theme.placeholder}
-                placeholder="Enter first name"
+                placeholder="First name"
               />
               <Text style={styles.label}>Last Name *</Text>
               <TextInput
@@ -144,9 +148,9 @@ export function DriverProfileEditScreen({ onBack, API_BASE, makeAuthenticatedReq
                 value={formData.last_name}
                 onChangeText={(t) => setFormData({ ...formData, last_name: t })}
                 placeholderTextColor={theme.placeholder}
-                placeholder="Enter last name"
+                placeholder="Last name"
               />
-              <Text style={styles.label}>Phone Number (10 digits, no area code)</Text>
+              <Text style={styles.label}>Phone Number (10 digits)</Text>
               <TextInput
                 style={styles.input}
                 value={formData.phone_number}
@@ -155,26 +159,6 @@ export function DriverProfileEditScreen({ onBack, API_BASE, makeAuthenticatedReq
                 placeholder="(555) 555-5555"
                 keyboardType="phone-pad"
                 maxLength={14}
-              />
-              <Text style={styles.label}>License</Text>
-              <DriverLicenseFields
-                licenseIssuingRegion={formData.license_issuing_region}
-                licenseNumber={formData.license_number}
-                onRegionChange={(code) => setFormData({ ...formData, license_issuing_region: code })}
-                onLicenseNumberChange={(text) => setFormData({ ...formData, license_number: text })}
-                theme={theme}
-                styles={styles}
-              />
-
-              <Text style={styles.sectionTitle}>Password</Text>
-              <Text style={styles.label}>New Password</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.password}
-                onChangeText={(t) => setFormData({ ...formData, password: t })}
-                placeholderTextColor={theme.placeholder}
-                placeholder="Leave blank to keep current password"
-                secureTextEntry
               />
 
               <AddressFields
@@ -191,8 +175,57 @@ export function DriverProfileEditScreen({ onBack, API_BASE, makeAuthenticatedReq
                 showAutocomplete
               />
 
+              <Text style={styles.sectionTitle}>Business</Text>
+              <View style={styles.switchContainer}>
+                <Text style={styles.switchLabel}>Business customer</Text>
+                <Switch
+                  value={formData.is_business}
+                  onValueChange={(v) => setFormData({ ...formData, is_business: v })}
+                />
+              </View>
+              {formData.is_business ? (
+                <TextInput
+                  style={styles.input}
+                  value={formData.company_name}
+                  onChangeText={(t) => setFormData({ ...formData, company_name: t })}
+                  placeholderTextColor={theme.placeholder}
+                  placeholder="Company name"
+                />
+              ) : null}
+
+              <Text style={styles.sectionTitle}>Preferred pickup address</Text>
+              <AddressAutocomplete
+                placeholder="Preferred pickup location (optional)"
+                initialValue={formData.preferred_pickup_address}
+                countryHint={formData.address_country === 'CA' ? 'CA' : 'US'}
+                onAddressSelected={(result) => {
+                  setFormData({
+                    ...formData,
+                    preferred_pickup_address: result.formatted_address || result.normalized_address || '',
+                  });
+                }}
+                onValidationStatusChange={() => {}}
+              />
+              <TextInput
+                style={[styles.input, { marginTop: 8 }]}
+                value={formData.preferred_pickup_address}
+                onChangeText={(t) => setFormData({ ...formData, preferred_pickup_address: t })}
+                placeholderTextColor={theme.placeholder}
+                placeholder="Or enter preferred pickup manually"
+              />
+
+              <Text style={styles.sectionTitle}>Password</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.password}
+                onChangeText={(t) => setFormData({ ...formData, password: t })}
+                placeholderTextColor={theme.placeholder}
+                placeholder="New password (leave blank to keep current)"
+                secureTextEntry
+              />
+
               <View style={styles.buttonContainer}>
-                <Button title={saving ? 'Saving...' : 'Save Profile'} onPress={handleSave} disabled={saving} />
+                <Button title={saving ? 'Saving…' : 'Save Profile'} onPress={handleSave} disabled={saving} />
               </View>
             </>
           )}

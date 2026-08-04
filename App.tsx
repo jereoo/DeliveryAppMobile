@@ -60,9 +60,7 @@ import { AdminComplianceScreen } from './src/components/AdminComplianceScreen';
 import { AdminDriverListFilters } from './src/components/AdminDriverListFilters';
 import { ComplianceDocumentsPanel } from './src/components/ComplianceDocumentsPanel';
 import { ComplianceStatusCard } from './src/components/ComplianceStatusCard';
-import { DriverLicenseFields } from './src/components/DriverLicenseFields';
 import { DriverVehicleOnboardingForm } from './src/components/DriverVehicleOnboardingForm';
-import { VehicleCatalogFields } from './src/components/VehicleCatalogFields';
 import { VehicleReactivationChecklist } from './src/components/VehicleReactivationChecklist';
 import {
   AdminCustomersScreen,
@@ -70,6 +68,7 @@ import {
   AdminDriversScreen,
   AdminDriverVehiclesScreen,
   AdminVehiclesScreen,
+  CustomerProfileEditScreen,
   DeliveryRequestScreen,
   DriverComplianceScreen,
   DriverProfileEditScreen,
@@ -77,7 +76,7 @@ import {
   MyDeliveriesScreen,
   RegisterAsDriverScreen,
 } from './src/screens';
-import { validateDriverLicenseNumber } from './src/utils/driverLicenseValidation';
+import { formatPhone10, getPhoneDigits } from './src/utils/phoneFormatting';
 import { checkBackendHealth, getApiDebugInfo, getApiUrl } from './src/config/api';
 import type { ComplianceSummary, DispatchEligibility, FleetComplianceSummary, VehicleComplianceStatus } from './src/services/complianceService';
 import {
@@ -291,25 +290,6 @@ export default function App() {
     preferred_pickup_address: ''
   });
 
-  const [driverLicenseFieldError, setDriverLicenseFieldError] = useState<string | null>(null);
-  const [driverVehicleCatalogError, setDriverVehicleCatalogError] = useState<string | null>(null);
-  const [driverForm, setDriverForm] = useState({
-    username: '',
-    email: '',
-    password: '',
-    first_name: '',
-    last_name: '',
-    phone_number: '',
-    license_issuing_region: 'CA-BC',
-    license_number: '',
-    vehicle_model_spec_id: null as number | null,
-    vehicle_license_plate: '',
-    vehicle_year: new Date().getFullYear(),
-    vehicle_vin: '',
-    vehicle_capacity: 0,
-    vehicle_capacity_unit: 'lb' as 'kg' | 'lb',
-  });
-
   const [vehicleForm, setVehicleForm] = useState({
     license_plate: '',
     make: '',
@@ -426,7 +406,16 @@ export default function App() {
   // Registration Functions
   const registerCustomer = async () => {
     if (!customerForm.username || !customerForm.email || !customerForm.password) {
-      Alert.alert('Error', 'Please fill in all required fields (*, username, email, password)');
+      Alert.alert('Error', 'Please fill in username, email, and password');
+      return;
+    }
+    if (!customerForm.first_name?.trim() || !customerForm.last_name?.trim()) {
+      Alert.alert('Error', 'First name and last name are required');
+      return;
+    }
+    const phoneDigits = getPhoneDigits(customerForm.phone_number);
+    if (phoneDigits.length !== 10) {
+      Alert.alert('Error', 'Phone number must be exactly 10 digits');
       return;
     }
 
@@ -435,7 +424,7 @@ export default function App() {
       const response = await fetch(`${API_BASE}/customers/register/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(customerForm)
+        body: JSON.stringify({ ...customerForm, phone_number: phoneDigits })
       });
 
       if (response.ok) {
@@ -455,93 +444,6 @@ export default function App() {
       }
     } catch (error) {
       Alert.alert('Error', 'Network error during registration');
-    }
-    setLoading(false);
-  };
-
-  const registerDriver = async () => {
-    setDriverLicenseFieldError(null);
-    setDriverVehicleCatalogError(null);
-
-    // Validate required fields
-    if (!driverForm.username || !driverForm.email || !driverForm.password ||
-      !driverForm.first_name || !driverForm.last_name || !driverForm.phone_number || !driverForm.license_number ||
-      !driverForm.license_issuing_region || !driverForm.vehicle_model_spec_id ||
-      !driverForm.vehicle_license_plate ||
-      !driverForm.vehicle_year || !driverForm.vehicle_vin) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
-    }
-
-    const licenseValidation = validateDriverLicenseNumber(
-      driverForm.license_issuing_region,
-      driverForm.license_number,
-    );
-    if (!licenseValidation.ok) {
-      setDriverLicenseFieldError(licenseValidation.message);
-      Alert.alert('Invalid driver license', licenseValidation.message);
-      return;
-    }
-
-    if (!driverForm.vehicle_model_spec_id) {
-      Alert.alert('Error', 'Select a vehicle manufacturer and model from the catalog.');
-      setDriverVehicleCatalogError('Select a vehicle manufacturer and model from the catalog.');
-      return;
-    }
-
-    if (!driverForm.vehicle_capacity || driverForm.vehicle_capacity <= 0) {
-      Alert.alert('Error', 'Vehicle capacity is set automatically when you select a catalog model.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Must match DriverRegistrationSerializer (vehicle_year, not year)
-      const registrationData = {
-        username: driverForm.username,
-        email: driverForm.email,
-        password: driverForm.password,
-        first_name: driverForm.first_name,
-        last_name: driverForm.last_name,
-        phone_number: driverForm.phone_number,
-        license_issuing_region: driverForm.license_issuing_region,
-        license_number: licenseValidation.normalized,
-        vehicle_model_spec_id: driverForm.vehicle_model_spec_id,
-        vehicle_license_plate: driverForm.vehicle_license_plate,
-        vehicle_year: driverForm.vehicle_year ? Number(driverForm.vehicle_year) : new Date().getFullYear(),
-        vehicle_vin: driverForm.vehicle_vin,
-        vehicle_capacity: driverForm.vehicle_capacity,
-        vehicle_capacity_unit: driverForm.vehicle_capacity_unit,
-      };
-
-      const response = await fetch(`${API_BASE}/drivers/register/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(registrationData)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        Alert.alert(
-          'Registration submitted',
-          data.message
-            || 'Your driver account was created and is pending admin approval. You can log in to upload compliance documents while you wait.',
-        );
-        setDriverForm({
-          username: '', email: '', password: '', first_name: '', last_name: '', phone_number: '',
-          license_issuing_region: 'CA-BC',
-          license_number: '', vehicle_model_spec_id: null,
-          vehicle_license_plate: '', vehicle_year: new Date().getFullYear(), vehicle_vin: '',
-          vehicle_capacity: 0, vehicle_capacity_unit: 'lb',
-        });
-        setDriverLicenseFieldError(null);
-        setCurrentScreen('login');
-      } else {
-        const errorData = await response.json();
-        Alert.alert('Registration Failed', JSON.stringify(errorData));
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Network error during driver registration');
     }
     setLoading(false);
   };
@@ -883,13 +785,7 @@ export default function App() {
     try {
       const response = await makeAuthenticatedRequest('/drivers/', {
         method: 'POST',
-        body: JSON.stringify({
-          first_name: driverData.first_name,
-          last_name: driverData.last_name,
-          phone_number: driverData.phone_number,
-          license_number: driverData.license_number,
-          active: driverData.active !== undefined ? driverData.active : true
-        })
+        body: JSON.stringify(driverData),
       });
 
       if (!response.ok) {
@@ -906,16 +802,6 @@ export default function App() {
       Alert.alert('Success', 'Driver created successfully!');
       setDriverCrudMode('list');
       await loadDrivers();
-
-      // Reset form
-      setDriverForm({
-        username: '', email: '', password: '', first_name: '', last_name: '', phone_number: '',
-        license_issuing_region: 'CA-BC',
-        license_number: '', vehicle_model_spec_id: null,
-        vehicle_license_plate: '', vehicle_year: new Date().getFullYear(), vehicle_vin: '',
-        vehicle_capacity: 0, vehicle_capacity_unit: 'lb',
-      });
-
     } catch (error) {
       console.error('Error creating driver:', error);
       Alert.alert('Error', (error as any).message || 'Failed to create driver');
@@ -1355,7 +1241,7 @@ export default function App() {
       loadData();
     }
     // Load customers when entering admin_customers screen
-    if (authToken && currentScreen === 'admin_customers') {
+    if (authToken && (currentScreen === 'admin_customers' || currentScreen === 'admin_deliveries')) {
       loadCustomers();
     }
   }, [authToken, currentScreen, userType]);
@@ -1378,17 +1264,15 @@ export default function App() {
 
   // Admin Vehicles Screen
   if (currentScreen === 'admin_vehicles' && userType === 'admin') {
-    return <AdminVehiclesScreen onBack={() => setCurrentScreen('dashboard')} vehicles={vehicles} loadVehicles={loadVehicles} makeAuthenticatedRequest={makeAuthenticatedRequest} createVehicle={createVehicle} updateVehicle={updateVehicle} deleteVehicle={deleteVehicle} deactivateVehicle={deactivateVehicle} reactivateVehicle={reactivateVehicle} />;
+    return <AdminVehiclesScreen onBack={() => setCurrentScreen('dashboard')} API_BASE={API_BASE} vehicles={vehicles} loadVehicles={loadVehicles} makeAuthenticatedRequest={makeAuthenticatedRequest} createVehicle={createVehicle} updateVehicle={updateVehicle} deleteVehicle={deleteVehicle} deactivateVehicle={deactivateVehicle} reactivateVehicle={reactivateVehicle} />;
   }
 
-  // Admin Deliveries Screen
   if (currentScreen === 'admin_deliveries' && userType === 'admin') {
-    return <AdminDeliveriesScreen onBack={() => setCurrentScreen('dashboard')} deliveries={deliveries} drivers={drivers} assignments={assignments} loadDeliveries={loadDeliveries} loadAssignments={loadAssignments} makeAuthenticatedRequest={makeAuthenticatedRequest} createDelivery={createDelivery} updateDelivery={updateDelivery} deleteDelivery={deleteDelivery} />;
+    return <AdminDeliveriesScreen onBack={() => setCurrentScreen('dashboard')} deliveries={deliveries} customers={customers} drivers={drivers} assignments={assignments} loadDeliveries={loadDeliveries} loadAssignments={loadAssignments} makeAuthenticatedRequest={makeAuthenticatedRequest} createDelivery={createDelivery} updateDelivery={updateDelivery} deleteDelivery={deleteDelivery} />;
   }
 
-  // Admin Drivers Screen
   if (currentScreen === 'admin_drivers' && userType === 'admin') {
-    return <AdminDriversScreen onBack={() => setCurrentScreen('dashboard')} drivers={drivers} loadDrivers={loadDrivers} makeAuthenticatedRequest={makeAuthenticatedRequest} createDriver={createDriver} updateDriver={updateDriver} deleteDriver={deleteDriver} />;
+    return <AdminDriversScreen onBack={() => setCurrentScreen('dashboard')} API_BASE={API_BASE} drivers={drivers} loadDrivers={loadDrivers} makeAuthenticatedRequest={makeAuthenticatedRequest} createDriver={createDriver} updateDriver={updateDriver} deleteDriver={deleteDriver} />;
   }
 
   // Admin Driver-Vehicles Screen
@@ -1415,11 +1299,15 @@ export default function App() {
 
   // My Deliveries Screen
   if (currentScreen === 'my_deliveries') {
-    return <MyDeliveriesScreen onBack={() => setCurrentScreen('dashboard')} deliveries={deliveries} loadMyDeliveries={loadMyDeliveries} />;
+    return <MyDeliveriesScreen onBack={() => setCurrentScreen('dashboard')} deliveries={deliveries} loadMyDeliveries={loadMyDeliveries} makeAuthenticatedRequest={makeAuthenticatedRequest} userType={userType} />;
+  }
+
+  if (currentScreen === 'customer_profile_edit' && userType === 'customer') {
+    return <CustomerProfileEditScreen onBack={() => setCurrentScreen('dashboard')} API_BASE={API_BASE} makeAuthenticatedRequest={makeAuthenticatedRequest} />;
   }
 
   if (currentScreen === 'driver_profile_edit' && userType === 'driver') {
-    return <DriverProfileEditScreen onBack={() => setCurrentScreen('dashboard')} makeAuthenticatedRequest={makeAuthenticatedRequest} />;
+    return <DriverProfileEditScreen onBack={() => setCurrentScreen('dashboard')} API_BASE={API_BASE} makeAuthenticatedRequest={makeAuthenticatedRequest} />;
   }
 
   if (currentScreen === 'driver_vehicle_edit' && userType === 'driver') {
@@ -1590,22 +1478,23 @@ export default function App() {
               style={styles.input}
               value={customerForm.first_name}
               onChangeText={(text) => setCustomerForm({ ...customerForm, first_name: text })}
-              placeholderTextColor={theme.placeholder} placeholder="First Name"
+              placeholderTextColor={theme.placeholder} placeholder="First Name *"
             />
 
             <TextInput
               style={styles.input}
               value={customerForm.last_name}
               onChangeText={(text) => setCustomerForm({ ...customerForm, last_name: text })}
-              placeholderTextColor={theme.placeholder} placeholder="Last Name"
+              placeholderTextColor={theme.placeholder} placeholder="Last Name *"
             />
 
             <TextInput
               style={styles.input}
               value={customerForm.phone_number}
-              onChangeText={(text) => setCustomerForm({ ...customerForm, phone_number: text })}
-              placeholderTextColor={theme.placeholder} placeholder="Phone Number"
+              onChangeText={(text) => setCustomerForm({ ...customerForm, phone_number: formatPhone10(text) })}
+              placeholderTextColor={theme.placeholder} placeholder="Phone Number * (10 digits)"
               keyboardType="phone-pad"
+              maxLength={14}
             />
 
             <Text style={styles.sectionTitle}>📍 Address Information</Text>
@@ -1709,164 +1598,6 @@ export default function App() {
     );
   }
 
-  // Driver Registration Screen - KEYBOARD FIXED!
-  if (currentScreen === 'driver_register') {
-    return (
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
-      >
-        <ScrollView
-          style={styles.container}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.content}>
-            <Text style={styles.title}>🚚 Driver Registration</Text>
-
-            <TextInput
-              style={styles.input}
-              value={driverForm.username}
-              onChangeText={(text) => setDriverForm({ ...driverForm, username: text })}
-              placeholderTextColor={theme.placeholder} placeholder="Username *"
-              autoCapitalize="none"
-            />
-
-            <TextInput
-              style={styles.input}
-              value={driverForm.email}
-              onChangeText={(text) => setDriverForm({ ...driverForm, email: text })}
-              placeholderTextColor={theme.placeholder} placeholder="Email *"
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-
-            <TextInput
-              style={styles.input}
-              value={driverForm.password}
-              onChangeText={(text) => setDriverForm({ ...driverForm, password: text })}
-              placeholderTextColor={theme.placeholder} placeholder="Password *"
-              secureTextEntry
-            />
-
-            <TextInput
-              style={styles.input}
-              value={driverForm.first_name}
-              onChangeText={(text) => setDriverForm({ ...driverForm, first_name: text })}
-              placeholderTextColor={theme.placeholder} placeholder="First Name *"
-              autoCapitalize="words"
-            />
-
-            <TextInput
-              style={styles.input}
-              value={driverForm.last_name}
-              onChangeText={(text) => setDriverForm({ ...driverForm, last_name: text })}
-              placeholderTextColor={theme.placeholder} placeholder="Last Name *"
-              autoCapitalize="words"
-            />
-
-            <TextInput
-              style={styles.input}
-              value={driverForm.phone_number}
-              onChangeText={(text) => setDriverForm({ ...driverForm, phone_number: text })}
-              placeholderTextColor={theme.placeholder} placeholder="Phone Number *"
-              keyboardType="phone-pad"
-            />
-
-            <DriverLicenseFields
-              licenseIssuingRegion={driverForm.license_issuing_region}
-              licenseNumber={driverForm.license_number}
-              onRegionChange={(code) => {
-                setDriverLicenseFieldError(null);
-                setDriverForm({ ...driverForm, license_issuing_region: code });
-              }}
-              onLicenseNumberChange={(text) => {
-                setDriverLicenseFieldError(null);
-                setDriverForm({ ...driverForm, license_number: text });
-              }}
-              theme={theme}
-              styles={styles}
-              fieldError={driverLicenseFieldError}
-            />
-
-            <Text style={styles.sectionTitle}>Vehicle Information</Text>
-            <VehicleCatalogFields
-              apiBase={API_BASE}
-              vehicleModelSpecId={driverForm.vehicle_model_spec_id}
-              vehicleYear={driverForm.vehicle_year}
-              onSpecChange={(specId) => {
-                setDriverVehicleCatalogError(null);
-                setDriverForm({
-                  ...driverForm,
-                  vehicle_model_spec_id: specId,
-                  vehicle_capacity: 0,
-                });
-              }}
-              onCatalogCapacityChange={(maxPayloadLb) => {
-                setDriverForm({
-                  ...driverForm,
-                  vehicle_capacity: maxPayloadLb,
-                  vehicle_capacity_unit: 'lb',
-                });
-              }}
-              theme={theme}
-              styles={styles}
-              fieldError={driverVehicleCatalogError}
-            />
-
-            <TextInput
-              style={styles.input}
-              value={driverForm.vehicle_year ? driverForm.vehicle_year.toString() : ''}
-              onChangeText={(text) => {
-                if (text === '') {
-                  setDriverForm({ ...driverForm, vehicle_year: new Date().getFullYear() });
-                } else {
-                  const year = parseInt(text);
-                  if (!isNaN(year) && year >= 1999 && year <= 2100) {
-                    setDriverForm({ ...driverForm, vehicle_year: year });
-                  }
-                }
-              }}
-              placeholderTextColor={theme.placeholder} placeholder="Vehicle Year (e.g., 2024) *"
-              keyboardType="numeric"
-              maxLength={4}
-            />
-
-            <TextInput
-              style={styles.input}
-              value={driverForm.vehicle_license_plate}
-              onChangeText={(text) => setDriverForm({ ...driverForm, vehicle_license_plate: text.toUpperCase() })}
-              placeholderTextColor={theme.placeholder} placeholder="Vehicle License Plate *"
-              autoCapitalize="characters"
-            />
-
-            <TextInput
-              style={styles.input}
-              value={driverForm.vehicle_vin}
-              onChangeText={(text) => setDriverForm({ ...driverForm, vehicle_vin: text.toUpperCase() })}
-              placeholderTextColor={theme.placeholder} placeholder="VIN (17 characters) *"
-              autoCapitalize="characters"
-              maxLength={17}
-            />
-
-            <View style={styles.buttonContainer}>
-              <Button title="Register Driver & Vehicle" onPress={registerDriver} disabled={loading} />
-            </View>
-
-            <View style={styles.buttonContainer}>
-              <Button title="Back" onPress={() => setCurrentScreen('main')} />
-            </View>
-
-            {/* Extra padding to ensure buttons are visible above keyboard */}
-            <View style={styles.keyboardPadding} />
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    );
-  }
-
   // Dashboard Screen (Post-Login)
   if (currentScreen === 'dashboard') {
     return (
@@ -1884,6 +1615,9 @@ export default function App() {
           {userType === 'customer' && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>📦 Customer Services</Text>
+              <View style={styles.buttonContainer}>
+                <Button title="👤 Edit My Profile" onPress={() => setCurrentScreen('customer_profile_edit')} />
+              </View>
               <View style={styles.buttonContainer}>
                 <Button title="📋 Request Delivery" onPress={() => setCurrentScreen('delivery_request')} />
               </View>

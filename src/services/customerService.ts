@@ -27,6 +27,23 @@ export interface CustomerAdminPayload extends CustomerRegistrationFields {
   password?: string;
 }
 
+export interface CustomerProfileFields {
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  phone_number?: string;
+  password?: string;
+  address_unit?: string;
+  address_street?: string;
+  address_city?: string;
+  address_state?: string;
+  address_postal_code?: string;
+  address_country?: string;
+  company_name?: string;
+  is_business?: boolean;
+  preferred_pickup_address?: string;
+}
+
 export async function parseCustomerApiError(response: Response): Promise<string> {
   try {
     const data = await response.json();
@@ -83,6 +100,52 @@ export async function fetchCustomers(request: AuthenticatedRequest): Promise<any
   }
   const data = await response.json();
   return data.results ?? data;
+}
+
+export async function fetchCustomerMe(request: AuthenticatedRequest): Promise<any> {
+  const response = await request('/customers/me/');
+  if (!response.ok) {
+    throw new Error(await parseCustomerApiError(response));
+  }
+  return response.json();
+}
+
+export function buildCustomerProfilePayload(
+  fields: CustomerProfileFields,
+): Record<string, unknown> {
+  const payload: Record<string, unknown> = {
+    email: fields.email,
+    first_name: fields.first_name,
+    last_name: fields.last_name,
+    phone_number: fields.phone_number,
+    address_unit: fields.address_unit || '',
+    address_street: fields.address_street || '',
+    address_city: fields.address_city || '',
+    address_state: fields.address_state || '',
+    address_postal_code: fields.address_postal_code || '',
+    address_country: fields.address_country || 'US',
+    company_name: fields.company_name || '',
+    is_business: fields.is_business || false,
+    preferred_pickup_address: fields.preferred_pickup_address || '',
+  };
+  if (fields.password?.trim()) {
+    payload.password = fields.password;
+  }
+  return payload;
+}
+
+export async function updateCustomerMe(
+  request: AuthenticatedRequest,
+  payload: Record<string, unknown>,
+): Promise<any> {
+  const response = await request('/customers/me/', {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error(await parseCustomerApiError(response));
+  }
+  return response.json();
 }
 
 export async function fetchMyDeliveries(request: AuthenticatedRequest): Promise<any[]> {

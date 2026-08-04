@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Button, ScrollView, Text, TextInput, View } from 'react-native';
+import { AddressFields, emptyAddressFields } from '../components/AddressFields';
 import { DriverLicenseFields } from '../components/DriverLicenseFields';
 import { VehicleCatalogFields } from '../components/VehicleCatalogFields';
-import { validateDriverLicenseNumber } from '../utils/driverLicenseValidation';
 import { theme, styles } from '../theme';
+import { formatPhone10, getPhoneDigits } from '../utils/phoneFormatting';
+import { validateDriverLicenseNumber } from '../utils/driverLicenseValidation';
 
 export interface RegisterAsDriverScreenProps {
   onBack: () => void;
@@ -27,6 +29,7 @@ export interface RegisterAsDriverScreenProps {
       vehicle_vin: '',
       vehicle_capacity: 0,
       vehicle_capacity_unit: 'lb' as 'kg' | 'lb',
+      ...emptyAddressFields(),
     });
     const [error, setError] = useState<string | null>(null);
     const [licenseFieldError, setLicenseFieldError] = useState<string | null>(null);
@@ -72,7 +75,13 @@ export interface RegisterAsDriverScreenProps {
       if (!formData.vehicle_license_plate?.trim()) missingFields.push('vehicle_license_plate');
       if (!formData.vehicle_vin?.trim()) missingFields.push('vehicle_vin');
 
-      // Validate vehicle year (2000 is treated as empty/default)
+      const phoneDigits = getPhoneDigits(formData.phone_number);
+      if (phoneDigits.length !== 10) {
+        setError('Phone number must be exactly 10 digits');
+        return;
+      }
+
+      // Validate vehicle year
       if (!formData.vehicle_year || formData.vehicle_year === 2000 || formData.vehicle_year < 2000 || formData.vehicle_year > 2100) {
         missingFields.push('vehicle_year (must be between 2000-2100, not default)');
       }
@@ -118,9 +127,15 @@ export interface RegisterAsDriverScreenProps {
           email: formData.email,
           first_name: formData.first_name,
           last_name: formData.last_name,
-          phone_number: formData.phone_number,
+          phone_number: phoneDigits,
           license_issuing_region: formData.license_issuing_region,
           license_number: licenseValidation.normalized,
+          address_unit: formData.address_unit,
+          address_street: formData.address_street,
+          address_city: formData.address_city,
+          address_state: formData.address_state,
+          address_postal_code: formData.address_postal_code,
+          address_country: formData.address_country,
           vehicle_model_spec_id: formData.vehicle_model_spec_id,
           // Vehicle information (flat structure as expected by backend)
           vehicle_license_plate: formData.vehicle_license_plate,
@@ -231,13 +246,15 @@ export interface RegisterAsDriverScreenProps {
             onChangeText={(text) => setFormData(prev => ({ ...prev, last_name: text }))}
           />
 
-          <Text style={styles.label}>Phone Number</Text>
+          <Text style={styles.label}>Phone Number (10 digits) *</Text>
           <TextInput
             style={styles.input}
-            placeholderTextColor={theme.placeholder} placeholder="Enter phone number"
+            placeholderTextColor={theme.placeholder}
+            placeholder="(555) 555-5555"
             value={formData.phone_number}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, phone_number: text }))}
+            onChangeText={(text) => setFormData((prev) => ({ ...prev, phone_number: formatPhone10(text) }))}
             keyboardType="phone-pad"
+            maxLength={14}
           />
 
           <DriverLicenseFields
@@ -254,6 +271,20 @@ export interface RegisterAsDriverScreenProps {
             theme={theme}
             styles={styles}
             fieldError={licenseFieldError}
+          />
+
+          <AddressFields
+            value={{
+              address_unit: formData.address_unit,
+              address_street: formData.address_street,
+              address_city: formData.address_city,
+              address_state: formData.address_state,
+              address_postal_code: formData.address_postal_code,
+              address_country: formData.address_country,
+            }}
+            onChange={(address) => setFormData((prev) => ({ ...prev, ...address }))}
+            apiBase={API_BASE}
+            showAutocomplete
           />
 
           <Text style={styles.sectionTitle}>Vehicle Information</Text>

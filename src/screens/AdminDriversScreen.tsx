@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Button, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Button, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { AddressFields, emptyAddressFields } from '../components/AddressFields';
 import { AdminDriverListFilters } from '../components/AdminDriverListFilters';
 import { ComplianceDocumentsPanel } from '../components/ComplianceDocumentsPanel';
+import { DriverLicenseFields } from '../components/DriverLicenseFields';
 import { approveDriver, DEFAULT_ADMIN_DRIVER_LIST_FILTERS, DRIVER_APPROVAL_LABELS, filterAndSortAdminDrivers, rejectDriver, type AdminDriverListFilters as AdminDriverListFiltersState, type DriverApprovalStatus } from '../services/driverService';
 import { theme, styles } from '../theme';
 import { formatPhone10, formatPhoneForDisplay, getPhoneDigits } from '../utils/phoneFormatting';
@@ -9,6 +11,7 @@ import type { AuthenticatedRequest } from './types';
 
 export interface AdminDriversScreenProps {
   onBack: () => void;
+  API_BASE: string;
   drivers: any[];
   loadDrivers: () => Promise<void>;
   makeAuthenticatedRequest: AuthenticatedRequest;
@@ -17,16 +20,21 @@ export interface AdminDriversScreenProps {
   deleteDriver: (id: any) => Promise<void>;
 }
 
-  export function AdminDriversScreen({ onBack, drivers, loadDrivers, makeAuthenticatedRequest, createDriver, updateDriver, deleteDriver }: AdminDriversScreenProps) {
+  export function AdminDriversScreen({ onBack, API_BASE, drivers, loadDrivers, makeAuthenticatedRequest, createDriver, updateDriver, deleteDriver }: AdminDriversScreenProps) {
     console.log('[DEBUG] AdminDriversScreen: Component initialized/re-initialized');
     const [selectedDriver, setSelectedDriver] = useState<any>(null);
     const [mode, setMode] = useState<'list' | 'create' | 'edit' | 'detail'>('list');
     const [formData, setFormData] = useState({
+      username: '',
+      email: '',
+      password: '',
       first_name: '',
       last_name: '',
       phone_number: '',
+      license_issuing_region: 'CA-BC',
       license_number: '',
-      active: true
+      active: true,
+      ...emptyAddressFields(),
     });
     const [error, setError] = useState<string | null>(null);
     const [localLoading, setLocalLoading] = useState(false);
@@ -86,16 +94,25 @@ export interface AdminDriversScreenProps {
 
     const resetForm = () => {
       setFormData({
+        username: '',
+        email: '',
+        password: '',
         first_name: '',
         last_name: '',
         phone_number: '',
+        license_issuing_region: 'CA-BC',
         license_number: '',
-        active: true
+        active: true,
+        ...emptyAddressFields(),
       });
       setError(null);
     };
 
     const handleCreate = async () => {
+      if (!formData.username.trim() || !formData.email.trim() || !formData.password.trim()) {
+        setError('Username, email, and password are required');
+        return;
+      }
       if (!formData.first_name.trim() || !formData.last_name.trim() || !formData.license_number.trim()) {
         setError('First name, last name, and license number are required');
         return;
@@ -108,7 +125,10 @@ export interface AdminDriversScreenProps {
 
       setLocalLoading(true);
       try {
-        const payload = { ...formData, phone_number: getPhoneDigits(formData.phone_number) };
+        const payload = {
+          ...formData,
+          phone_number: phoneDigits,
+        };
         await createDriver(payload);
         await loadDrivers();
         setMode('list');
@@ -172,11 +192,21 @@ export interface AdminDriversScreenProps {
     const handleEdit = (driver: any) => {
       setSelectedDriver(driver);
       setFormData({
+        username: '',
+        email: '',
+        password: '',
         first_name: driver.first_name || '',
         last_name: driver.last_name || '',
         phone_number: formatPhoneForDisplay(driver.phone_number || ''),
+        license_issuing_region: driver.license_issuing_region || 'CA-BC',
         license_number: driver.license_number || '',
-        active: driver.active ?? true
+        active: driver.active ?? true,
+        address_unit: driver.address_unit || '',
+        address_street: driver.address_street || '',
+        address_city: driver.address_city || '',
+        address_state: driver.address_state || '',
+        address_postal_code: driver.address_postal_code || '',
+        address_country: driver.address_country === 'CA' ? 'CA' : 'US',
       });
       setMode('edit');
     };
@@ -220,6 +250,37 @@ export interface AdminDriversScreenProps {
 
             {error && <Text style={{ color: 'red', marginBottom: 10 }}>{error}</Text>}
 
+            {mode === 'create' ? (
+              <>
+                <Text style={styles.sectionTitle}>Account</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholderTextColor={theme.placeholder}
+                  placeholder="Username *"
+                  value={formData.username}
+                  onChangeText={(text) => setFormData((prev) => ({ ...prev, username: text }))}
+                  autoCapitalize="none"
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholderTextColor={theme.placeholder}
+                  placeholder="Email *"
+                  value={formData.email}
+                  onChangeText={(text) => setFormData((prev) => ({ ...prev, email: text }))}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholderTextColor={theme.placeholder}
+                  placeholder="Password *"
+                  value={formData.password}
+                  onChangeText={(text) => setFormData((prev) => ({ ...prev, password: text }))}
+                  secureTextEntry
+                />
+              </>
+            ) : null}
+
             <Text style={styles.label}>First Name *</Text>
             <TextInput
               style={styles.input}
@@ -246,12 +307,27 @@ export interface AdminDriversScreenProps {
               maxLength={14}
             />
 
-            <Text style={styles.label}>License Number *</Text>
-            <TextInput
-              style={styles.input}
-              placeholderTextColor={theme.placeholder} placeholder="Enter license number"
-              value={formData.license_number}
-              onChangeText={(text) => setFormData(prev => ({ ...prev, license_number: text }))}
+            <DriverLicenseFields
+              licenseIssuingRegion={formData.license_issuing_region}
+              licenseNumber={formData.license_number}
+              onRegionChange={(code) => setFormData((prev) => ({ ...prev, license_issuing_region: code }))}
+              onLicenseNumberChange={(text) => setFormData((prev) => ({ ...prev, license_number: text }))}
+              theme={theme}
+              styles={styles}
+            />
+
+            <AddressFields
+              value={{
+                address_unit: formData.address_unit,
+                address_street: formData.address_street,
+                address_city: formData.address_city,
+                address_state: formData.address_state,
+                address_postal_code: formData.address_postal_code,
+                address_country: formData.address_country,
+              }}
+              onChange={(address) => setFormData((prev) => ({ ...prev, ...address }))}
+              apiBase={API_BASE}
+              showAutocomplete
             />
 
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15 }}>

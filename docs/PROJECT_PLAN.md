@@ -1,12 +1,12 @@
 # DeliveryApp — Project Plan
 
-**Last updated:** July 31, 2026  
+**Last updated:** August 4, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟡 Phase 1–4C **complete**; Phase 4D **in progress** — admin UI + nightly cron **Done**; compliance resubmit → approve **prod verified**; expiry **email not live** (no final domain yet); driver vehicle replace UX **still in QA**  
-**Current focus:** Prod-test driver My Vehicle replace + compliance upload after replace. Email reminders **blocked** until final domain chosen (then Heroku `EMAIL_*` / `DEFAULT_FROM_EMAIL`). Phase 4G (staff RBAC) **backlog**.  
+**Overall status:** 🟡 Phase 1–4C **complete**; Phase 4D **in progress** — admin UI + nightly cron **Done**; compliance resubmit → approve **prod verified**; expiry **email not live** (no final domain yet); driver vehicle replace UX **still in QA**; **Phase 4H** (form/screen field parity) **planned** from screen audit  
+**Current focus:** **Phase 4H** — form field parity across register/create/edit screens (customer profile edit, admin delivery customer picker, shared address block). Prod-test driver My Vehicle replace + compliance upload after replace. Email reminders **blocked** until final domain chosen (then Heroku `EMAIL_*` / `DEFAULT_FROM_EMAIL`). Phase 4G (staff RBAC) **backlog**.  
 **Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
-**Latest status report:** `docs/PROJECT_STATUS_20260731.md` + `docs/PROJECT_LOG.md`  
+**Latest status report:** `docs/PROJECT_STATUS_20260804.md` + `docs/PROJECT_LOG.md`  
 **Architecture:** `docs/ARCHITECTURE.md` + `.cursor/rules/layered-architecture.mdc`  
 **Business use cases:** [`docs/USE_CASES.md`](USE_CASES.md) → `DeliveryApp/project-docs/USE_CASES.md` (auth, compliance, dispatch)  
 **Development process:** [`docs/DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md) — plan → build → test → done
@@ -298,6 +298,7 @@ From BC requirements doc: admin visibility + expiry reminders. **MVP-recommended
 | Driver `license_issuing_region` + format validation | **Done** — migration `0006`, registration API + mobile (`3b32091` / `e2aa00d`) | High |
 | Vehicle **make / model** catalog dropdowns (NA pickup trucks) | **Done** — `VehicleModelSpec` migration `0007`, `/api/vehicle-catalog/`, mobile `VehicleCatalogFields` (`19f8f2d` / `af7b229`) | High |
 | Seed **vehicle make/model reference data** | **Done** — `vehicle_catalog_data.py` + `seed_demo_data` / `seed_driver_vehicle_test_data` | High |
+| Driver self-edit **structured address** block | **Done** — `DriverProfileEditScreen` (unit, street, city, state, postal, country) | High |
 | Vehicle **colour** field (customer/driver identification) | Todo | Medium |
 | Driver **emergency contact** (name + phone) | Todo | Medium |
 | BC/ICBC-aware consent copy on insurance upload | Todo | Low (copy only) |
@@ -344,6 +345,104 @@ Document lists as good practice; **not required** for BC Class 5 local delivery 
 | Municipal **business licence** document type | Todo | Optional |
 | **GST number** on driver profile | Todo | Optional — if contractor reporting needed |
 
+### Phase 4H — Form & screen field parity *(planned — August 2026 audit)*
+
+**Problem:** Register, create, edit, and admin screens for the same entity expose **different fields**, use **different validation**, or send **payload keys the API does not accept**. Example: driver self-edit now has structured address, but driver register and admin driver forms do not; admin delivery form edits `customer_name` / `customer_address` but backend `DeliverySerializer` has no writable `customer_address` and `customer_name` is read-only.
+
+**Scope:** All forms in **DeliveryAppMobile** (`App.tsx`, `src/screens/`, shared `src/components/`). Web UI is exported from this repo via Expo → Vercel.
+
+**Screen inventory (reference):**
+
+| Screen | Path | Mode |
+|--------|------|------|
+| Customer register | `App.tsx` (`customer_register`) | Register |
+| Customer admin create/edit | `AdminCustomersScreen.tsx` | Create / Edit |
+| Customer self profile edit | — | **Missing** |
+| Driver register (active) | `RegisterAsDriverScreen.tsx` | Register |
+| Driver register (legacy) | `App.tsx` (`driver_register`) | Register — **orphaned, not in menu** |
+| Driver self profile edit | `DriverProfileEditScreen.tsx` | Edit |
+| Driver admin create/edit | `AdminDriversScreen.tsx` | Create / Edit |
+| Delivery request (customer) | `DeliveryRequestScreen.tsx` | Create |
+| Delivery admin create/edit | `AdminDeliveriesScreen.tsx` | Create / Edit |
+| Vehicle admin create/edit | `AdminVehiclesScreen.tsx` | Create / Edit |
+| Driver vehicle replace/resubmit | `DriverVehicleOnboardingForm.tsx` | Create-like |
+| Compliance upload | `ComplianceDocumentsPanel.tsx` | Create / resubmit |
+
+**Shared structured address block** (backend: `address_unit`, `address_street`, `address_city`, `address_state`, `address_postal_code`, `address_country`):
+
+| Screen | Address block |
+|--------|:-------------:|
+| Customer register | ✅ |
+| Customer admin create/edit | ✅ |
+| Customer self edit | ❌ (no screen) |
+| Driver register | ❌ |
+| Driver self edit | ✅ |
+| Driver admin create/edit | ❌ |
+| Delivery pickup/dropoff | ❌ (free-text only) |
+
+**Cross-cutting gaps:**
+
+| # | Gap | Affected screens |
+|---|-----|------------------|
+| 1 | **`AddressAutocomplete` unused** — component + validation service exist; all addresses are plain `TextInput` | Customer, driver, delivery |
+| 2 | **Phone validation inconsistent** — 10-digit NA enforced on admin/edit; public register accepts raw input | `App.tsx` register, `RegisterAsDriverScreen` |
+| 3 | **Required-field labeling** — backend requires customer `first_name` / `last_name` / `phone_number`; public register does not mark or validate | `App.tsx` customer register |
+| 4 | **Duplicate driver registration** — `RegisterAsDriverScreen` (active) vs `App.tsx` `driver_register` (legacy, missing confirm_password) | Driver register |
+| 5 | **Vehicle identity split** — driver paths use catalog (`vehicle_model_spec_id`); admin vehicle uses free-text make/model + manual capacity | Driver register/replace vs `AdminVehiclesScreen` |
+
+#### P0 — Critical (broken or blocks users)
+
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| 1 | **Customer profile edit** — new screen + `PATCH /customers/me/` (backend action today is GET-only) | **Done** — `CustomerProfileEditScreen` + `CustomerMeSerializer` | Customers can update address/phone/preferred pickup after signup |
+| 2 | **Admin delivery create/edit** — replace `customer_name` / `customer_address` with **customer FK picker** | **Done** — `AdminDeliveriesScreen` customer picker + `buildDeliveryAdminPayload` | Uses `customer` FK aligned with `DeliverySerializer` |
+
+#### P1 — High (field parity + backend alignment)
+
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| 3 | **Shared address block** on driver register + driver admin create/edit | **Done** — `AddressFields` on register + admin driver forms | Matches customer + driver self-edit |
+| 4 | **Delivery scheduling fields** — `delivery_date`, `delivery_time`, `special_instructions`, `same_dropoff_as_customer` on customer request + admin forms | **Done** | Customer + admin delivery forms |
+| 5 | Wire **`AddressAutocomplete`** into profile and delivery location fields | **Done** — customer/driver profile, delivery request, admin delivery | Reuses `AddressAutocomplete.tsx` |
+| 6 | **`license_issuing_region`** on driver profile edit (with region-aware validation) | **Done** — `DriverMeSerializer` + `DriverLicenseFields` on profile edit | Editable after registration |
+| 7 | **10-digit phone validation** on all public register forms | **Done** — customer register + driver register | Aligns with admin/edit screens |
+
+#### P2 — Medium (consistency + cleanup)
+
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| 8 | **Unify vehicle catalog** — admin vehicle create uses catalog (`vehicle_model_spec_id`) like driver register/replace | **Done** — `VehicleCatalogFields` on admin vehicle create | Auto-fills make/model/capacity |
+| 9 | **Admin driver create** — clarify/fix user account creation (`POST /drivers/` has read-only `user`; staff may need dedicated endpoint or registration-style flow) | **Done** — `StaffDriverCreateSerializer` + admin form account fields | Creates User + Driver |
+| 10 | **Compliance upload: `effective_date`** field | **Done** — upload form field + payload | Backend field exposed in UI |
+| 11 | **Customer delivery cancel/edit** (customer-facing) | **Done** — `POST /deliveries/{id}/cancel/` + My Deliveries cancel button | Pending deliveries only |
+
+#### P3 — Low (debt)
+
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| 12 | Remove legacy **`App.tsx` `driver_register`** block | **Done** | Use `RegisterAsDriverScreen` only |
+| 13 | Extract **shared form sections** — address block, phone input, account fields — into reusable components | **Done** — `AddressFields` component | Used across profile/register/admin forms |
+
+**Backend gaps to address with Phase 4H UI work:**
+
+| API | Gap |
+|-----|-----|
+| `GET/PATCH /customers/me/` | PATCH not implemented — only GET today |
+| `DriverSerializer` (admin) | No address fields; driver address only via `DriverMeSerializer` |
+| `DriverSerializer` | No `license_issuing_region` on update |
+| `DeliverySerializer` | `customer_name` read-only; no `customer_address` — use `customer` FK |
+
+**Phase 4H exit criteria:**
+
+- Customer can edit own profile (address, phone, preferred pickup) after registration.
+- Admin delivery create/edit uses customer picker; no phantom `customer_address` field.
+- Driver register and admin driver forms include the same structured address block as driver self-edit.
+- Customer and driver delivery forms expose date/time, special instructions, and dropoff shortcut flags supported by backend.
+- Public registration forms use the same phone validation as admin/edit screens.
+- `AddressAutocomplete` used on at least customer address, driver address, and delivery location fields.
+
+**Audit reference:** `docs/PROJECT_STATUS_20260804.md` · `DeliveryApp/project-docs/PROJECT_STATUS_20260804.md`
+
 ### Phase 4 — Other product items
 
 - Large-item domain (dimensions, capacity matching, estimates) — see workspace `project-docs/AUTOMATED_BUILD_PLAN.md`
@@ -351,6 +450,7 @@ Document lists as good practice; **not required** for BC Class 5 local delivery 
 - **Admin drivers list filters** — **Done** (`9118dec`) — dropdown filters: last name (Z→A sort), account status (active/inactive), approval status; prod verified July 29, 2026
 - **Compliance resubmit → admin approve** — **Done** — prod verified July 31, 2026 (UC-13 / UC-06; `5353a0b`–`680b00c` + approve-after-resubmit fix)
 - **Driver My Vehicle replace + upload after replace** — **In QA** (`5353a0b`, `96a8142`, `680b00c`) — replace vehicle, upload compliance on new truck, profile field labels, catalog capacity auto-fill (`9174cd8`, `ddf0b7b`)
+- **Form & screen field parity (Phase 4H)** — **Planned** — screen audit August 4, 2026; see Phase 4H table (customer profile edit, admin delivery customer picker, address block parity, delivery scheduling fields, `AddressAutocomplete`)
 
 ---
 

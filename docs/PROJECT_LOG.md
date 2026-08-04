@@ -4,6 +4,26 @@ Chronological decisions and implementation notes. Latest status reports: `PROJEC
 
 ---
 
+## August 4, 2026 — Screen audit: form & field parity (Phase 4H planned)
+
+**Scope:** DeliveryAppMobile screens vs DeliveryAppBackend serializers/models
+
+### Findings (summary)
+
+- **Customer:** register + admin forms aligned; **no self-service profile edit**; backend `GET /customers/me/` only.
+- **Driver:** self-edit has structured address ✅; register and admin driver forms lack address; `license_issuing_region` only at registration.
+- **Delivery:** customer + admin forms missing `delivery_date`, `delivery_time`, `special_instructions`, `same_dropoff_as_customer`; admin form uses non-writable `customer_name` / phantom `customer_address`.
+- **Cross-cutting:** `AddressAutocomplete` unused; phone validation inconsistent on public register; duplicate legacy driver register in `App.tsx`; admin vehicle free-text vs driver catalog split.
+
+### Plan update
+
+- Added **Phase 4H — Form & screen field parity** to `docs/PROJECT_PLAN.md` with P0–P3 task table and exit criteria.
+- Marked driver self-edit structured address as **Done** in Phase 4E.
+
+**Status report:** `docs/PROJECT_STATUS_20260804.md` · `DeliveryApp/project-docs/PROJECT_STATUS_20260804.md`
+
+---
+
 ## July 31, 2026 — Compliance resubmit → admin approve (prod verified)
 
 **Environments:** Vercel web + Heroku `truck-buddy`

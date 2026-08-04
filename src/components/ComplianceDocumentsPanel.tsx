@@ -147,6 +147,7 @@ export function ComplianceDocumentsPanel({
     issuer: '',
     policy_number: '',
     coverage_type: 'COMMERCIAL',
+    effective_date: '',
     expiry_date: '',
     notes: '',
   });
@@ -168,6 +169,7 @@ export function ComplianceDocumentsPanel({
       issuer: doc.issuer || '',
       policy_number: doc.policy_number || '',
       coverage_type: doc.coverage_type || 'COMMERCIAL',
+      effective_date: doc.effective_date || '',
       expiry_date: doc.expiry_date || '',
       notes: doc.notes || '',
     });
@@ -270,6 +272,7 @@ export function ComplianceDocumentsPanel({
         issuer: form.issuer?.trim() || undefined,
         policy_number: form.policy_number?.trim() || undefined,
         coverage_type: form.coverage_type,
+        effective_date: form.effective_date?.trim() || undefined,
         expiry_date: form.expiry_date?.trim() || undefined,
         notes: form.notes?.trim() || undefined,
         file_key: fileMeta?.file_key,
@@ -562,6 +565,14 @@ export function ComplianceDocumentsPanel({
                   </Text>
                 </>
               )}
+              <Text style={styles.label}>Effective date (YYYY-MM-DD, optional)</Text>
+              <TextInput
+                style={styles.input}
+                value={form.effective_date || ''}
+                onChangeText={(t) => setForm((f) => ({ ...f, effective_date: t }))}
+                placeholder="2026-01-01"
+                placeholderTextColor={theme.textMuted}
+              />
               <Text style={styles.label}>Expiry date (YYYY-MM-DD)</Text>
               <TextInput
                 style={styles.input}
