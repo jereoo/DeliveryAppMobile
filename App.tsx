@@ -1624,6 +1624,9 @@ export default function App() {
               <View style={styles.buttonContainer}>
                 <Button title="📋 My Deliveries" onPress={() => setCurrentScreen('my_deliveries')} />
               </View>
+              <View style={styles.buttonContainer}>
+                <Button title="🚪 Logout" onPress={handleLogout} />
+              </View>
             </View>
           )}
 
