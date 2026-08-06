@@ -737,10 +737,11 @@ export default function App() {
       await createDeliveryByApi(makeAuthenticatedRequest, deliveryData);
       Alert.alert('Success', 'Delivery created successfully!');
       await loadDeliveries();
-
     } catch (error) {
       console.error('Error creating delivery:', error);
-      Alert.alert('Error', (error as any).message || 'Failed to create delivery');
+      const message = error instanceof Error ? error.message : 'Failed to create delivery';
+      Alert.alert('Error', message);
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -752,10 +753,11 @@ export default function App() {
       await updateDeliveryById(makeAuthenticatedRequest, deliveryId, deliveryData);
       Alert.alert('Success', 'Delivery updated successfully!');
       await loadDeliveries();
-
     } catch (error) {
       console.error('Error updating delivery:', error);
-      Alert.alert('Error', (error as any).message || 'Failed to update delivery');
+      const message = error instanceof Error ? error.message : 'Failed to update delivery';
+      Alert.alert('Error', message);
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -767,10 +769,11 @@ export default function App() {
       await deleteDeliveryById(makeAuthenticatedRequest, deliveryId);
       Alert.alert('Success', 'Delivery deleted successfully!');
       await loadDeliveries();
-
     } catch (error) {
       console.error('Error deleting delivery:', error);
-      Alert.alert('Error', (error as any).message || 'Failed to delete delivery');
+      const message = error instanceof Error ? error.message : 'Failed to delete delivery';
+      Alert.alert('Error', message);
+      throw error;
     } finally {
       setLoading(false);
     }

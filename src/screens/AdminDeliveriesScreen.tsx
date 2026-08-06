@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Button, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Button, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import { createDeliveryAssignment } from '../services/assignmentService';
 import type { DispatchEligibility } from '../services/complianceService';
@@ -183,8 +183,8 @@ export function AdminDeliveriesScreen({
       setMode('list');
       setForm(emptyDeliveryForm());
       await loadDeliveries();
-    } catch {
-      setError('Failed to create delivery');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to create delivery');
     }
     setLocalLoading(false);
   };
@@ -199,8 +199,8 @@ export function AdminDeliveriesScreen({
       setMode('list');
       setSelected(null);
       await loadDeliveries();
-    } catch {
-      setError('Failed to update delivery');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to update delivery');
     }
     setLocalLoading(false);
   };
@@ -208,16 +208,35 @@ export function AdminDeliveriesScreen({
   const renderFormFields = () => (
     <>
       <Text style={styles.sectionTitle}>Customer *</Text>
+      <Text style={{ color: theme.textMuted, marginBottom: 8 }}>
+        Tap a customer below to select them.
+      </Text>
       {customers.length === 0 ? (
         <Text style={{ color: theme.textMuted, marginBottom: 10 }}>No customers loaded.</Text>
       ) : (
-        customers.map((customer: any) => (
-          <Button
-            key={customer.id}
-            title={`${form.customer === customer.id ? '✓ ' : ''}${customer.display_name || customer.full_name || customer.username}`}
-            onPress={() => setForm((f) => ({ ...f, customer: customer.id }))}
-          />
-        ))
+        customers.map((customer: any) => {
+          const label = customer.display_name || customer.full_name || customer.username;
+          const selected = form.customer === customer.id;
+          return (
+            <Pressable
+              key={customer.id}
+              onPress={() => setForm((f) => ({ ...f, customer: customer.id }))}
+              style={{
+                paddingVertical: 12,
+                paddingHorizontal: 14,
+                marginBottom: 6,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: selected ? theme.border : theme.textMuted,
+                backgroundColor: selected ? '#1e3a5f' : 'transparent',
+              }}
+            >
+              <Text style={{ color: theme.text, fontWeight: selected ? '700' : '400' }}>
+                {selected ? '✓ ' : ''}{label}
+              </Text>
+            </Pressable>
+          );
+        })
       )}
       {selectedCustomer ? (
         <Text style={{ color: theme.textMuted, marginVertical: 8 }}>

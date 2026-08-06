@@ -68,6 +68,22 @@ export async function parseDeliveryApiError(response: Response): Promise<string>
     if (typeof data?.message === 'string') {
       return data.message;
     }
+    if (data && typeof data === 'object') {
+      const fieldMessages = Object.entries(data)
+        .map(([field, value]) => {
+          if (Array.isArray(value)) {
+            return `${field}: ${value.join(', ')}`;
+          }
+          if (typeof value === 'string') {
+            return `${field}: ${value}`;
+          }
+          return null;
+        })
+        .filter(Boolean);
+      if (fieldMessages.length > 0) {
+        return fieldMessages.join('; ');
+      }
+    }
     return JSON.stringify(data);
   } catch {
     return `HTTP ${response.status}: ${response.statusText}`;
