@@ -5,6 +5,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getApiUrl } from '../config/api';
 
 export interface AddressValidationRequest {
   address: string;
@@ -53,12 +54,10 @@ export interface ValidationStatistics {
 }
 
 class AddressValidationService {
-  private baseUrl: string;
   private apiToken: string | null = null;
 
-  constructor(baseUrl: string = process.env.BACKEND_URL || 'http://localhost:8000/api') {
-    this.baseUrl = baseUrl;
-    this.loadToken();
+  private async getBaseUrl(): Promise<string> {
+    return getApiUrl();
   }
 
   private async loadToken(): Promise<void> {
@@ -91,7 +90,8 @@ class AddressValidationService {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`${this.baseUrl}/address-validation/validate/`, {
+      const baseUrl = await this.getBaseUrl();
+      const response = await fetch(`${baseUrl}/address-validation/validate/`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -124,7 +124,8 @@ class AddressValidationService {
     try {
       const headers = await this.getAuthHeaders();
 
-      const response = await fetch(`${this.baseUrl}/address-validation/statistics/`, {
+      const baseUrl = await this.getBaseUrl();
+      const response = await fetch(`${baseUrl}/address-validation/statistics/`, {
         method: 'GET',
         headers,
       });
@@ -148,7 +149,8 @@ class AddressValidationService {
     try {
       const headers = await this.getAuthHeaders();
 
-      const response = await fetch(`${this.baseUrl}/address-validation/validated-addresses/?page=${page}`, {
+      const baseUrl = await this.getBaseUrl();
+      const response = await fetch(`${baseUrl}/address-validation/validated-addresses/?page=${page}`, {
         method: 'GET',
         headers,
       });
