@@ -4,6 +4,38 @@ Chronological decisions and implementation notes. Latest status reports: `PROJEC
 
 ---
 
+## August 5, 2026 — Phase 4H post-deploy: admin Add Delivery + address autocomplete (prod fixes)
+
+**Environments:** Vercel `deliveryapp-mobile.vercel.app` + Heroku `truck-buddy`
+
+### Issues reported (admin Add Delivery)
+
+1. **Chrome “Access other apps and services on this device”** popup and **Failed to fetch** when typing pickup/dropoff — `AddressAutocomplete` called `localhost:8000` from HTTPS Vercel site (Local Network Access prompt).
+2. **Delivery did not save** — often with **Same pickup as customer address** enabled; API returned 400 because staff `DeliverySerializer` rejected blank locations (customer path already allowed blanks via `DeliveryCreateSerializer`).
+3. **Silent failure UX** — form navigated back to list even when create failed.
+4. **Customer picker confusion** — list is real DB data (`demo.customer`, test customers from `create_test_data`); web `Button` styling obscured selection.
+
+### Fixes shipped
+
+| Repo | Commit | Change |
+|------|--------|--------|
+| DeliveryAppMobile | `36751b7` | `addressValidationService` → `getApiUrl()` (Heroku, not localhost) |
+| DeliveryAppBackend | `9f421dc` | Shared `_validate_delivery_location_fields()`; staff create allows blank pickup/dropoff with same-as-customer flags; require `customer` |
+| DeliveryAppMobile | `38a62cb` | Rethrow CRUD errors; inline API messages; `Pressable` customer picker; richer `parseDeliveryApiError` |
+
+### Status
+
+✅ **Committed and pushed** to `main` (Heroku + Vercel auto-deploy).  
+🟡 **Awaiting prod retest** — admin Add Delivery with customer selection + same-as-customer toggles + address fields.
+
+**Status report:** `docs/PROJECT_STATUS_20260805.md` · `docs/PROJECT_PLAN.md` Phase 4H post-deploy table
+
+### UX consistency (product standard)
+
+Documented requirement: **all screens should follow consistent design/UX patterns** where possible so the whole app has a unified look and feel — not only field parity (Phase 4H). Added to `PROJECT_PLAN.md`, `ARCHITECTURE.md`, and `DEVELOPMENT_PROCESS.md` (DoD checkbox). Aug 5 admin delivery customer picker is the reference example of what to avoid (stacked `Button`s) vs target (`Pressable` selectable rows + theme tokens).
+
+---
+
 ## August 4, 2026 — Screen audit: form & field parity (Phase 4H planned)
 
 **Scope:** DeliveryAppMobile screens vs DeliveryAppBackend serializers/models

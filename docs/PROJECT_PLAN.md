@@ -1,12 +1,12 @@
 # DeliveryApp — Project Plan
 
-**Last updated:** August 4, 2026  
+**Last updated:** August 5, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟡 Phase 1–4C **complete**; Phase 4D **in progress** — admin UI + nightly cron **Done**; compliance resubmit → approve **prod verified**; expiry **email not live** (no final domain yet); driver vehicle replace UX **still in QA**; **Phase 4H** (form/screen field parity) **planned** from screen audit  
-**Current focus:** **Phase 4H** — form field parity across register/create/edit screens (customer profile edit, admin delivery customer picker, shared address block). Prod-test driver My Vehicle replace + compliance upload after replace. Email reminders **blocked** until final domain chosen (then Heroku `EMAIL_*` / `DEFAULT_FROM_EMAIL`). Phase 4G (staff RBAC) **backlog**.  
+**Overall status:** 🟡 Phase 1–4C **complete**; Phase 4D **in progress** — admin UI + nightly cron **Done**; compliance resubmit → approve **prod verified**; expiry **email not live** (no final domain yet); driver vehicle replace UX **still in QA**; **Phase 4H** (form/screen field parity) **Done** — post-deploy admin delivery + address autocomplete fixes **shipped Aug 5, await prod retest**  
+**Current focus:** Prod-retest admin **Add Delivery** (customer picker, same-as-customer toggles, address autocomplete on Vercel). Prod-test driver My Vehicle replace + compliance upload after replace. Email reminders **blocked** until final domain chosen (then Heroku `EMAIL_*` / `DEFAULT_FROM_EMAIL`). Phase 4G (staff RBAC) **backlog**.  
 **Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
-**Latest status report:** `docs/PROJECT_STATUS_20260804.md` + `docs/PROJECT_LOG.md`  
+**Latest status report:** `docs/PROJECT_STATUS_20260805.md` + `docs/PROJECT_LOG.md`  
 **Architecture:** `docs/ARCHITECTURE.md` + `.cursor/rules/layered-architecture.mdc`  
 **Business use cases:** [`docs/USE_CASES.md`](USE_CASES.md) → `DeliveryApp/project-docs/USE_CASES.md` (auth, compliance, dispatch)  
 **Development process:** [`docs/DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md) — plan → build → test → done
@@ -345,11 +345,30 @@ Document lists as good practice; **not required** for BC Class 5 local delivery 
 | Municipal **business licence** document type | Todo | Optional |
 | **GST number** on driver profile | Todo | Optional — if contractor reporting needed |
 
-### Phase 4H — Form & screen field parity *(planned — August 2026 audit)*
+### Phase 4H — Form & screen field parity *(Done — August 2026; post-deploy fixes Aug 5)*
 
 **Problem:** Register, create, edit, and admin screens for the same entity expose **different fields**, use **different validation**, or send **payload keys the API does not accept**. Example: driver self-edit now has structured address, but driver register and admin driver forms do not; admin delivery form edits `customer_name` / `customer_address` but backend `DeliverySerializer` has no writable `customer_address` and `customer_name` is read-only.
 
 **Scope:** All forms in **DeliveryAppMobile** (`App.tsx`, `src/screens/`, shared `src/components/`). Web UI is exported from this repo via Expo → Vercel.
+
+**Post-deploy production issues (Aug 5, 2026)** — discovered after Phase 4H shipped to Vercel + Heroku:
+
+| # | Issue | Root cause | Fix | Status |
+|---|--------|------------|-----|--------|
+| 1 | Chrome popup: *“Access other apps and services on this device”* + red **Failed to fetch** on pickup/dropoff when typing in admin Add Delivery | `addressValidationService` used `process.env.BACKEND_URL \|\| localhost:8000` instead of shared `getApiUrl()` / `EXPO_PUBLIC_BACKEND_URL` on Vercel | Mobile `36751b7` — `src/services/addressValidation.ts` | ✅ **Deployed** — await prod retest |
+| 2 | Admin **Add Delivery** did not save (especially with **Same pickup as customer address** on) | Staff `POST /deliveries/` used `DeliverySerializer` which rejected blank `pickup_location` / `dropoff_location` even when `same_*_as_customer` flags were set (customer `request_delivery` path already allowed blanks) | Backend `9f421dc` — shared `_validate_delivery_location_fields()` + require `customer` on staff create | ✅ **Deployed** — await prod retest |
+| 3 | Create failed silently — form returned to list with no new delivery | `createDelivery` in `App.tsx` caught API errors but did not rethrow; `AdminDeliveriesScreen` treated call as success | Mobile `38a62cb` — rethrow after alert; show API message on form | ✅ **Deployed** — await prod retest |
+| 4 | Customer picker looked like one undifferentiated list; easy to miss selection | Each customer rendered as a native `Button` (poor web styling) | Mobile `38a62cb` — `Pressable` rows with ✓ + highlight; helper text | ✅ **Deployed** — await prod retest |
+| 5 | User thought “demo customers” do not exist | Picker lists real Heroku data: `demo.customer` (**Demo Customer**) from `seed_demo_data` plus bulk test customers from `create_test_data` (e.g. Mike Hernandez) | No code change — documentation / UX clarity above | ℹ️ **Clarified** |
+
+**Prod retest checklist (admin Add Delivery):**
+
+1. Hard-refresh `deliveryapp-mobile.vercel.app`
+2. Tap a customer row (✓ + highlight) — e.g. **Demo Customer**
+3. Enter pickup/dropoff manually **or** enable same-as-customer toggles
+4. Tap **Create** — on error, stay on form with message; on success, delivery appears in list
+
+**Status report:** `docs/PROJECT_STATUS_20260805.md`
 
 **Screen inventory (reference):**
 
@@ -423,16 +442,16 @@ Document lists as good practice; **not required** for BC Class 5 local delivery 
 | 12 | Remove legacy **`App.tsx` `driver_register`** block | **Done** | Use `RegisterAsDriverScreen` only |
 | 13 | Extract **shared form sections** — address block, phone input, account fields — into reusable components | **Done** — `AddressFields` component | Used across profile/register/admin forms |
 
-**Backend gaps to address with Phase 4H UI work:**
+**Backend gaps to address with Phase 4H UI work:** *(all addressed in Phase 4H + Aug 5 follow-up)*
 
-| API | Gap |
-|-----|-----|
-| `GET/PATCH /customers/me/` | PATCH not implemented — only GET today |
-| `DriverSerializer` (admin) | No address fields; driver address only via `DriverMeSerializer` |
-| `DriverSerializer` | No `license_issuing_region` on update |
-| `DeliverySerializer` | `customer_name` read-only; no `customer_address` — use `customer` FK |
+| API | Gap | Status |
+|-----|-----|--------|
+| `GET/PATCH /customers/me/` | PATCH not implemented — only GET today | ✅ Done — `CustomerMeSerializer` |
+| `DriverSerializer` (admin) | No address fields; driver address only via `DriverMeSerializer` | ✅ Done |
+| `DriverSerializer` | No `license_issuing_region` on update | ✅ Done |
+| `DeliverySerializer` | `customer_name` read-only; no `customer_address` — use `customer` FK | ✅ Done — picker + Aug 5 location validation parity |
 
-**Phase 4H exit criteria:**
+**Phase 4H exit criteria:** ✅ **Met** (Aug 4–5, 2026)
 
 - Customer can edit own profile (address, phone, preferred pickup) after registration.
 - Admin delivery create/edit uses customer picker; no phantom `customer_address` field.
@@ -440,8 +459,9 @@ Document lists as good practice; **not required** for BC Class 5 local delivery 
 - Customer and driver delivery forms expose date/time, special instructions, and dropoff shortcut flags supported by backend.
 - Public registration forms use the same phone validation as admin/edit screens.
 - `AddressAutocomplete` used on at least customer address, driver address, and delivery location fields.
+- **Aug 5 addendum:** Admin delivery saves with same-as-customer toggles; address validation hits production API on Vercel; create errors visible on form.
 
-**Audit reference:** `docs/PROJECT_STATUS_20260804.md` · `DeliveryApp/project-docs/PROJECT_STATUS_20260804.md`
+**Audit reference:** `docs/PROJECT_STATUS_20260804.md` (audit) · `docs/PROJECT_STATUS_20260805.md` (post-deploy fixes) · `DeliveryApp/project-docs/PROJECT_STATUS_20260805.md`
 
 ### Phase 4 — Other product items
 
@@ -450,7 +470,50 @@ Document lists as good practice; **not required** for BC Class 5 local delivery 
 - **Admin drivers list filters** — **Done** (`9118dec`) — dropdown filters: last name (Z→A sort), account status (active/inactive), approval status; prod verified July 29, 2026
 - **Compliance resubmit → admin approve** — **Done** — prod verified July 31, 2026 (UC-13 / UC-06; `5353a0b`–`680b00c` + approve-after-resubmit fix)
 - **Driver My Vehicle replace + upload after replace** — **In QA** (`5353a0b`, `96a8142`, `680b00c`) — replace vehicle, upload compliance on new truck, profile field labels, catalog capacity auto-fill (`9174cd8`, `ddf0b7b`)
-- **Form & screen field parity (Phase 4H)** — **Planned** — screen audit August 4, 2026; see Phase 4H table (customer profile edit, admin delivery customer picker, address block parity, delivery scheduling fields, `AddressAutocomplete`)
+- **Form & screen field parity (Phase 4H)** — **Done** — shipped Aug 4–5, 2026 (`4140587`, `e413ab7`, `36751b7`, `9f421dc`, `38a62cb`); post-deploy admin delivery + address autocomplete fixes **await prod retest** — see Phase 4H post-deploy table
+
+### UX & design consistency *(ongoing — product standard)*
+
+**Principle:** The whole app must have a **consistent look and feel**. All screens should follow the **same UX patterns** wherever it is possible or makes sense — not only matching **fields/API parity** (Phase 4H) but also **layout, interaction, feedback, and visual language**.
+
+**Why it matters:** Inconsistent screens confuse users and hide bugs (e.g. Aug 5 admin delivery: native `Button` customer list looked like one block; create errors returned to list while other forms use inline errors).
+
+**Source of truth (mobile):**
+
+| Layer | Location | Use for |
+|-------|----------|---------|
+| Theme tokens | `src/theme/index.ts` — `theme`, `styles` | Colors, typography, spacing, inputs, cards, errors |
+| Shared form sections | `src/components/` — e.g. `AddressFields`, `DriverLicenseFields`, `VehicleCatalogFields` | Reuse across register / admin / self-edit |
+| Services | `src/services/` | Validation and error messages — not duplicated inline in screens |
+
+**Standard screen patterns (apply to new work and refactors):**
+
+| Pattern | Convention |
+|---------|------------|
+| **Screen shell** | `ScrollView` + `styles.container` / `styles.content`; title via `styles.title`; section headers via `styles.sectionTitle` |
+| **Forms** | `styles.label` + `styles.input`; errors via `styles.fieldError` / red inline text above actions — **stay on screen** on failure |
+| **Required fields** | Label with `*` or explicit helper text |
+| **Lists / pickers** | Selectable rows (`Pressable` + highlight + ✓), not stacked native `Button`s on web |
+| **Toggles** | `styles.switchContainer` + `styles.switchLabel` |
+| **List + detail CRUD** | List → detail → edit/create; Back + primary action at bottom; same empty-state copy (`styles.emptyText`) |
+| **Loading** | `ActivityIndicator` + disable primary button while submitting |
+| **Success / error** | Inline error on form; `Alert` optional for confirm/success — **do not navigate away on silent failure** |
+
+**When screens may differ:** Role-specific dashboards and compliance upload flows may add extra steps, but should still use shared theme, inputs, and error handling.
+
+**Known gaps (backlog — align over time):**
+
+| Gap | Example | Target pattern |
+|-----|---------|----------------|
+| Mixed controls | Admin delivery customer list was all `Button`s | Selectable `Pressable` rows (fixed Aug 5 — apply elsewhere) |
+| Inline one-off styles | Ad-hoc `style={{ … }}` instead of `theme` / `styles` | Extend `src/theme/index.ts` or shared components |
+| Error handling split | Some flows Alert-only, some inline, some swallowed | Inline error on form + rethrow from `App.tsx` CRUD helpers |
+| Screen headers | Back button placement varies | Shared header component (future P3) |
+| Duplicate form blocks | Similar address/account blocks copied | Reuse `AddressFields` and future shared sections |
+
+**Gate for new screens / major edits:** Before marking UI work Done, confirm it reuses theme + shared components where they exist and matches the patterns above (or documents a deliberate exception in the PR).
+
+**Related:** Phase 4H (field parity) · `docs/ARCHITECTURE.md` (frontend UX) · `docs/DEVELOPMENT_PROCESS.md` (DoD UX checkbox)
 
 ---
 

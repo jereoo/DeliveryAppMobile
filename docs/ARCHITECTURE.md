@@ -1,6 +1,6 @@
 # DeliveryApp — Architecture
 
-**Last updated:** June 12, 2026  
+**Last updated:** August 5, 2026  
 **Product focus:** **v1.0** — single fleet, single-driver context  
 **Cursor rules:** `.cursor/rules/layered-architecture.mdc` · `.cursor/rules/use-cases.mdc` (DeliveryApp workspace)  
 **Business use cases:** [`USE_CASES.md`](USE_CASES.md) → canonical [`DeliveryApp/project-docs/USE_CASES.md`](../../DeliveryApp/project-docs/USE_CASES.md)  
@@ -55,6 +55,17 @@ Layered architecture with **one source of truth** per CRUD operation, **role-bas
 
 - Components handle UI and API calls only — **no business logic in components**.
 - Admin and Driver flows that hit the same API use the **same service function** (e.g. `updateVehicleById` in `vehicleService.ts`).
+
+### UX & design consistency
+
+The app should present a **single coherent look and feel** across admin, driver, and customer flows (web via Vercel and native via Expo).
+
+- **Visual language:** Use `src/theme/index.ts` (`theme`, `styles`) for colors, typography, spacing, inputs, cards, and errors — avoid one-off palettes unless documented.
+- **Interaction patterns:** Prefer the same layout and controls for equivalent tasks (e.g. FK pickers as selectable rows, form errors inline and keep the user on the screen, loading states on primary actions).
+- **Shared components:** Reuse `src/components/` building blocks (`AddressFields`, etc.) on register, admin create/edit, and self-service edit screens when the same data is collected.
+- **Exceptions:** Allowed when a role truly needs a different flow (e.g. compliance upload wizard), but still inherit theme tokens and error/success feedback conventions.
+
+See **`docs/PROJECT_PLAN.md` → UX & design consistency** for the full pattern table and backlog gaps.
 
 ---
 

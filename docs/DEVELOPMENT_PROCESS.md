@@ -1,7 +1,7 @@
 # DeliveryApp — Development Process
 
 **Version:** 1.0  
-**Last updated:** June 12, 2026  
+**Last updated:** August 5, 2026  
 **Team size:** 1–3  
 **Applies to:** `DeliveryAppBackend`, `DeliveryAppMobile`, workspace docs
 
@@ -38,7 +38,7 @@ Select → Specify → Implement → Verify → Record → Next
 |----------|---------|
 | [`docs/PROJECT_PLAN.md`](PROJECT_PLAN.md) | Ordered backlog and phase status |
 | [`docs/PHASE_4A_LEGAL_COMPLIANCE.md`](PHASE_4A_LEGAL_COMPLIANCE.md) | Detailed spec for active product work |
-| [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) | Layered architecture, v1.0 vs v2.0 scope |
+| [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) | Layered architecture, v1.0 vs v2.0 scope, **UX consistency** |
 | [`docs/USE_CASES.md`](USE_CASES.md) | Business use cases — auth, compliance, dispatch flows |
 | [`.cursor/rules/layered-architecture.mdc`](../.cursor/rules/layered-architecture.mdc) | Coding standards for AI/humans |
 | [`docs/PROJECT_STATUS_YYYYMMDD.md`](PROJECT_STATUS_20260612.md) | Prod QA log after release |
@@ -68,6 +68,7 @@ An item is **Done** only when **all** apply:
 
 - [ ] Implements acceptance criteria with minimal, focused diff
 - [ ] Follows layered architecture (services SSOT, thin ViewSets, mobile `src/services/`)
+- [ ] **UX consistency** (if mobile UI changed): uses `src/theme` tokens and shared components where they exist; same interaction patterns as similar screens (see `PROJECT_PLAN.md` → UX & design consistency)
 - [ ] No unrelated refactors or Phase 5 / multi-tenant code
 
 ### Test (quality gate)
