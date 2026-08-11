@@ -1,7 +1,9 @@
 import React, { useMemo } from 'react';
+import { View } from 'react-native';
 
 import type { AdminFilterPickerConfig } from './AdminListFilterBar';
 import { AdminListFilterBar } from './AdminListFilterBar';
+import { AdminListSearchField } from './AdminListSearchField';
 import {
   AdminDriverListFilters as AdminDriverListFiltersState,
   DRIVER_APPROVAL_LABELS,
@@ -14,6 +16,7 @@ type Theme = {
   textMuted: string;
   inputBg: string;
   border: string;
+  placeholder: string;
 };
 
 type Styles = {
@@ -71,12 +74,22 @@ export function AdminDriverListFilters({
   }, [drivers]);
 
   return (
-    <AdminListFilterBar
-      pickers={pickers}
-      filters={filters}
-      onChange={onChange}
-      theme={theme}
-      styles={styles}
-    />
+    <View style={{ marginBottom: 16 }}>
+      <AdminListSearchField
+        label="Search driver name"
+        placeholder="e.g. Smith or partial name"
+        value={filters.driverNameSearch}
+        onChangeText={(driverNameSearch) => onChange({ ...filters, driverNameSearch })}
+        theme={theme}
+        styles={styles}
+      />
+      <AdminListFilterBar
+        pickers={pickers}
+        filters={filters}
+        onChange={onChange}
+        theme={theme}
+        styles={styles}
+      />
+    </View>
   );
 }

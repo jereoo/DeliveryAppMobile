@@ -1,13 +1,15 @@
 import React, { useMemo } from 'react';
+import { View } from 'react-native';
 
 import type { AdminFilterPickerConfig } from './AdminListFilterBar';
 import { AdminListFilterBar } from './AdminListFilterBar';
+import { AdminListSearchField } from './AdminListSearchField';
 import {
   AdminCustomerListFilters as AdminCustomerListFiltersState,
   getUniqueCustomerLastNames,
 } from '../services/customerService';
 
-type Theme = { text: string; inputBg: string };
+type Theme = { text: string; inputBg: string; placeholder: string };
 type Styles = { label: object; input: object };
 
 interface Props {
@@ -67,6 +69,16 @@ export function AdminCustomerListFilters({
   }, [customers]);
 
   return (
-    <AdminListFilterBar pickers={pickers} filters={filters} onChange={onChange} theme={theme} styles={styles} />
+    <View style={{ marginBottom: 16 }}>
+      <AdminListSearchField
+        label="Search customer name"
+        placeholder="e.g. Smith or partial name"
+        value={filters.customerNameSearch}
+        onChangeText={(customerNameSearch) => onChange({ ...filters, customerNameSearch })}
+        theme={theme}
+        styles={styles}
+      />
+      <AdminListFilterBar pickers={pickers} filters={filters} onChange={onChange} theme={theme} styles={styles} />
+    </View>
   );
 }

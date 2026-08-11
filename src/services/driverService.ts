@@ -3,6 +3,7 @@
  */
 
 import type { AuthenticatedRequest } from './vehicleService';
+import { matchesAdminTextSearch } from '../utils/adminListFilterUtils';
 
 export type DriverApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -27,12 +28,14 @@ export type AdminDriverAccountFilter = 'all' | 'active' | 'inactive';
 export type AdminDriverApprovalFilter = 'all' | DriverApprovalStatus;
 
 export interface AdminDriverListFilters {
+  driverNameSearch: string;
   lastName: string;
   accountStatus: AdminDriverAccountFilter;
   approvalStatus: AdminDriverApprovalFilter;
 }
 
 export const DEFAULT_ADMIN_DRIVER_LIST_FILTERS: AdminDriverListFilters = {
+  driverNameSearch: '',
   lastName: '',
   accountStatus: 'all',
   approvalStatus: 'all',
@@ -56,6 +59,13 @@ export function filterAndSortAdminDrivers<T extends DriverListRow>(
   filters: AdminDriverListFilters,
 ): T[] {
   let result = [...drivers];
+
+  if (filters.driverNameSearch.trim()) {
+    result = result.filter((driver) => matchesAdminTextSearch(
+      `${driver.first_name || ''} ${driver.last_name || ''}`.trim(),
+      filters.driverNameSearch,
+    ));
+  }
 
   if (filters.lastName) {
     const target = filters.lastName.toLowerCase();
@@ -97,7 +107,8 @@ export function filterAndSortAdminDrivers<T extends DriverListRow>(
 
 export function adminDriverFiltersAreActive(filters: AdminDriverListFilters): boolean {
   return (
-    filters.lastName !== ''
+    filters.driverNameSearch.trim() !== ''
+    || filters.lastName !== ''
     || filters.accountStatus !== 'all'
     || filters.approvalStatus !== 'all'
   );

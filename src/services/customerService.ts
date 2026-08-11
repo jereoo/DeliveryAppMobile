@@ -7,6 +7,7 @@ import {
   compareStringsDesc,
   getUniqueSortedStrings,
   matchesAccountStatus,
+  matchesAdminTextSearch,
 } from '../utils/adminListFilterUtils';
 
 export interface CustomerRegistrationFields {
@@ -220,6 +221,7 @@ export type AdminCustomerTypeFilter = 'all' | 'business' | 'individual';
 export type AdminCustomerCountryFilter = 'all' | 'US' | 'CA';
 
 export interface AdminCustomerListFilters {
+  customerNameSearch: string;
   lastName: string;
   accountStatus: AdminCustomerAccountFilter;
   customerType: AdminCustomerTypeFilter;
@@ -227,6 +229,7 @@ export interface AdminCustomerListFilters {
 }
 
 export const DEFAULT_ADMIN_CUSTOMER_LIST_FILTERS: AdminCustomerListFilters = {
+  customerNameSearch: '',
   lastName: '',
   accountStatus: 'all',
   customerType: 'all',
@@ -250,7 +253,8 @@ export function getUniqueCustomerLastNames(customers: CustomerListRow[]): string
 
 export function adminCustomerFiltersAreActive(filters: AdminCustomerListFilters): boolean {
   return (
-    filters.lastName !== ''
+    filters.customerNameSearch.trim() !== ''
+    || filters.lastName !== ''
     || filters.accountStatus !== 'all'
     || filters.customerType !== 'all'
     || filters.country !== 'all'
@@ -262,6 +266,13 @@ export function filterAndSortAdminCustomers<T extends CustomerListRow>(
   filters: AdminCustomerListFilters,
 ): T[] {
   let result = [...customers];
+
+  if (filters.customerNameSearch.trim()) {
+    result = result.filter((customer) => matchesAdminTextSearch(
+      `${customer.first_name || ''} ${customer.last_name || ''}`.trim(),
+      filters.customerNameSearch,
+    ));
+  }
 
   if (filters.lastName) {
     const target = filters.lastName.toLowerCase();

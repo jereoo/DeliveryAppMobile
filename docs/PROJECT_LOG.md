@@ -4,6 +4,44 @@ Chronological decisions and implementation notes. Latest status reports: `PROJEC
 
 ---
 
+## August 11, 2026 — Admin list search boxes (customers, drivers, vehicles, deliveries)
+
+**Environments:** DeliveryAppMobile → Vercel `deliveryapp-mobile.vercel.app`
+
+### Problem
+
+Admin **Customers** and **Drivers** had dropdown filters but no quick text search by display name. **Vehicles** and **Deliveries** also needed dedicated search fields (license plate, delivery number).
+
+### Solution (mobile `ec30659`, follow-up commit)
+
+- **`AdminListSearchField`** — shared text search input above filter pickers
+- **`matchesAdminTextSearch()`** — case-insensitive partial match in `adminListFilterUtils.ts`
+- **Service-layer filter fields:**
+  - Customers — `customerNameSearch` (first + last name)
+  - Drivers — `driverNameSearch` (first + last name)
+  - Vehicles — `licensePlateSearch`
+  - Deliveries — `deliveryIdSearch` (delivery `#id`)
+- **Deliveries list** — row title shows `Delivery #42 — Customer Name`
+- **Tests** — `src/__tests__/adminListFilters.test.ts` (77 total tests pass)
+
+### Search by screen
+
+| Screen | Search field |
+|--------|----------------|
+| Customers | Customer name (partial) |
+| Drivers | Driver name (partial) |
+| Vehicles | License plate (partial) |
+| Deliveries | Delivery number / ID (partial) |
+
+### Status
+
+✅ **Committed and pushed** to `DeliveryAppMobile` main.  
+🟡 **Awaiting prod retest** on Vercel after deploy.
+
+**Docs:** `docs/PROJECT_PLAN.md` (UX → Admin list filters) · `docs/PROJECT_STATUS_20260811.md`
+
+---
+
 ## August 11, 2026 — Admin list sort/filter parity (all manage screens)
 
 **Environments:** DeliveryAppMobile → Vercel `deliveryapp-mobile.vercel.app`

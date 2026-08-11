@@ -2,8 +2,8 @@
 
 **Last updated:** August 11, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟡 Phase 1–4C **complete**; Phase 4D **in progress** — admin UI + nightly cron **Done**; compliance resubmit → approve **prod verified**; expiry **email not live** (no final domain yet); driver vehicle replace UX **still in QA**; **Phase 4H** **Done**; admin list **sort/filter parity** **Done** (`584fca4`, Aug 11) — **await prod retest** on non-driver admin screens  
-**Current focus:** Prod-retest admin lists (customers, deliveries, vehicles, driver–vehicles, compliance filters). Prod-retest admin **Add Delivery** (Aug 5 fixes). Prod-test driver My Vehicle replace + compliance upload after replace. Email reminders **blocked** until final domain chosen. Phase 4G (staff RBAC) **backlog**.  
+**Overall status:** 🟡 Phase 1–4C **complete**; Phase 4D **in progress** — admin UI + nightly cron **Done**; compliance resubmit → approve **prod verified**; expiry **email not live** (no final domain yet); driver vehicle replace UX **still in QA**; **Phase 4H** **Done**; admin list **sort/filter parity** **Done** (`584fca4`, Aug 11); admin list **search boxes** **Done** (customers, drivers, vehicles, deliveries) — **await prod retest**  
+**Current focus:** Prod-retest admin list search + filters on Vercel. Prod-retest admin **Add Delivery** (Aug 5 fixes). Prod-test driver My Vehicle replace + compliance upload after replace. Email reminders **blocked** until final domain chosen. Phase 4G (staff RBAC) **backlog**.  
 **Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
 **Latest status report:** `docs/PROJECT_STATUS_20260811.md` + `docs/PROJECT_LOG.md`  
@@ -469,6 +469,7 @@ Document lists as good practice; **not required** for BC Class 5 local delivery 
 - **Vehicle `disposed` status** — third lifecycle state (distinct from inactive); staff-only
 - **Admin drivers list filters** — **Done** (`9118dec`, prod verified July 29, 2026) — **extended to all admin list screens** Aug 11, 2026 (`584fca4`); see UX section → Admin list filters
 - **Admin list sort/filter parity (all manage screens)** — **Done** (`584fca4`) — customers, deliveries, vehicles, driver–vehicles, compliance ops; shared `AdminListFilterBar` + `AdminFilteredListMeta`; filter logic in services — **await prod retest**
+- **Admin list text search** — **Done** (Aug 11) — `AdminListSearchField` on customers (name), drivers (name), vehicles (plate), deliveries (`#id`); `matchesAdminTextSearch()` in services — **await prod retest**
 - **Compliance resubmit → admin approve** — **Done** — prod verified July 31, 2026 (UC-13 / UC-06; `5353a0b`–`680b00c` + approve-after-resubmit fix)
 - **Driver My Vehicle replace + upload after replace** — **In QA** (`5353a0b`, `96a8142`, `680b00c`) — replace vehicle, upload compliance on new truck, profile field labels, catalog capacity auto-fill (`9174cd8`, `ddf0b7b`)
 - **Form & screen field parity (Phase 4H)** — **Done** — shipped Aug 4–5, 2026 (`4140587`, `e413ab7`, `36751b7`, `9f421dc`, `38a62cb`); post-deploy admin delivery + address autocomplete fixes **await prod retest** — see Phase 4H post-deploy table
@@ -495,7 +496,7 @@ Document lists as good practice; **not required** for BC Class 5 local delivery 
 | **Forms** | `styles.label` + `styles.input`; errors via `styles.fieldError` / red inline text above actions — **stay on screen** on failure |
 | **Required fields** | Label with `*` or explicit helper text |
 | **Lists / pickers** | Selectable rows (`Pressable` + highlight + ✓), not stacked native `Button`s on web |
-| **Admin list filters** | `AdminListFilterBar` + per-entity filter component; `filterAndSort*` / `filter*` in `src/services/`; `AdminFilteredListMeta` (“Showing X of Y”, clear filters) |
+| **Admin list filters** | `AdminListFilterBar` + per-entity filter component + **`AdminListSearchField`** where applicable; `filterAndSort*` / `filter*` in `src/services/`; `AdminFilteredListMeta` (“Showing X of Y”, clear filters) |
 | **Toggles** | `styles.switchContainer` + `styles.switchLabel` |
 | **List + detail CRUD** | List → detail → edit/create; Back + primary action at bottom; same empty-state copy (`styles.emptyText`) |
 | **Loading** | `ActivityIndicator` + disable primary button while submitting |
@@ -514,18 +515,18 @@ Document lists as good practice; **not required** for BC Class 5 local delivery 
 | Duplicate form blocks | Similar address/account blocks copied | Reuse `AddressFields` and future shared sections |
 | Admin list filter parity | Only Manage Drivers had filters (July 2026) | **Done Aug 11** — all admin list screens; retest on Vercel |
 
-**Admin list filters (Aug 11, 2026 — `584fca4`):**
+**Admin list filters + search (Aug 11, 2026 — `584fca4`, `ec30659`, follow-up):**
 
-| Screen | Filters / sort |
-|--------|----------------|
-| **Drivers** | Last name (Z→A), account status, approval status *(existing; refactored to shared components)* |
-| **Customers** | Last name, account status, business vs individual, country (US/CA) |
-| **Deliveries** | Status, customer, sort (newest / oldest / customer A→Z) |
-| **Vehicles** | Operational status, approval status, sort (plate / make-model / year) |
-| **Driver–vehicles** | Active vs completed, driver, plate, sort (assigned date / driver / plate) |
-| **Compliance ops** | Document type, driver vs vehicle subject, document status |
+| Screen | Filters / sort | Text search |
+|--------|----------------|-------------|
+| **Drivers** | Last name (Z→A), account status, approval status | Driver name (partial) |
+| **Customers** | Last name, account status, business vs individual, country (US/CA) | Customer name (partial) |
+| **Deliveries** | Status, customer, sort (newest / oldest / customer A→Z) | Delivery number / `#id` |
+| **Vehicles** | Operational status, approval status, sort (plate / make-model / year) | License plate |
+| **Driver–vehicles** | Active vs completed, driver, plate, sort (assigned date / driver / plate) | — |
+| **Compliance ops** | Document type, driver vs vehicle subject, document status | — |
 
-**Shared components:** `AdminListFilterBar`, `AdminFilteredListMeta`, `src/utils/adminListFilterUtils.ts`
+**Shared components:** `AdminListFilterBar`, `AdminListSearchField`, `AdminFilteredListMeta`, `src/utils/adminListFilterUtils.ts`
 
 **Gate for new screens / major edits:** Before marking UI work Done, confirm it reuses theme + shared components where they exist and matches the patterns above (or documents a deliberate exception in the PR).
 

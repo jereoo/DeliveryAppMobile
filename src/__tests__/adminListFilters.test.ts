@@ -1,4 +1,8 @@
 import {
+  DEFAULT_ADMIN_DRIVER_LIST_FILTERS,
+  filterAndSortAdminDrivers,
+} from '../services/driverService';
+import {
   DEFAULT_ADMIN_CUSTOMER_LIST_FILTERS,
   filterAndSortAdminCustomers,
   getUniqueCustomerLastNames,
@@ -33,6 +37,32 @@ describe('admin list filters', () => {
     });
     expect(filtered).toHaveLength(1);
     expect(filtered[0].last_name).toBe('Jones');
+  });
+
+  it('searches customers by name', () => {
+    const customers = [
+      { id: 1, first_name: 'Jane', last_name: 'Smith', is_business: false, active: true, address_country: 'US' },
+      { id: 2, first_name: 'Bob', last_name: 'Jones', is_business: false, active: true, address_country: 'US' },
+    ];
+    const result = filterAndSortAdminCustomers(customers, {
+      ...DEFAULT_ADMIN_CUSTOMER_LIST_FILTERS,
+      customerNameSearch: 'jane sm',
+    });
+    expect(result).toHaveLength(1);
+    expect(result[0].last_name).toBe('Smith');
+  });
+
+  it('searches drivers by name', () => {
+    const drivers = [
+      { first_name: 'Alice', last_name: 'Brown', active: true, approval_status: 'APPROVED' as const },
+      { first_name: 'Carl', last_name: 'Smith', active: true, approval_status: 'APPROVED' as const },
+    ];
+    const result = filterAndSortAdminDrivers(drivers, {
+      ...DEFAULT_ADMIN_DRIVER_LIST_FILTERS,
+      driverNameSearch: 'smith',
+    });
+    expect(result).toHaveLength(1);
+    expect(result[0].last_name).toBe('Smith');
   });
 
   it('filters deliveries by status and sorts by customer name', () => {
