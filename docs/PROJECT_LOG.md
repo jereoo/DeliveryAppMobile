@@ -4,6 +4,41 @@ Chronological decisions and implementation notes. Latest status reports: `PROJEC
 
 ---
 
+## August 11, 2026 — Admin list sort/filter parity (all manage screens)
+
+**Environments:** DeliveryAppMobile → Vercel `deliveryapp-mobile.vercel.app`
+
+### Problem
+
+Manage **Drivers** had dropdown filters and sort (July 2026, `9118dec`); **Customers**, **Deliveries**, **Vehicles**, **Driver–vehicles**, and **Compliance ops** had none — inconsistent admin UX.
+
+### Solution (mobile `584fca4`)
+
+- **`AdminListFilterBar`** — shared picker UI (same pattern as drivers)
+- **`AdminFilteredListMeta`** — “Showing X of Y”, empty-filter message, **Clear filters**
+- **Filter logic in services** — `filterAndSortAdminCustomers`, `filterAndSortAdminDeliveries`, `filterAndSortAdminVehicles`, `filterAndSortAdminDriverVehicles`, `filterAdminComplianceDocuments` (+ driver filters refactored to shared bar)
+- **Per-screen filter components** — `AdminCustomerListFilters`, `AdminDeliveryListFilters`, etc.
+- **Tests** — `src/__tests__/adminListFilters.test.ts` (73 total tests pass)
+
+### Filters shipped
+
+| Screen | Key filters |
+|--------|-------------|
+| Customers | Last name, account status, business/individual, country |
+| Deliveries | Status, customer, sort (newest/oldest/customer A→Z) |
+| Vehicles | Operational + approval status, sort (plate/make/year) |
+| Driver–vehicles | Active/completed, driver, plate, sort |
+| Compliance | Document type, subject (driver/vehicle), status |
+
+### Status
+
+✅ **Committed and pushed** to `DeliveryAppMobile` main (`584fca4`).  
+🟡 **Awaiting prod retest** on Vercel after deploy.
+
+**Docs:** `docs/PROJECT_PLAN.md` (UX → Admin list filters) · `docs/PROJECT_STATUS_20260811.md`
+
+---
+
 ## August 5, 2026 — Phase 4H post-deploy: admin Add Delivery + address autocomplete (prod fixes)
 
 **Environments:** Vercel `deliveryapp-mobile.vercel.app` + Heroku `truck-buddy`

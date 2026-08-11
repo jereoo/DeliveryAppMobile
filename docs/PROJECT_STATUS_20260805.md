@@ -113,7 +113,7 @@
 - `DeliveryAppMobile/docs/ARCHITECTURE.md` — frontend UX rules
 - `DeliveryAppMobile/docs/DEVELOPMENT_PROCESS.md` — DoD checkbox for mobile UI changes
 
-**Reference implementation:** Admin delivery customer picker (`38a62cb`) — selectable rows + theme, inline errors, stay on form on failure.
+**Reference implementation:** Admin delivery customer picker (`38a62cb`) — selectable rows + theme, inline errors, stay on form on failure. Admin list filters (`584fca4`) — shared `AdminListFilterBar` on all manage screens.
 
 ---
 
