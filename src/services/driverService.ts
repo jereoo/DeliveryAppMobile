@@ -95,6 +95,14 @@ export function filterAndSortAdminDrivers<T extends DriverListRow>(
   return result;
 }
 
+export function adminDriverFiltersAreActive(filters: AdminDriverListFilters): boolean {
+  return (
+    filters.lastName !== ''
+    || filters.accountStatus !== 'all'
+    || filters.approvalStatus !== 'all'
+  );
+}
+
 export async function approveDriver(
   request: AuthenticatedRequest,
   driverId: number,

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Button,
@@ -7,11 +7,16 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { AdminComplianceListFilters } from './AdminComplianceListFilters';
+import { AdminFilteredListMeta } from './AdminFilteredListMeta';
 import type { AuthenticatedRequest } from '../services/vehicleService';
 import {
   AdminComplianceDocumentRow,
+  adminComplianceFiltersAreActive,
+  DEFAULT_ADMIN_COMPLIANCE_LIST_FILTERS,
   DOCUMENT_TYPE_LABELS,
   DOCUMENT_TYPES_REQUIRING_EXPIRY,
+  filterAdminComplianceDocuments,
   FleetComplianceSummary,
   getFleetComplianceSummary,
   listAdminComplianceInbox,
@@ -19,6 +24,7 @@ import {
   openDocumentDownload,
   rejectDocument,
   verifyDocument,
+  type AdminComplianceListFilters as AdminComplianceListFiltersState,
 } from '../services/complianceService';
 
 type Theme = {
@@ -94,6 +100,20 @@ export function AdminComplianceScreen({
   const [rejectReason, setRejectReason] = useState('');
   const [approveExpiryDocId, setApproveExpiryDocId] = useState<number | null>(null);
   const [approveExpiryDate, setApproveExpiryDate] = useState('');
+  const [listFilters, setListFilters] = useState<AdminComplianceListFiltersState>(
+    DEFAULT_ADMIN_COMPLIANCE_LIST_FILTERS,
+  );
+
+  const filteredInbox = useMemo(
+    () => filterAdminComplianceDocuments(inbox, listFilters),
+    [inbox, listFilters],
+  );
+  const filteredExpiring = useMemo(
+    () => filterAdminComplianceDocuments(expiring, listFilters),
+    [expiring, listFilters],
+  );
+  const activeRows = tab === 'inbox' ? filteredInbox : filteredExpiring;
+  const totalRows = tab === 'inbox' ? inbox.length : expiring.length;
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -339,18 +359,31 @@ export function AdminComplianceScreen({
               />
             </View>
 
-            {tab === 'inbox' ? (
-              inbox.length === 0 ? (
-                <Text style={{ color: theme.textMuted }}>No pending documents.</Text>
-              ) : (
-                inbox.map(renderInboxRow)
-              )
+            <AdminComplianceListFilters
+              filters={listFilters}
+              onChange={setListFilters}
+              theme={theme}
+              styles={styles}
+            />
+
+            {totalRows === 0 ? (
+              <Text style={{ color: theme.textMuted }}>
+                {tab === 'inbox' ? 'No pending documents.' : 'No expiring or expired documents in window.'}
+              </Text>
             ) : (
-              expiring.length === 0 ? (
-                <Text style={{ color: theme.textMuted }}>No expiring or expired documents in window.</Text>
-              ) : (
-                expiring.map(renderExpiringRow)
-              )
+              <AdminFilteredListMeta
+                totalCount={totalRows}
+                filteredCount={activeRows.length}
+                filteredEmptyMessage="No documents match the current filters."
+                hasActiveFilters={adminComplianceFiltersAreActive(listFilters)}
+                onClearFilters={() => setListFilters(DEFAULT_ADMIN_COMPLIANCE_LIST_FILTERS)}
+                theme={theme}
+                styles={styles}
+              >
+                {tab === 'inbox'
+                  ? filteredInbox.map(renderInboxRow)
+                  : filteredExpiring.map(renderExpiringRow)}
+              </AdminFilteredListMeta>
             )}
           </>
         )}

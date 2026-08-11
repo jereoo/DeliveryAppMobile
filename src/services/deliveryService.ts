@@ -3,6 +3,10 @@
  */
 
 import type { AuthenticatedRequest } from './vehicleService';
+import {
+  compareStringsAsc,
+  getUniqueSortedStrings,
+} from '../utils/adminListFilterUtils';
 
 export interface DeliveryRequestFields {
   pickup_location?: string;
@@ -152,4 +156,69 @@ export async function deleteDeliveryById(
   if (!response.ok) {
     throw new Error(await parseDeliveryApiError(response));
   }
+}
+
+export type AdminDeliveryStatusFilter = 'all' | 'Pending' | 'En Route' | 'Completed' | 'Cancelled';
+export type AdminDeliverySort = 'newest' | 'oldest' | 'customer_az';
+
+export interface AdminDeliveryListFilters {
+  status: AdminDeliveryStatusFilter;
+  customerName: string;
+  sort: AdminDeliverySort;
+}
+
+export const DEFAULT_ADMIN_DELIVERY_LIST_FILTERS: AdminDeliveryListFilters = {
+  status: 'all',
+  customerName: '',
+  sort: 'newest',
+};
+
+type DeliveryListRow = {
+  customer_name?: string;
+  status?: string;
+  created_at?: string;
+};
+
+export function getUniqueDeliveryCustomerNames(deliveries: DeliveryListRow[]): string[] {
+  return getUniqueSortedStrings(
+    deliveries.map((delivery) => (delivery.customer_name || '').trim()),
+    'desc',
+  );
+}
+
+export function adminDeliveryFiltersAreActive(filters: AdminDeliveryListFilters): boolean {
+  return filters.status !== 'all' || filters.customerName !== '' || filters.sort !== 'newest';
+}
+
+export function filterAndSortAdminDeliveries<T extends DeliveryListRow>(
+  deliveries: T[],
+  filters: AdminDeliveryListFilters,
+): T[] {
+  let result = [...deliveries];
+
+  if (filters.status !== 'all') {
+    result = result.filter((delivery) => delivery.status === filters.status);
+  }
+
+  if (filters.customerName) {
+    const target = filters.customerName.toLowerCase();
+    result = result.filter(
+      (delivery) => (delivery.customer_name || '').trim().toLowerCase() === target,
+    );
+  }
+
+  result.sort((a, b) => {
+    if (filters.sort === 'customer_az') {
+      return compareStringsAsc(a.customer_name || '', b.customer_name || '');
+    }
+
+    const aTime = a.created_at ? Date.parse(a.created_at) : 0;
+    const bTime = b.created_at ? Date.parse(b.created_at) : 0;
+    if (filters.sort === 'oldest') {
+      return aTime - bTime;
+    }
+    return bTime - aTime;
+  });
+
+  return result;
 }

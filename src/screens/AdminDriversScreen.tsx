@@ -2,9 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Button, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { AddressFields, emptyAddressFields } from '../components/AddressFields';
 import { AdminDriverListFilters } from '../components/AdminDriverListFilters';
+import { AdminFilteredListMeta } from '../components/AdminFilteredListMeta';
 import { ComplianceDocumentsPanel } from '../components/ComplianceDocumentsPanel';
 import { DriverLicenseFields } from '../components/DriverLicenseFields';
-import { approveDriver, DEFAULT_ADMIN_DRIVER_LIST_FILTERS, DRIVER_APPROVAL_LABELS, filterAndSortAdminDrivers, rejectDriver, type AdminDriverListFilters as AdminDriverListFiltersState, type DriverApprovalStatus } from '../services/driverService';
+import { approveDriver, adminDriverFiltersAreActive, DEFAULT_ADMIN_DRIVER_LIST_FILTERS, DRIVER_APPROVAL_LABELS, filterAndSortAdminDrivers, rejectDriver, type AdminDriverListFilters as AdminDriverListFiltersState, type DriverApprovalStatus } from '../services/driverService';
 import { theme, styles } from '../theme';
 import { formatPhone10, formatPhoneForDisplay, getPhoneDigits } from '../utils/phoneFormatting';
 import type { AuthenticatedRequest } from './types';
@@ -504,18 +505,16 @@ export interface AdminDriversScreenProps {
               <Text style={styles.emptyText}>No drivers found.</Text>
               <Text style={styles.infoText}>Add your first driver to get started!</Text>
             </View>
-          ) : filteredDrivers.length === 0 ? (
-            <View style={{ alignItems: 'center', marginTop: 24 }}>
-              <Text style={styles.emptyText}>No drivers match the current filters.</Text>
-              <View style={{ marginTop: 8 }}>
-                <Button title="Clear filters" onPress={() => setListFilters(DEFAULT_ADMIN_DRIVER_LIST_FILTERS)} />
-              </View>
-            </View>
           ) : (
-            <>
-              <Text style={{ color: theme.textMuted, marginBottom: 8 }}>
-                Showing {filteredDrivers.length} of {drivers.length} drivers
-              </Text>
+            <AdminFilteredListMeta
+              totalCount={drivers.length}
+              filteredCount={filteredDrivers.length}
+              filteredEmptyMessage="No drivers match the current filters."
+              hasActiveFilters={adminDriverFiltersAreActive(listFilters)}
+              onClearFilters={() => setListFilters(DEFAULT_ADMIN_DRIVER_LIST_FILTERS)}
+              theme={theme}
+              styles={styles}
+            >
               {filteredDrivers.map((driver: any) => (
               <View key={driver.id} style={styles.itemContainer}>
                 <Text style={styles.itemTitle}>{driver.first_name} {driver.last_name}</Text>
@@ -551,7 +550,7 @@ export interface AdminDriversScreenProps {
                 </View>
               </View>
               ))}
-            </>
+            </AdminFilteredListMeta>
           )}
         </View>
       </ScrollView>

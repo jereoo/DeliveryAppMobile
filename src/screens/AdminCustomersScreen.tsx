@@ -1,5 +1,13 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Button, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { AdminCustomerListFilters } from '../components/AdminCustomerListFilters';
+import { AdminFilteredListMeta } from '../components/AdminFilteredListMeta';
+import {
+  adminCustomerFiltersAreActive,
+  DEFAULT_ADMIN_CUSTOMER_LIST_FILTERS,
+  filterAndSortAdminCustomers,
+  type AdminCustomerListFilters as AdminCustomerListFiltersState,
+} from '../services/customerService';
 import { theme, styles } from '../theme';
 import { formatPhone10, formatPhoneForDisplay, getPhoneDigits } from '../utils/phoneFormatting';
 
@@ -23,6 +31,14 @@ export interface AdminCustomersScreenProps {
     const [error, setError] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [localLoading, setLocalLoading] = useState(false);
+    const [listFilters, setListFilters] = useState<AdminCustomerListFiltersState>(
+      DEFAULT_ADMIN_CUSTOMER_LIST_FILTERS,
+    );
+
+    const filteredCustomers = useMemo(
+      () => filterAndSortAdminCustomers(customers, listFilters),
+      [customers, listFilters],
+    );
 
     // Form validation
     const validateForm = () => {
@@ -206,32 +222,50 @@ export interface AdminCustomersScreenProps {
               />
             </View>
 
+            <AdminCustomerListFilters
+              customers={customers}
+              filters={listFilters}
+              onChange={setListFilters}
+              theme={theme}
+              styles={styles}
+            />
+
             {localLoading ? (
               <ActivityIndicator />
             ) : customers.length === 0 ? (
               <Text style={styles.emptyText}>No customers found.</Text>
             ) : (
-              customers.map((customer: any) => (
-                <View key={customer.id} style={styles.itemContainer}>
-                  <Text style={styles.itemTitle}>{customer.first_name} {customer.last_name} ({customer.username})</Text>
-                  <Text style={{ color: theme.text }}>Email: {customer.email}</Text>
-                  <Text style={{ color: theme.text }}>Phone: {formatPhoneForDisplay(customer.phone_number)}</Text>
-                  <Text style={{ color: theme.text }}>Business: {customer.is_business ? 'Yes' : 'No'}</Text>
-                  {customer.is_business && <Text style={{ color: theme.text }}>Company: {customer.company_name}</Text>}
-                  <Text style={{ color: theme.text }}>Address: {customer.address_unit} {customer.address_street}, {customer.address_city}, {customer.address_state} {customer.address_postal_code}</Text>
-                  <View style={{ flexDirection: 'row', marginTop: 8 }}>
-                    <View style={{ flex: 1, marginRight: 4 }}>
-                      <Button title="View" onPress={() => handleSelect(customer)} />
-                    </View>
-                    <View style={{ flex: 1, marginRight: 4 }}>
-                      <Button title="Edit" onPress={() => handleEdit(customer)} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Button title="Delete" color="#d9534f" onPress={() => handleDelete(customer)} />
+              <AdminFilteredListMeta
+                totalCount={customers.length}
+                filteredCount={filteredCustomers.length}
+                filteredEmptyMessage="No customers match the current filters."
+                hasActiveFilters={adminCustomerFiltersAreActive(listFilters)}
+                onClearFilters={() => setListFilters(DEFAULT_ADMIN_CUSTOMER_LIST_FILTERS)}
+                theme={theme}
+                styles={styles}
+              >
+                {filteredCustomers.map((customer: any) => (
+                  <View key={customer.id} style={styles.itemContainer}>
+                    <Text style={styles.itemTitle}>{customer.first_name} {customer.last_name} ({customer.username})</Text>
+                    <Text style={{ color: theme.text }}>Email: {customer.email}</Text>
+                    <Text style={{ color: theme.text }}>Phone: {formatPhoneForDisplay(customer.phone_number)}</Text>
+                    <Text style={{ color: theme.text }}>Business: {customer.is_business ? 'Yes' : 'No'}</Text>
+                    {customer.is_business && <Text style={{ color: theme.text }}>Company: {customer.company_name}</Text>}
+                    <Text style={{ color: theme.text }}>Address: {customer.address_unit} {customer.address_street}, {customer.address_city}, {customer.address_state} {customer.address_postal_code}</Text>
+                    <View style={{ flexDirection: 'row', marginTop: 8 }}>
+                      <View style={{ flex: 1, marginRight: 4 }}>
+                        <Button title="View" onPress={() => handleSelect(customer)} />
+                      </View>
+                      <View style={{ flex: 1, marginRight: 4 }}>
+                        <Button title="Edit" onPress={() => handleEdit(customer)} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Button title="Delete" color="#d9534f" onPress={() => handleDelete(customer)} />
+                      </View>
                     </View>
                   </View>
-                </View>
-              ))
+                ))}
+              </AdminFilteredListMeta>
             )}
           </View>
         </ScrollView>

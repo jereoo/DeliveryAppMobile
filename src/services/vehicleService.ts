@@ -2,6 +2,12 @@
  * Vehicle API helpers — onboarding, replace, resubmit, and staff approval.
  */
 
+import {
+  compareStringsAsc,
+  compareStringsDesc,
+  matchesAccountStatus,
+} from '../utils/adminListFilterUtils';
+
 export type AuthenticatedRequest = (
   endpoint: string,
   options?: Record<string, unknown>,
@@ -221,4 +227,72 @@ export async function requestVehicleResubmit(
     throw new Error(await parseVehicleApiError(response, 'Failed to request resubmit'));
   }
   return response.json();
+}
+
+export type AdminVehicleOperationalFilter = 'all' | 'active' | 'inactive';
+export type AdminVehicleApprovalFilter = 'all' | VehicleApprovalStatus;
+export type AdminVehicleSort = 'plate_az' | 'make_az' | 'year_desc';
+
+export interface AdminVehicleListFilters {
+  operationalStatus: AdminVehicleOperationalFilter;
+  approvalStatus: AdminVehicleApprovalFilter;
+  sort: AdminVehicleSort;
+}
+
+export const DEFAULT_ADMIN_VEHICLE_LIST_FILTERS: AdminVehicleListFilters = {
+  operationalStatus: 'all',
+  approvalStatus: 'all',
+  sort: 'plate_az',
+};
+
+type VehicleListRow = {
+  license_plate?: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  active?: boolean;
+  approval_status?: VehicleApprovalStatus | string;
+};
+
+export function adminVehicleFiltersAreActive(filters: AdminVehicleListFilters): boolean {
+  return (
+    filters.operationalStatus !== 'all'
+    || filters.approvalStatus !== 'all'
+    || filters.sort !== 'plate_az'
+  );
+}
+
+export function filterAndSortAdminVehicles<T extends VehicleListRow>(
+  vehicles: T[],
+  filters: AdminVehicleListFilters,
+): T[] {
+  let result = [...vehicles];
+
+  if (filters.operationalStatus !== 'all') {
+    result = result.filter(
+      (vehicle) => matchesAccountStatus(vehicle.active, filters.operationalStatus),
+    );
+  }
+
+  if (filters.approvalStatus !== 'all') {
+    result = result.filter(
+      (vehicle) => (vehicle.approval_status || 'PENDING') === filters.approvalStatus,
+    );
+  }
+
+  result.sort((a, b) => {
+    if (filters.sort === 'year_desc') {
+      return (b.year || 0) - (a.year || 0);
+    }
+    if (filters.sort === 'make_az') {
+      const makeCmp = compareStringsAsc(a.make || '', b.make || '');
+      if (makeCmp !== 0) {
+        return makeCmp;
+      }
+      return compareStringsAsc(a.model || '', b.model || '');
+    }
+    return compareStringsAsc(a.license_plate || '', b.license_plate || '');
+  });
+
+  return result;
 }

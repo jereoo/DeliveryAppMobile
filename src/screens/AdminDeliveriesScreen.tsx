@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Button, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import AddressAutocomplete from '../components/AddressAutocomplete';
+import { AdminDeliveryListFilters } from '../components/AdminDeliveryListFilters';
+import { AdminFilteredListMeta } from '../components/AdminFilteredListMeta';
 import { createDeliveryAssignment } from '../services/assignmentService';
 import type { DispatchEligibility } from '../services/complianceService';
 import { COMPLIANCE_BLOCKER_LABELS, getDriverDispatchEligibility } from '../services/complianceService';
-import { buildDeliveryAdminPayload } from '../services/deliveryService';
+import {
+  adminDeliveryFiltersAreActive,
+  buildDeliveryAdminPayload,
+  DEFAULT_ADMIN_DELIVERY_LIST_FILTERS,
+  filterAndSortAdminDeliveries,
+  type AdminDeliveryListFilters as AdminDeliveryListFiltersState,
+} from '../services/deliveryService';
 import { theme, styles } from '../theme';
 import type { AuthenticatedRequest } from './types';
 
@@ -59,6 +67,14 @@ export function AdminDeliveriesScreen({
   const [dispatchEligibility, setDispatchEligibility] = useState<DispatchEligibility | null>(null);
   const [eligibilityLoading, setEligibilityLoading] = useState(false);
   const [assigning, setAssigning] = useState(false);
+  const [listFilters, setListFilters] = useState<AdminDeliveryListFiltersState>(
+    DEFAULT_ADMIN_DELIVERY_LIST_FILTERS,
+  );
+
+  const filteredDeliveries = useMemo(
+    () => filterAndSortAdminDeliveries(deliveries, listFilters),
+    [deliveries, listFilters],
+  );
 
   const selectedCustomer = customers.find((c) => c.id === form.customer);
 
@@ -391,30 +407,49 @@ export function AdminDeliveriesScreen({
               }}
             />
           </View>
+
+          <AdminDeliveryListFilters
+            deliveries={deliveries}
+            filters={listFilters}
+            onChange={setListFilters}
+            theme={theme}
+            styles={styles}
+          />
+
           {localLoading ? (
             <ActivityIndicator />
           ) : deliveries.length === 0 ? (
             <Text style={styles.emptyText}>No deliveries found.</Text>
           ) : (
-            deliveries.map((delivery: any) => (
-              <View key={delivery.id} style={styles.itemContainer}>
-                <Text style={styles.itemTitle}>{delivery.customer_name}</Text>
-                <Text style={{ color: theme.text }}>From: {delivery.pickup_location}</Text>
-                <Text style={{ color: theme.text }}>To: {delivery.dropoff_location}</Text>
-                <Text style={{ color: theme.text }}>Status: {delivery.status}</Text>
-                <View style={{ flexDirection: 'row', marginTop: 8 }}>
-                  <View style={{ flex: 1, marginRight: 4 }}>
-                    <Button title="View" onPress={() => handleSelect(delivery)} />
-                  </View>
-                  <View style={{ flex: 1, marginRight: 4 }}>
-                    <Button title="Edit" onPress={() => handleEdit(delivery)} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Button title="Delete" color="#d9534f" onPress={() => handleDelete(delivery)} />
+            <AdminFilteredListMeta
+              totalCount={deliveries.length}
+              filteredCount={filteredDeliveries.length}
+              filteredEmptyMessage="No deliveries match the current filters."
+              hasActiveFilters={adminDeliveryFiltersAreActive(listFilters)}
+              onClearFilters={() => setListFilters(DEFAULT_ADMIN_DELIVERY_LIST_FILTERS)}
+              theme={theme}
+              styles={styles}
+            >
+              {filteredDeliveries.map((delivery: any) => (
+                <View key={delivery.id} style={styles.itemContainer}>
+                  <Text style={styles.itemTitle}>{delivery.customer_name}</Text>
+                  <Text style={{ color: theme.text }}>From: {delivery.pickup_location}</Text>
+                  <Text style={{ color: theme.text }}>To: {delivery.dropoff_location}</Text>
+                  <Text style={{ color: theme.text }}>Status: {delivery.status}</Text>
+                  <View style={{ flexDirection: 'row', marginTop: 8 }}>
+                    <View style={{ flex: 1, marginRight: 4 }}>
+                      <Button title="View" onPress={() => handleSelect(delivery)} />
+                    </View>
+                    <View style={{ flex: 1, marginRight: 4 }}>
+                      <Button title="Edit" onPress={() => handleEdit(delivery)} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Button title="Delete" color="#d9534f" onPress={() => handleDelete(delivery)} />
+                    </View>
                   </View>
                 </View>
-              </View>
-            ))
+              ))}
+            </AdminFilteredListMeta>
           )}
         </View>
       </ScrollView>

@@ -468,3 +468,52 @@ export async function createDeliveryAssignment(
   }
   return response.json();
 }
+
+export type AdminComplianceSubjectFilter = 'all' | 'driver' | 'vehicle';
+export type AdminComplianceStatusFilter = 'all' | DocumentStatus;
+export type AdminComplianceDocumentTypeFilter = 'all' | DocumentType;
+
+export interface AdminComplianceListFilters {
+  documentType: AdminComplianceDocumentTypeFilter;
+  subjectType: AdminComplianceSubjectFilter;
+  status: AdminComplianceStatusFilter;
+}
+
+export const DEFAULT_ADMIN_COMPLIANCE_LIST_FILTERS: AdminComplianceListFilters = {
+  documentType: 'all',
+  subjectType: 'all',
+  status: 'all',
+};
+
+export function adminComplianceFiltersAreActive(filters: AdminComplianceListFilters): boolean {
+  return filters.documentType !== 'all' || filters.subjectType !== 'all' || filters.status !== 'all';
+}
+
+export function filterAdminComplianceDocuments(
+  rows: AdminComplianceDocumentRow[],
+  filters: AdminComplianceListFilters,
+): AdminComplianceDocumentRow[] {
+  let result = [...rows];
+
+  if (filters.documentType !== 'all') {
+    result = result.filter((row) => row.document_type === filters.documentType);
+  }
+
+  if (filters.subjectType === 'driver') {
+    result = result.filter((row) => row.driver_id != null);
+  } else if (filters.subjectType === 'vehicle') {
+    result = result.filter((row) => row.vehicle_id != null);
+  }
+
+  if (filters.status !== 'all') {
+    result = result.filter((row) => row.status === filters.status);
+  }
+
+  result.sort((a, b) => {
+    const aDate = a.expiry_date || a.created_at || '';
+    const bDate = b.expiry_date || b.created_at || '';
+    return aDate.localeCompare(bDate);
+  });
+
+  return result;
+}

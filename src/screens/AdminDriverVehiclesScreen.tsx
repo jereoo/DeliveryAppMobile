@@ -1,5 +1,13 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Button, ScrollView, Text, TextInput, View } from 'react-native';
+import { AdminDriverVehicleListFilters } from '../components/AdminDriverVehicleListFilters';
+import { AdminFilteredListMeta } from '../components/AdminFilteredListMeta';
+import {
+  adminDriverVehicleFiltersAreActive,
+  DEFAULT_ADMIN_DRIVER_VEHICLE_LIST_FILTERS,
+  filterAndSortAdminDriverVehicles,
+  type AdminDriverVehicleListFilters as AdminDriverVehicleListFiltersState,
+} from '../services/assignmentService';
 import { theme, styles } from '../theme';
 
 export interface AdminDriverVehiclesScreenProps {
@@ -26,6 +34,14 @@ export interface AdminDriverVehiclesScreenProps {
     });
     const [error, setError] = useState<string | null>(null);
     const [localLoading, setLocalLoading] = useState(false);
+    const [listFilters, setListFilters] = useState<AdminDriverVehicleListFiltersState>(
+      DEFAULT_ADMIN_DRIVER_VEHICLE_LIST_FILTERS,
+    );
+
+    const filteredAssignments = useMemo(
+      () => filterAndSortAdminDriverVehicles(driverVehicles, listFilters),
+      [driverVehicles, listFilters],
+    );
 
     const resetForm = () => {
       setFormData({
@@ -275,6 +291,14 @@ export interface AdminDriverVehiclesScreenProps {
 
           <Button title="🔄 Refresh" onPress={refreshAssignments} />
 
+          <AdminDriverVehicleListFilters
+            assignments={driverVehicles}
+            filters={listFilters}
+            onChange={setListFilters}
+            theme={theme}
+            styles={styles}
+          />
+
           {error && <Text style={{ color: theme.error, marginBottom: 10 }}>{error}</Text>}
 
           {localLoading ? (
@@ -285,24 +309,34 @@ export interface AdminDriverVehiclesScreenProps {
               <Text style={styles.infoText}>Create your first assignment to get started!</Text>
             </View>
           ) : (
-            driverVehicles.map((assignment: any) => (
-              <View key={assignment.id} style={styles.itemContainer}>
-                <Text style={styles.itemTitle}>Assignment #{assignment.id}</Text>
-                <Text style={{ color: theme.text }}>Driver: {assignment.driver_name || 'Unknown Driver'}</Text>
-                <Text style={{ color: theme.text }}>Vehicle: {assignment.vehicle_license_plate || 'Unknown Vehicle'}</Text>
-                <Text style={{ color: theme.text }}>From: {assignment.assigned_from}</Text>
-                <Text style={{ color: theme.text }}>To: {assignment.assigned_to || 'Ongoing'}</Text>
-                <Text style={{ color: theme.text }}>Status: <Text style={{ color: assignment.assigned_to ? theme.textMuted : theme.text }}>
-                  {assignment.assigned_to ? 'Completed' : 'Active'}
-                </Text></Text>
+            <AdminFilteredListMeta
+              totalCount={driverVehicles.length}
+              filteredCount={filteredAssignments.length}
+              filteredEmptyMessage="No assignments match the current filters."
+              hasActiveFilters={adminDriverVehicleFiltersAreActive(listFilters)}
+              onClearFilters={() => setListFilters(DEFAULT_ADMIN_DRIVER_VEHICLE_LIST_FILTERS)}
+              theme={theme}
+              styles={styles}
+            >
+              {filteredAssignments.map((assignment: any) => (
+                <View key={assignment.id} style={styles.itemContainer}>
+                  <Text style={styles.itemTitle}>Assignment #{assignment.id}</Text>
+                  <Text style={{ color: theme.text }}>Driver: {assignment.driver_name || 'Unknown Driver'}</Text>
+                  <Text style={{ color: theme.text }}>Vehicle: {assignment.vehicle_license_plate || 'Unknown Vehicle'}</Text>
+                  <Text style={{ color: theme.text }}>From: {assignment.assigned_from}</Text>
+                  <Text style={{ color: theme.text }}>To: {assignment.assigned_to || 'Ongoing'}</Text>
+                  <Text style={{ color: theme.text }}>Status: <Text style={{ color: assignment.assigned_to ? theme.textMuted : theme.text }}>
+                    {assignment.assigned_to ? 'Completed' : 'Active'}
+                  </Text></Text>
 
-                <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 8 }}>
-                  <Button title="View" onPress={() => handleDetail(assignment)} />
-                  <Button title="Edit" onPress={() => handleEdit(assignment)} />
-                  <Button title="Delete" onPress={() => handleDelete(assignment)} color="red" />
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 8 }}>
+                    <Button title="View" onPress={() => handleDetail(assignment)} />
+                    <Button title="Edit" onPress={() => handleEdit(assignment)} />
+                    <Button title="Delete" onPress={() => handleDelete(assignment)} color="red" />
+                  </View>
                 </View>
-              </View>
-            ))
+              ))}
+            </AdminFilteredListMeta>
           )}
         </View>
       </ScrollView>

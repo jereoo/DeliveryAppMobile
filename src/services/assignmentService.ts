@@ -2,6 +2,11 @@
  * Assignment API helpers — delivery dispatch and driver-vehicle history.
  */
 
+import {
+  compareStringsAsc,
+  compareStringsDesc,
+  getUniqueSortedStrings,
+} from '../utils/adminListFilterUtils';
 import { createDeliveryAssignment as createDeliveryAssignmentViaCompliance } from './complianceService';
 import type { AuthenticatedRequest } from './vehicleService';
 
@@ -102,4 +107,92 @@ export async function deleteDriverVehicleAssignment(
   if (!response.ok) {
     throw new Error(await parseAssignmentApiError(response));
   }
+}
+
+export type AdminDriverVehicleAssignmentFilter = 'all' | 'active' | 'completed';
+export type AdminDriverVehicleSort = 'newest' | 'driver_az' | 'plate_az';
+
+export interface AdminDriverVehicleListFilters {
+  assignmentStatus: AdminDriverVehicleAssignmentFilter;
+  driverName: string;
+  vehiclePlate: string;
+  sort: AdminDriverVehicleSort;
+}
+
+export const DEFAULT_ADMIN_DRIVER_VEHICLE_LIST_FILTERS: AdminDriverVehicleListFilters = {
+  assignmentStatus: 'all',
+  driverName: '',
+  vehiclePlate: '',
+  sort: 'newest',
+};
+
+type DriverVehicleListRow = {
+  driver_name?: string;
+  vehicle_license_plate?: string;
+  assigned_from?: string;
+  assigned_to?: string | null;
+};
+
+export function getUniqueDriverVehicleDriverNames(assignments: DriverVehicleListRow[]): string[] {
+  return getUniqueSortedStrings(
+    assignments.map((row) => (row.driver_name || '').trim()),
+    'desc',
+  );
+}
+
+export function getUniqueDriverVehiclePlates(assignments: DriverVehicleListRow[]): string[] {
+  return getUniqueSortedStrings(
+    assignments.map((row) => (row.vehicle_license_plate || '').trim()),
+    'asc',
+  );
+}
+
+export function adminDriverVehicleFiltersAreActive(filters: AdminDriverVehicleListFilters): boolean {
+  return (
+    filters.assignmentStatus !== 'all'
+    || filters.driverName !== ''
+    || filters.vehiclePlate !== ''
+    || filters.sort !== 'newest'
+  );
+}
+
+export function filterAndSortAdminDriverVehicles<T extends DriverVehicleListRow>(
+  assignments: T[],
+  filters: AdminDriverVehicleListFilters,
+): T[] {
+  let result = [...assignments];
+
+  if (filters.assignmentStatus === 'active') {
+    result = result.filter((row) => !row.assigned_to);
+  } else if (filters.assignmentStatus === 'completed') {
+    result = result.filter((row) => !!row.assigned_to);
+  }
+
+  if (filters.driverName) {
+    const target = filters.driverName.toLowerCase();
+    result = result.filter(
+      (row) => (row.driver_name || '').trim().toLowerCase() === target,
+    );
+  }
+
+  if (filters.vehiclePlate) {
+    const target = filters.vehiclePlate.toLowerCase();
+    result = result.filter(
+      (row) => (row.vehicle_license_plate || '').trim().toLowerCase() === target,
+    );
+  }
+
+  result.sort((a, b) => {
+    if (filters.sort === 'driver_az') {
+      return compareStringsAsc(a.driver_name || '', b.driver_name || '');
+    }
+    if (filters.sort === 'plate_az') {
+      return compareStringsAsc(a.vehicle_license_plate || '', b.vehicle_license_plate || '');
+    }
+    const aDate = a.assigned_from || '';
+    const bDate = b.assigned_from || '';
+    return compareStringsDesc(aDate, bDate);
+  });
+
+  return result;
 }

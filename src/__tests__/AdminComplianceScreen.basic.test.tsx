@@ -5,6 +5,13 @@ import { AdminComplianceScreen } from '../components/AdminComplianceScreen';
 jest.mock('../services/complianceService', () => ({
   DOCUMENT_TYPE_LABELS: { DRIVER_LICENSE: 'Driver licence' },
   DOCUMENT_TYPES_REQUIRING_EXPIRY: [],
+  DEFAULT_ADMIN_COMPLIANCE_LIST_FILTERS: {
+    documentType: 'all',
+    subjectType: 'all',
+    status: 'all',
+  },
+  adminComplianceFiltersAreActive: jest.fn(() => false),
+  filterAdminComplianceDocuments: jest.fn((rows: unknown[]) => rows),
   getFleetComplianceSummary: jest.fn().mockResolvedValue({
     documents_pending: 1,
     documents_expired: 0,
@@ -38,6 +45,7 @@ const styles = {
   input: {},
   itemContainer: {},
   buttonContainer: {},
+  emptyText: {},
 };
 
 describe('AdminComplianceScreen', () => {

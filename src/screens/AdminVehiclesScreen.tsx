@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Button, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { AdminFilteredListMeta } from '../components/AdminFilteredListMeta';
+import { AdminVehicleListFilters } from '../components/AdminVehicleListFilters';
 import { ComplianceDocumentsPanel } from '../components/ComplianceDocumentsPanel';
 import { VehicleCapacityFields } from '../components/VehicleCapacityFields';
 import { VehicleCatalogFields } from '../components/VehicleCatalogFields';
@@ -7,7 +9,7 @@ import { VehicleReactivationChecklist } from '../components/VehicleReactivationC
 import { findModelSpec, fetchVehicleCatalog } from '../services/vehicleCatalogService';
 import type { VehicleComplianceStatus } from '../services/complianceService';
 import { getVehicleComplianceStatus } from '../services/complianceService';
-import { approveVehicleById, requestVehicleResubmit, VEHICLE_APPROVAL_LABELS, type VehicleApprovalStatus } from '../services/vehicleService';
+import { approveVehicleById, requestVehicleResubmit, VEHICLE_APPROVAL_LABELS, type VehicleApprovalStatus, DEFAULT_ADMIN_VEHICLE_LIST_FILTERS, adminVehicleFiltersAreActive, filterAndSortAdminVehicles, type AdminVehicleListFilters as AdminVehicleListFiltersState } from '../services/vehicleService';
 import { theme, styles } from '../theme';
 import { convertCapacityTextForUnit, nextCapacityAfterInput, validateCapacityText } from '../utils/vehicleCapacity';
 import type { AuthenticatedRequest } from './types';
@@ -39,6 +41,14 @@ export interface AdminVehiclesScreenProps {
     const [localLoading, setLocalLoading] = useState(false);
     const [vehicleCompliance, setVehicleCompliance] = useState<VehicleComplianceStatus | null>(null);
     const [complianceLoading, setComplianceLoading] = useState(false);
+    const [listFilters, setListFilters] = useState<AdminVehicleListFiltersState>(
+      DEFAULT_ADMIN_VEHICLE_LIST_FILTERS,
+    );
+
+    const filteredVehicles = useMemo(
+      () => filterAndSortAdminVehicles(vehicles, listFilters),
+      [vehicles, listFilters],
+    );
 
     useEffect(() => {
       let cancelled = false;
@@ -298,40 +308,58 @@ export interface AdminVehiclesScreenProps {
             <View style={styles.buttonContainer}>
               <Button title="Add Vehicle" onPress={() => { resetVehicleForm(); setMode('create'); }} />
             </View>
+
+            <AdminVehicleListFilters
+              filters={listFilters}
+              onChange={setListFilters}
+              theme={theme}
+              styles={styles}
+            />
+
             {localLoading ? <ActivityIndicator /> : vehicles.length === 0 ? (
               <Text style={styles.emptyText}>No vehicles found.</Text>
             ) : (
-              vehicles.map((vehicle: any) => (
-                <View key={vehicle.id} style={styles.itemContainer}>
-                  <Text style={styles.itemTitle}>{vehicle.make} {vehicle.model} ({vehicle.license_plate})</Text>
-                  <Text style={{ color: theme.text }}>Year: {vehicle.year}</Text>
-                  <Text style={{ color: theme.text }}>Capacity: {vehicle.capacity} {vehicle.capacity_unit || 'kg'}</Text>
-                  <Text style={{ color: theme.text }}>Operational: {vehicle.active ? 'Active' : 'Inactive'}</Text>
-                  <Text style={{ color: theme.text }}>
-                    Approval: {VEHICLE_APPROVAL_LABELS[vehicle.approval_status as VehicleApprovalStatus] || vehicle.approval_status || 'Unknown'}
-                  </Text>
-                  <View style={{ flexDirection: 'row', marginTop: 8 }}>
-                    <View style={{ flex: 1, marginRight: 4 }}>
-                      <Button title="View" onPress={() => handleSelect(vehicle)} />
+              <AdminFilteredListMeta
+                totalCount={vehicles.length}
+                filteredCount={filteredVehicles.length}
+                filteredEmptyMessage="No vehicles match the current filters."
+                hasActiveFilters={adminVehicleFiltersAreActive(listFilters)}
+                onClearFilters={() => setListFilters(DEFAULT_ADMIN_VEHICLE_LIST_FILTERS)}
+                theme={theme}
+                styles={styles}
+              >
+                {filteredVehicles.map((vehicle: any) => (
+                  <View key={vehicle.id} style={styles.itemContainer}>
+                    <Text style={styles.itemTitle}>{vehicle.make} {vehicle.model} ({vehicle.license_plate})</Text>
+                    <Text style={{ color: theme.text }}>Year: {vehicle.year}</Text>
+                    <Text style={{ color: theme.text }}>Capacity: {vehicle.capacity} {vehicle.capacity_unit || 'kg'}</Text>
+                    <Text style={{ color: theme.text }}>Operational: {vehicle.active ? 'Active' : 'Inactive'}</Text>
+                    <Text style={{ color: theme.text }}>
+                      Approval: {VEHICLE_APPROVAL_LABELS[vehicle.approval_status as VehicleApprovalStatus] || vehicle.approval_status || 'Unknown'}
+                    </Text>
+                    <View style={{ flexDirection: 'row', marginTop: 8 }}>
+                      <View style={{ flex: 1, marginRight: 4 }}>
+                        <Button title="View" onPress={() => handleSelect(vehicle)} />
+                      </View>
+                      <View style={{ flex: 1, marginRight: 4 }}>
+                        <Button title="Edit" onPress={() => handleEdit(vehicle)} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        {vehicle.active ? (
+                          <Button title="Deactivate" color="#f0ad4e" onPress={() => handleDeactivate(vehicle)} />
+                        ) : (
+                          <Button title="Reactivate" color="#5cb85c" onPress={() => handleReactivate(vehicle)} />
+                        )}
+                      </View>
                     </View>
-                    <View style={{ flex: 1, marginRight: 4 }}>
-                      <Button title="Edit" onPress={() => handleEdit(vehicle)} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      {vehicle.active ? (
-                        <Button title="Deactivate" color="#f0ad4e" onPress={() => handleDeactivate(vehicle)} />
-                      ) : (
-                        <Button title="Reactivate" color="#5cb85c" onPress={() => handleReactivate(vehicle)} />
-                      )}
-                    </View>
+                    {vehicle.active && (
+                      <View style={{ marginTop: 4 }}>
+                        <Button title="Delete (no history only)" color="#d9534f" onPress={() => handleDelete(vehicle)} />
+                      </View>
+                    )}
                   </View>
-                  {vehicle.active && (
-                    <View style={{ marginTop: 4 }}>
-                      <Button title="Delete (no history only)" color="#d9534f" onPress={() => handleDelete(vehicle)} />
-                    </View>
-                  )}
-                </View>
-              ))
+                ))}
+              </AdminFilteredListMeta>
             )}
           </View>
         </ScrollView>

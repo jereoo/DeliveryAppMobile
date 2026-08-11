@@ -3,6 +3,11 @@
  */
 
 import type { AuthenticatedRequest } from './vehicleService';
+import {
+  compareStringsDesc,
+  getUniqueSortedStrings,
+  matchesAccountStatus,
+} from '../utils/adminListFilterUtils';
 
 export interface CustomerRegistrationFields {
   username: string;
@@ -208,4 +213,86 @@ export async function fetchCustomerDeliveries(
   }
   const data = await response.json();
   return data.results ?? data;
+}
+
+export type AdminCustomerAccountFilter = 'all' | 'active' | 'inactive';
+export type AdminCustomerTypeFilter = 'all' | 'business' | 'individual';
+export type AdminCustomerCountryFilter = 'all' | 'US' | 'CA';
+
+export interface AdminCustomerListFilters {
+  lastName: string;
+  accountStatus: AdminCustomerAccountFilter;
+  customerType: AdminCustomerTypeFilter;
+  country: AdminCustomerCountryFilter;
+}
+
+export const DEFAULT_ADMIN_CUSTOMER_LIST_FILTERS: AdminCustomerListFilters = {
+  lastName: '',
+  accountStatus: 'all',
+  customerType: 'all',
+  country: 'all',
+};
+
+type CustomerListRow = {
+  first_name?: string;
+  last_name?: string;
+  active?: boolean;
+  is_business?: boolean;
+  address_country?: string;
+};
+
+export function getUniqueCustomerLastNames(customers: CustomerListRow[]): string[] {
+  return getUniqueSortedStrings(
+    customers.map((customer) => (customer.last_name || '').trim()),
+    'desc',
+  );
+}
+
+export function adminCustomerFiltersAreActive(filters: AdminCustomerListFilters): boolean {
+  return (
+    filters.lastName !== ''
+    || filters.accountStatus !== 'all'
+    || filters.customerType !== 'all'
+    || filters.country !== 'all'
+  );
+}
+
+export function filterAndSortAdminCustomers<T extends CustomerListRow>(
+  customers: T[],
+  filters: AdminCustomerListFilters,
+): T[] {
+  let result = [...customers];
+
+  if (filters.lastName) {
+    const target = filters.lastName.toLowerCase();
+    result = result.filter(
+      (customer) => (customer.last_name || '').trim().toLowerCase() === target,
+    );
+  }
+
+  if (filters.accountStatus !== 'all') {
+    result = result.filter((customer) => matchesAccountStatus(customer.active, filters.accountStatus));
+  }
+
+  if (filters.customerType === 'business') {
+    result = result.filter((customer) => customer.is_business === true);
+  } else if (filters.customerType === 'individual') {
+    result = result.filter((customer) => !customer.is_business);
+  }
+
+  if (filters.country !== 'all') {
+    result = result.filter(
+      (customer) => (customer.address_country || 'US').toUpperCase() === filters.country,
+    );
+  }
+
+  result.sort((a, b) => {
+    const lastCmp = compareStringsDesc(a.last_name || '', b.last_name || '');
+    if (lastCmp !== 0) {
+      return lastCmp;
+    }
+    return compareStringsDesc(a.first_name || '', b.first_name || '');
+  });
+
+  return result;
 }
