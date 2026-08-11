@@ -54,6 +54,24 @@ describe('admin list filters', () => {
     expect(byCustomer.map((d) => d.customer_name)).toEqual(['Alpha Co', 'Beta LLC', 'Zed Corp']);
   });
 
+  it('searches deliveries by delivery number (id)', () => {
+    const deliveries = [
+      { id: 12, customer_name: 'A', status: 'Pending', created_at: '2026-08-01T00:00:00Z' },
+      { id: 120, customer_name: 'B', status: 'Pending', created_at: '2026-08-02T00:00:00Z' },
+    ];
+    const result = filterAndSortAdminDeliveries(deliveries, {
+      ...DEFAULT_ADMIN_DELIVERY_LIST_FILTERS,
+      deliveryIdSearch: '12',
+    });
+    expect(result).toHaveLength(2);
+    const exact = filterAndSortAdminDeliveries(deliveries, {
+      ...DEFAULT_ADMIN_DELIVERY_LIST_FILTERS,
+      deliveryIdSearch: '120',
+    });
+    expect(exact).toHaveLength(1);
+    expect(exact[0].id).toBe(120);
+  });
+
   it('filters vehicles by operational and approval status', () => {
     const vehicles = [
       { id: 1, license_plate: 'B123', make: 'Ford', model: 'F-150', year: 2020, active: true, approval_status: 'PENDING' },
@@ -66,6 +84,19 @@ describe('admin list filters', () => {
     });
     expect(activePending).toHaveLength(1);
     expect(activePending[0].license_plate).toBe('B123');
+  });
+
+  it('searches vehicles by license plate', () => {
+    const vehicles = [
+      { id: 1, license_plate: 'DEMO001', make: 'Ford', model: 'F-150', year: 2020, active: true, approval_status: 'APPROVED' },
+      { id: 2, license_plate: 'ABC123', make: 'Toyota', model: 'Tacoma', year: 2022, active: true, approval_status: 'APPROVED' },
+    ];
+    const result = filterAndSortAdminVehicles(vehicles, {
+      ...DEFAULT_ADMIN_VEHICLE_LIST_FILTERS,
+      licensePlateSearch: 'demo',
+    });
+    expect(result).toHaveLength(1);
+    expect(result[0].license_plate).toBe('DEMO001');
   });
 
   it('filters driver-vehicle assignments by active status', () => {

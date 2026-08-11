@@ -43,3 +43,12 @@ export function extractLastNameFromDisplayName(displayName: string): string {
   const parts = displayName.trim().split(/\s+/);
   return parts.length > 0 ? parts[parts.length - 1] : '';
 }
+
+/** Case-insensitive partial match for admin list search boxes. */
+export function matchesAdminTextSearch(value: string | number | undefined | null, query: string): boolean {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) {
+    return true;
+  }
+  return String(value ?? '').toLowerCase().includes(normalizedQuery);
+}

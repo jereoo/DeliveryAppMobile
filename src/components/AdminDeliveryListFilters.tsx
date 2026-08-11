@@ -1,13 +1,15 @@
 import React, { useMemo } from 'react';
+import { View } from 'react-native';
 
 import type { AdminFilterPickerConfig } from './AdminListFilterBar';
 import { AdminListFilterBar } from './AdminListFilterBar';
+import { AdminListSearchField } from './AdminListSearchField';
 import {
   AdminDeliveryListFilters as AdminDeliveryListFiltersState,
   getUniqueDeliveryCustomerNames,
 } from '../services/deliveryService';
 
-type Theme = { text: string; inputBg: string };
+type Theme = { text: string; inputBg: string; placeholder: string };
 type Styles = { label: object; input: object };
 
 interface Props {
@@ -60,6 +62,17 @@ export function AdminDeliveryListFilters({
   }, [deliveries]);
 
   return (
-    <AdminListFilterBar pickers={pickers} filters={filters} onChange={onChange} theme={theme} styles={styles} />
+    <View style={{ marginBottom: 16 }}>
+      <AdminListSearchField
+        label="Search delivery number"
+        placeholder="e.g. 42 or partial ID"
+        value={filters.deliveryIdSearch}
+        onChangeText={(deliveryIdSearch) => onChange({ ...filters, deliveryIdSearch })}
+        theme={theme}
+        styles={styles}
+        keyboardType="number-pad"
+      />
+      <AdminListFilterBar pickers={pickers} filters={filters} onChange={onChange} theme={theme} styles={styles} />
+    </View>
   );
 }

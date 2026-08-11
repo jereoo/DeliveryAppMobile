@@ -432,7 +432,7 @@ export function AdminDeliveriesScreen({
             >
               {filteredDeliveries.map((delivery: any) => (
                 <View key={delivery.id} style={styles.itemContainer}>
-                  <Text style={styles.itemTitle}>{delivery.customer_name}</Text>
+                  <Text style={styles.itemTitle}>Delivery #{delivery.id} — {delivery.customer_name}</Text>
                   <Text style={{ color: theme.text }}>From: {delivery.pickup_location}</Text>
                   <Text style={{ color: theme.text }}>To: {delivery.dropoff_location}</Text>
                   <Text style={{ color: theme.text }}>Status: {delivery.status}</Text>

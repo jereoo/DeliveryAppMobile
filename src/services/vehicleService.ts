@@ -6,6 +6,7 @@ import {
   compareStringsAsc,
   compareStringsDesc,
   matchesAccountStatus,
+  matchesAdminTextSearch,
 } from '../utils/adminListFilterUtils';
 
 export type AuthenticatedRequest = (
@@ -234,12 +235,14 @@ export type AdminVehicleApprovalFilter = 'all' | VehicleApprovalStatus;
 export type AdminVehicleSort = 'plate_az' | 'make_az' | 'year_desc';
 
 export interface AdminVehicleListFilters {
+  licensePlateSearch: string;
   operationalStatus: AdminVehicleOperationalFilter;
   approvalStatus: AdminVehicleApprovalFilter;
   sort: AdminVehicleSort;
 }
 
 export const DEFAULT_ADMIN_VEHICLE_LIST_FILTERS: AdminVehicleListFilters = {
+  licensePlateSearch: '',
   operationalStatus: 'all',
   approvalStatus: 'all',
   sort: 'plate_az',
@@ -256,7 +259,8 @@ type VehicleListRow = {
 
 export function adminVehicleFiltersAreActive(filters: AdminVehicleListFilters): boolean {
   return (
-    filters.operationalStatus !== 'all'
+    filters.licensePlateSearch.trim() !== ''
+    || filters.operationalStatus !== 'all'
     || filters.approvalStatus !== 'all'
     || filters.sort !== 'plate_az'
   );
@@ -267,6 +271,13 @@ export function filterAndSortAdminVehicles<T extends VehicleListRow>(
   filters: AdminVehicleListFilters,
 ): T[] {
   let result = [...vehicles];
+
+  if (filters.licensePlateSearch.trim()) {
+    result = result.filter((vehicle) => matchesAdminTextSearch(
+      vehicle.license_plate,
+      filters.licensePlateSearch,
+    ));
+  }
 
   if (filters.operationalStatus !== 'all') {
     result = result.filter(

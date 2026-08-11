@@ -6,6 +6,7 @@ import type { AuthenticatedRequest } from './vehicleService';
 import {
   compareStringsAsc,
   getUniqueSortedStrings,
+  matchesAdminTextSearch,
 } from '../utils/adminListFilterUtils';
 
 export interface DeliveryRequestFields {
@@ -162,18 +163,21 @@ export type AdminDeliveryStatusFilter = 'all' | 'Pending' | 'En Route' | 'Comple
 export type AdminDeliverySort = 'newest' | 'oldest' | 'customer_az';
 
 export interface AdminDeliveryListFilters {
+  deliveryIdSearch: string;
   status: AdminDeliveryStatusFilter;
   customerName: string;
   sort: AdminDeliverySort;
 }
 
 export const DEFAULT_ADMIN_DELIVERY_LIST_FILTERS: AdminDeliveryListFilters = {
+  deliveryIdSearch: '',
   status: 'all',
   customerName: '',
   sort: 'newest',
 };
 
 type DeliveryListRow = {
+  id?: number;
   customer_name?: string;
   status?: string;
   created_at?: string;
@@ -187,7 +191,12 @@ export function getUniqueDeliveryCustomerNames(deliveries: DeliveryListRow[]): s
 }
 
 export function adminDeliveryFiltersAreActive(filters: AdminDeliveryListFilters): boolean {
-  return filters.status !== 'all' || filters.customerName !== '' || filters.sort !== 'newest';
+  return (
+    filters.deliveryIdSearch.trim() !== ''
+    || filters.status !== 'all'
+    || filters.customerName !== ''
+    || filters.sort !== 'newest'
+  );
 }
 
 export function filterAndSortAdminDeliveries<T extends DeliveryListRow>(
@@ -195,6 +204,13 @@ export function filterAndSortAdminDeliveries<T extends DeliveryListRow>(
   filters: AdminDeliveryListFilters,
 ): T[] {
   let result = [...deliveries];
+
+  if (filters.deliveryIdSearch.trim()) {
+    result = result.filter((delivery) => matchesAdminTextSearch(
+      delivery.id,
+      filters.deliveryIdSearch,
+    ));
+  }
 
   if (filters.status !== 'all') {
     result = result.filter((delivery) => delivery.status === filters.status);
