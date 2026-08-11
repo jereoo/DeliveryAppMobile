@@ -32,7 +32,7 @@ export function AdminCustomerListFilters({
     return [
       {
         id: 'lastName',
-        label: 'Last name (sorted Z → A)',
+        label: 'Last name (sorted A → Z)',
         options: [
           { label: 'All last names', value: '' },
           ...lastNames.map((lastName) => ({ label: lastName, value: lastName })),

@@ -43,7 +43,7 @@ export function AdminDeliveryListFilters({
       },
       {
         id: 'customerName',
-        label: 'Customer (sorted Z → A)',
+        label: 'Customer (sorted A → Z)',
         options: [
           { label: 'All customers', value: '' },
           ...customerNames.map((name) => ({ label: name, value: name })),

@@ -30,7 +30,7 @@ describe('admin list filters', () => {
       { id: 1, first_name: 'A', last_name: 'Smith', is_business: false, active: true, address_country: 'US' },
       { id: 2, first_name: 'B', last_name: 'Jones', is_business: true, active: true, address_country: 'CA' },
     ];
-    expect(getUniqueCustomerLastNames(customers)).toEqual(['Smith', 'Jones']);
+    expect(getUniqueCustomerLastNames(customers)).toEqual(['Jones', 'Smith']);
     const filtered = filterAndSortAdminCustomers(customers, {
       ...DEFAULT_ADMIN_CUSTOMER_LIST_FILTERS,
       customerType: 'business',

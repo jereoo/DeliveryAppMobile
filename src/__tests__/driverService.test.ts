@@ -12,13 +12,13 @@ describe('admin driver list filters', () => {
     { id: 4, first_name: 'Dan', last_name: 'Adams', active: true, approval_status: 'APPROVED' as const },
   ];
 
-  it('returns unique last names sorted descending', () => {
-    expect(getUniqueDriverLastNames(sampleDrivers)).toEqual(['Smith', 'Brown', 'Adams']);
+  it('returns unique last names sorted ascending', () => {
+    expect(getUniqueDriverLastNames(sampleDrivers)).toEqual(['Adams', 'Brown', 'Smith']);
   });
 
-  it('sorts drivers by last name descending', () => {
+  it('sorts drivers by last name ascending', () => {
     const result = filterAndSortAdminDrivers(sampleDrivers, DEFAULT_ADMIN_DRIVER_LIST_FILTERS);
-    expect(result.map((d) => d.last_name)).toEqual(['Smith', 'Smith', 'Brown', 'Adams']);
+    expect(result.map((d) => d.last_name)).toEqual(['Adams', 'Brown', 'Smith', 'Smith']);
   });
 
   it('filters by last name', () => {

@@ -4,7 +4,7 @@
 
 import type { AuthenticatedRequest } from './vehicleService';
 import {
-  compareStringsDesc,
+  compareStringsAsc,
   getUniqueSortedStrings,
   matchesAccountStatus,
   matchesAdminTextSearch,
@@ -247,7 +247,7 @@ type CustomerListRow = {
 export function getUniqueCustomerLastNames(customers: CustomerListRow[]): string[] {
   return getUniqueSortedStrings(
     customers.map((customer) => (customer.last_name || '').trim()),
-    'desc',
+    'asc',
   );
 }
 
@@ -298,11 +298,11 @@ export function filterAndSortAdminCustomers<T extends CustomerListRow>(
   }
 
   result.sort((a, b) => {
-    const lastCmp = compareStringsDesc(a.last_name || '', b.last_name || '');
+    const lastCmp = compareStringsAsc(a.last_name || '', b.last_name || '');
     if (lastCmp !== 0) {
       return lastCmp;
     }
-    return compareStringsDesc(a.first_name || '', b.first_name || '');
+    return compareStringsAsc(a.first_name || '', b.first_name || '');
   });
 
   return result;

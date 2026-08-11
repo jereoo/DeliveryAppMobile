@@ -51,7 +51,7 @@ export function getUniqueDriverLastNames(drivers: DriverListRow[]): string[] {
       names.add(lastName);
     }
   }
-  return Array.from(names).sort((a, b) => b.localeCompare(a, undefined, { sensitivity: 'base' }));
+  return Array.from(names).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 }
 
 export function filterAndSortAdminDrivers<T extends DriverListRow>(
@@ -87,16 +87,16 @@ export function filterAndSortAdminDrivers<T extends DriverListRow>(
   }
 
   result.sort((a, b) => {
-    const lastCmp = (b.last_name || '').localeCompare(
-      a.last_name || '',
+    const lastCmp = (a.last_name || '').localeCompare(
+      b.last_name || '',
       undefined,
       { sensitivity: 'base' },
     );
     if (lastCmp !== 0) {
       return lastCmp;
     }
-    return (b.first_name || '').localeCompare(
-      a.first_name || '',
+    return (a.first_name || '').localeCompare(
+      b.first_name || '',
       undefined,
       { sensitivity: 'base' },
     );

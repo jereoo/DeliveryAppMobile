@@ -41,7 +41,7 @@ export function AdminDriverVehicleListFilters({
       },
       {
         id: 'driverName',
-        label: 'Driver (sorted Z → A)',
+        label: 'Driver (sorted A → Z)',
         options: [
           { label: 'All drivers', value: '' },
           ...driverNames.map((name) => ({ label: name, value: name })),

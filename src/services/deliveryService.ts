@@ -186,7 +186,7 @@ type DeliveryListRow = {
 export function getUniqueDeliveryCustomerNames(deliveries: DeliveryListRow[]): string[] {
   return getUniqueSortedStrings(
     deliveries.map((delivery) => (delivery.customer_name || '').trim()),
-    'desc',
+    'asc',
   );
 }
 

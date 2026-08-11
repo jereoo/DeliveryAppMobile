@@ -136,7 +136,7 @@ type DriverVehicleListRow = {
 export function getUniqueDriverVehicleDriverNames(assignments: DriverVehicleListRow[]): string[] {
   return getUniqueSortedStrings(
     assignments.map((row) => (row.driver_name || '').trim()),
-    'desc',
+    'asc',
   );
 }
 
