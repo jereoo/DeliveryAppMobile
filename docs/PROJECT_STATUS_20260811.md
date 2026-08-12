@@ -11,10 +11,10 @@
 | Area | Status |
 |------|--------|
 | **Admin drivers list filters** | 🟢 Done — original `9118dec` (July 29 prod verified) |
-| **Admin list filter parity (all screens)** | 🟢 Shipped — `584fca4` — **await prod retest** |
-| **Admin list text search** | 🟢 Shipped — customers, drivers, vehicles, deliveries — **await prod retest** |
+| **Admin list filter parity (all screens)** | 🟢 Done — prod verified Aug 12, 2026 (`PROJECT_STATUS_20260812.md`) |
+| **Admin list text search** | 🟢 Done — prod verified Aug 12, 2026 |
 | **Shared filter components** | 🟢 Done — `AdminListFilterBar`, `AdminListSearchField`, `AdminFilteredListMeta` |
-| **Phase 4H / Aug 5 delivery fixes** | 🟡 Still await prod retest — see `PROJECT_STATUS_20260805.md` |
+| **Phase 4H / Aug 5 delivery fixes** | 🟢 Done — prod verified Aug 12, 2026 |
 
 ---
 
@@ -76,8 +76,8 @@ Hard-refresh Vercel after deploy completes.
 
 | Item | Status |
 |------|--------|
-| Admin list search + filters prod retest | 🟡 Todo |
-| Admin Add Delivery prod retest (Aug 5) | 🟡 Todo — `36751b7`, `9f421dc`, `38a62cb` |
+| Admin list search + filters prod retest | 🟢 Done — Aug 12, 2026 |
+| Admin Add Delivery prod retest (Aug 5) | 🟢 Done — Aug 12, 2026 |
 | Driver My Vehicle replace flow | Todo — prod QA |
 | Compliance upload after vehicle replace | Todo — prod QA |
 | Heroku `EMAIL_*` SMTP config | Todo — blocked on final domain |

@@ -35,10 +35,27 @@ Admin **Customers** and **Drivers** had dropdown filters but no quick text searc
 
 ### Status
 
-✅ **Committed and pushed** to `DeliveryAppMobile` main.  
-🟡 **Awaiting prod retest** on Vercel after deploy.
+✅ **Prod verified** Aug 12, 2026 — see `PROJECT_STATUS_20260812.md`.
 
 **Docs:** `docs/PROJECT_PLAN.md` (UX → Admin list filters) · `docs/PROJECT_STATUS_20260811.md`
+
+---
+
+## August 12, 2026 — Prod retest: admin list search + Add Delivery
+
+**Environments:** Vercel web · Heroku `truck-buddy`
+
+### Verified
+
+- Admin list **search + filters + sort** on customers, drivers, vehicles, deliveries (Vercel)
+- Admin **Add Delivery** — customer picker, same-as-customer toggles, create success (Vercel)
+- API `POST /api/deliveries/` with `same_pickup_as_customer` / `same_dropoff_as_customer` → delivery **#35** for `demo.customer`
+
+### Note
+
+Long sessions may hit JWT expiry (15 min) on write APIs while client-side list filters still work — logout/login workaround; token refresh on 401 is backlog.
+
+**Report:** `docs/PROJECT_STATUS_20260812.md`
 
 ---
 

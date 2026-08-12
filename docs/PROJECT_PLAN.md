@@ -1,12 +1,12 @@
 # DeliveryApp — Project Plan
 
-**Last updated:** August 11, 2026  
+**Last updated:** August 12, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟡 Phase 1–4C **complete**; Phase 4D **in progress** — admin UI + nightly cron **Done**; compliance resubmit → approve **prod verified**; expiry **email not live** (no final domain yet); driver vehicle replace UX **still in QA**; **Phase 4H** **Done**; admin list **sort/filter parity** **Done** (`584fca4`, Aug 11); admin list **search boxes** **Done** (customers, drivers, vehicles, deliveries) — **await prod retest**  
-**Current focus:** Prod-retest admin list search + filters on Vercel. Prod-retest admin **Add Delivery** (Aug 5 fixes). Prod-test driver My Vehicle replace + compliance upload after replace. Email reminders **blocked** until final domain chosen. Phase 4G (staff RBAC) **backlog**.  
+**Overall status:** 🟡 Phase 1–4C **complete**; Phase 4D **in progress** — admin UI + nightly cron **Done**; compliance resubmit → approve **prod verified**; expiry **email not live** (no final domain yet); driver vehicle replace UX **still in QA**; **Phase 4H** **Done** (incl. admin Add Delivery — **prod verified Aug 12**); admin list **sort/filter + search** **Done** — **prod verified Aug 12** (`584fca4`, `ec30659`, `1f175df`, `3b43107`)  
+**Current focus:** Prod-test driver My Vehicle replace + compliance upload after replace. Email reminders **blocked** until final domain chosen. JWT auto-refresh on 401 (long admin sessions) — backlog UX. Phase 4G (staff RBAC) **backlog**.  
 **Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
-**Latest status report:** `docs/PROJECT_STATUS_20260811.md` + `docs/PROJECT_LOG.md`  
+**Latest status report:** `docs/PROJECT_STATUS_20260812.md` + `docs/PROJECT_LOG.md`  
 **Architecture:** `docs/ARCHITECTURE.md` + `.cursor/rules/layered-architecture.mdc`  
 **Business use cases:** [`docs/USE_CASES.md`](USE_CASES.md) → `DeliveryApp/project-docs/USE_CASES.md` (auth, compliance, dispatch)  
 **Development process:** [`docs/DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md) — plan → build → test → done  
@@ -41,6 +41,8 @@
 **Prod checks (July 30, 2026):** API health ✅ · Vercel web ✅ · Phase 4D `/api/compliance/admin/*` ✅ · Admin compliance inbox UI ✅ · Admin driver list filters ✅ · GitHub Actions compliance cron ✅ (dry-run verified `ffdaae7`)
 
 **Prod verified (July 31, 2026):** Compliance resubmit after reject → admin approve — driver **PENDING → VERIFIED** (UC-13 / UC-06) ✅
+
+**Prod verified (Aug 12, 2026):** Admin list search + filters (all four entity lists) ✅ · Admin **Add Delivery** with same-as-customer toggles (Vercel UI + API `POST /deliveries/` id=35, `demo.customer`) ✅ — see `PROJECT_STATUS_20260812.md`
 
 **Not verified yet:** Driver My Vehicle replace flow · compliance upload after vehicle replace (`5353a0b`, `96a8142`, `680b00c`)
 
@@ -356,10 +358,10 @@ Document lists as good practice; **not required** for BC Class 5 local delivery 
 
 | # | Issue | Root cause | Fix | Status |
 |---|--------|------------|-----|--------|
-| 1 | Chrome popup: *“Access other apps and services on this device”* + red **Failed to fetch** on pickup/dropoff when typing in admin Add Delivery | `addressValidationService` used `process.env.BACKEND_URL \|\| localhost:8000` instead of shared `getApiUrl()` / `EXPO_PUBLIC_BACKEND_URL` on Vercel | Mobile `36751b7` — `src/services/addressValidation.ts` | ✅ **Deployed** — await prod retest |
-| 2 | Admin **Add Delivery** did not save (especially with **Same pickup as customer address** on) | Staff `POST /deliveries/` used `DeliverySerializer` which rejected blank `pickup_location` / `dropoff_location` even when `same_*_as_customer` flags were set (customer `request_delivery` path already allowed blanks) | Backend `9f421dc` — shared `_validate_delivery_location_fields()` + require `customer` on staff create | ✅ **Deployed** — await prod retest |
-| 3 | Create failed silently — form returned to list with no new delivery | `createDelivery` in `App.tsx` caught API errors but did not rethrow; `AdminDeliveriesScreen` treated call as success | Mobile `38a62cb` — rethrow after alert; show API message on form | ✅ **Deployed** — await prod retest |
-| 4 | Customer picker looked like one undifferentiated list; easy to miss selection | Each customer rendered as a native `Button` (poor web styling) | Mobile `38a62cb` — `Pressable` rows with ✓ + highlight; helper text | ✅ **Deployed** — await prod retest |
+| 1 | Chrome popup: *“Access other apps and services on this device”* + red **Failed to fetch** on pickup/dropoff when typing in admin Add Delivery | `addressValidationService` used `process.env.BACKEND_URL \|\| localhost:8000` instead of shared `getApiUrl()` / `EXPO_PUBLIC_BACKEND_URL` on Vercel | Mobile `36751b7` — `src/services/addressValidation.ts` | ✅ **Done** — prod verified Aug 12, 2026 |
+| 2 | Admin **Add Delivery** did not save (especially with **Same pickup as customer address** on) | Staff `POST /deliveries/` used `DeliverySerializer` which rejected blank `pickup_location` / `dropoff_location` even when `same_*_as_customer` flags were set (customer `request_delivery` path already allowed blanks) | Backend `9f421dc` — shared `_validate_delivery_location_fields()` + require `customer` on staff create | ✅ **Done** — prod verified Aug 12, 2026 |
+| 3 | Create failed silently — form returned to list with no new delivery | `createDelivery` in `App.tsx` caught API errors but did not rethrow; `AdminDeliveriesScreen` treated call as success | Mobile `38a62cb` — rethrow after alert; show API message on form | ✅ **Done** — prod verified Aug 12, 2026 |
+| 4 | Customer picker looked like one undifferentiated list; easy to miss selection | Each customer rendered as a native `Button` (poor web styling) | Mobile `38a62cb` — `Pressable` rows with ✓ + highlight; helper text | ✅ **Done** — prod verified Aug 12, 2026 |
 | 5 | User thought “demo customers” do not exist | Picker lists real Heroku data: `demo.customer` (**Demo Customer**) from `seed_demo_data` plus bulk test customers from `create_test_data` (e.g. Mike Hernandez) | No code change — documentation / UX clarity above | ℹ️ **Clarified** |
 
 **Prod retest checklist (admin Add Delivery):**
@@ -469,11 +471,11 @@ Document lists as good practice; **not required** for BC Class 5 local delivery 
 - Large-item domain (dimensions, capacity matching, estimates) — see workspace `project-docs/AUTOMATED_BUILD_PLAN.md`
 - **Vehicle `disposed` status** — third lifecycle state (distinct from inactive); staff-only
 - **Admin drivers list filters** — **Done** (`9118dec`, prod verified July 29, 2026) — **extended to all admin list screens** Aug 11, 2026 (`584fca4`); see UX section → Admin list filters
-- **Admin list sort/filter parity (all manage screens)** — **Done** (`584fca4`) — customers, deliveries, vehicles, driver–vehicles, compliance ops; shared `AdminListFilterBar` + `AdminFilteredListMeta`; filter logic in services — **await prod retest**
-- **Admin list text search** — **Done** (Aug 11) — `AdminListSearchField` on customers (name), drivers (name), vehicles (plate), deliveries (`#id`); `matchesAdminTextSearch()` in services — **await prod retest**
+- **Admin list sort/filter parity (all manage screens)** — **Done** (`584fca4`) — prod verified Aug 12, 2026
+- **Admin list text search** — **Done** (Aug 11) — prod verified Aug 12, 2026 — `AdminListSearchField` on customers, drivers, vehicles, deliveries
 - **Compliance resubmit → admin approve** — **Done** — prod verified July 31, 2026 (UC-13 / UC-06; `5353a0b`–`680b00c` + approve-after-resubmit fix)
 - **Driver My Vehicle replace + upload after replace** — **In QA** (`5353a0b`, `96a8142`, `680b00c`) — replace vehicle, upload compliance on new truck, profile field labels, catalog capacity auto-fill (`9174cd8`, `ddf0b7b`)
-- **Form & screen field parity (Phase 4H)** — **Done** — shipped Aug 4–5, 2026 (`4140587`, `e413ab7`, `36751b7`, `9f421dc`, `38a62cb`); post-deploy admin delivery + address autocomplete fixes **await prod retest** — see Phase 4H post-deploy table
+- **Form & screen field parity (Phase 4H)** — **Done** — shipped Aug 4–5, 2026; post-deploy admin delivery + address autocomplete fixes **prod verified Aug 12, 2026** — see Phase 4H post-deploy table · `PROJECT_STATUS_20260812.md`
 
 ### UX & design consistency *(ongoing — product standard)*
 
