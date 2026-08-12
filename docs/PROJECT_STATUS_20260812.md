@@ -15,6 +15,7 @@
 | **Admin Add Delivery (Aug 5 fixes)** | 🟢 **Done** — prod verified Aug 12, 2026 (UI + API) |
 | **Phase 4H post-deploy table (items 1–4)** | 🟢 **Done** — prod verified Aug 12, 2026 |
 | **Driver My Vehicle replace + compliance after replace** | 🟢 **Done** — prod verified Aug 12, 2026 |
+| **Dashboard logged-in username** | 🟢 **Done** — prod verified Aug 12, 2026 (`86801b5`, `847f82a`) |
 
 ---
 
@@ -69,6 +70,16 @@ status=Pending, created_at=2026-08-12T04:13:58Z
 **Design note:** Compliance **inbox** = uploaded docs awaiting review. Pre-upload gaps are visible on **Manage Vehicles** (reactivation checklist), not inbox.
 
 **Mobile commits:** `5353a0b`–`680b00c` (+ `9174cd8`, `ddf0b7b` catalog/labels)
+
+### Dashboard logged-in username (Vercel + Heroku)
+
+| Check | Result |
+|-------|--------|
+| `GET /api/me/` returns `username` | ✅ |
+| Welcome line shows username (e.g. `demo.driver`) | ✅ |
+| Status box shows `Logged In (username)` | ✅ |
+
+**Commits:** Mobile `86801b5` · Backend `847f82a`
 
 ### Admin auth note (non-blocking)
 

@@ -42,7 +42,7 @@
 
 **Prod verified (July 31, 2026):** Compliance resubmit after reject → admin approve — driver **PENDING → VERIFIED** (UC-13 / UC-06) ✅
 
-**Prod verified (Aug 12, 2026):** Admin list search + filters (all four entity lists) ✅ · Admin **Add Delivery** with same-as-customer toggles (Vercel UI + API `POST /deliveries/` id=35, `demo.customer`) ✅ · Driver **My Vehicle replace** + compliance upload on new truck + admin inbox approve (`demo.driver` → Chevrolet Silverado, VA458L) ✅ — see `PROJECT_STATUS_20260812.md`
+**Prod verified (Aug 12, 2026):** Admin list search + filters ✅ · Admin **Add Delivery** ✅ · Driver **My Vehicle replace** + compliance upload/approve ✅ · Dashboard shows **logged-in username** on welcome + status (`86801b5` mobile, `847f82a` backend `/api/me/`) ✅ — see `PROJECT_STATUS_20260812.md`
 
 **Admin surfaces (vehicle replace):** **Manage Vehicles** → vehicle detail shows resubmit/checklist before docs exist; **Compliance ops inbox** lists **uploaded** PENDING docs only (not missing-doc placeholders).
 
@@ -499,6 +499,7 @@ Document lists as good practice; **not required** for BC Class 5 local delivery 
 | **Forms** | `styles.label` + `styles.input`; errors via `styles.fieldError` / red inline text above actions — **stay on screen** on failure |
 | **Required fields** | Label with `*` or explicit helper text |
 | **Lists / pickers** | Selectable rows (`Pressable` + highlight + ✓), not stacked native `Button`s on web |
+| **Post-login dashboard** | Welcome + status show **`username`** from `GET /api/me/` (not generic “DRIVER User”) — **Done** Aug 12 (`86801b5`, `847f82a`) |
 | **Admin list filters** | `AdminListFilterBar` + per-entity filter component + **`AdminListSearchField`** where applicable; `filterAndSort*` / `filter*` in `src/services/`; `AdminFilteredListMeta` (“Showing X of Y”, clear filters) |
 | **Toggles** | `styles.switchContainer` + `styles.switchLabel` |
 | **List + detail CRUD** | List → detail → edit/create; Back + primary action at bottom; same empty-state copy (`styles.emptyText`) |

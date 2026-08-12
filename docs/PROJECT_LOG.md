@@ -75,7 +75,23 @@ Long sessions may hit JWT expiry (15 min) on write APIs while client-side list f
 
 ---
 
-## August 11, 2026 — Admin list sort/filter parity (all manage screens)
+## August 12, 2026 — Dashboard shows logged-in username
+
+**Environments:** Vercel + Heroku `truck-buddy`
+
+### Shipped
+
+| Commit | Repo | Change |
+|--------|------|--------|
+| `847f82a` | Backend | `username` on `GET /api/me/` |
+| `86801b5` | Mobile | Dashboard welcome + status use username |
+
+### Prod verified
+
+- `Welcome, demo.driver!` (not generic “DRIVER User”)
+- `Status: Logged In (demo.driver)`
+
+---
 
 **Environments:** DeliveryAppMobile → Vercel `deliveryapp-mobile.vercel.app`
 
