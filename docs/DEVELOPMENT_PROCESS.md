@@ -206,13 +206,21 @@ Review focus: acceptance criteria, architecture, regression risk, no scope creep
 
 ## 10. Using AI (Cursor) with this process
 
+**Session templates (workspace):**
+
+| Doc | Purpose |
+|-----|---------|
+| [`docs/AI_SESSION_STARTER.md`](AI_SESSION_STARTER.md) | Copy-paste at **start** of chat |
+| [`docs/AI_SESSION_END_REPORT.md`](AI_SESSION_END_REPORT.md) | Agent **end-of-session** report + human checklist |
+| [`docs/DEVELOPMENT_STANDARDS.md`](DEVELOPMENT_STANDARDS.md) | CRUD / validation / API baseline (don't repeat in every prompt) |
+
 Prompt pattern:
 
 ```text
-Follow docs/DEVELOPMENT_PROCESS.md.
-Implement PROJECT_PLAN Phase 4A task #1.
-Plan first, then build, then run tests from §6. Do not commit or deploy unless I ask.
-When done, tell me the next Todo row.
+Use AI_SESSION_STARTER.md (fill in task + mode).
+Follow docs/DEVELOPMENT_PROCESS.md and docs/DEVELOPMENT_STANDARDS.md.
+Run tests from §6. Do not commit or deploy unless I ask.
+End with AI_SESSION_END_REPORT.md format.
 ```
 
 Cursor rules (`layered-architecture.mdc`) define **how** to code; this document defines **when** each stage is complete.

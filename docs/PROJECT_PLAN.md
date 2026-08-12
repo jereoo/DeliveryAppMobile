@@ -9,7 +9,8 @@
 **Latest status report:** `docs/PROJECT_STATUS_20260811.md` + `docs/PROJECT_LOG.md`  
 **Architecture:** `docs/ARCHITECTURE.md` + `.cursor/rules/layered-architecture.mdc`  
 **Business use cases:** [`docs/USE_CASES.md`](USE_CASES.md) → `DeliveryApp/project-docs/USE_CASES.md` (auth, compliance, dispatch)  
-**Development process:** [`docs/DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md) — plan → build → test → done
+**Development process:** [`docs/DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md) — plan → build → test → done  
+**AI sessions:** [`docs/AI_SESSION_STARTER.md`](AI_SESSION_STARTER.md) · [`AI_SESSION_END_REPORT.md`](AI_SESSION_END_REPORT.md) · [`DEVELOPMENT_STANDARDS.md`](DEVELOPMENT_STANDARDS.md)
 
 ---
 
