@@ -11,6 +11,7 @@ export interface MeResponse {
   role: UserRole;
   user_id: number;
   profile_id: number | null;
+  username?: string;
 }
 
 export interface LoginCredentials {

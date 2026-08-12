@@ -14,14 +14,14 @@ describe('authService storage', () => {
     await storeAuthSession({
       access: 'access-token',
       refresh: 'refresh-token',
-      me: { role: 'admin', user_id: 1, profile_id: null },
+      me: { role: 'admin', user_id: 1, profile_id: null, username: 'admin' },
     });
 
     const loaded = await loadAuthSession();
     expect(loaded).toEqual({
       access: 'access-token',
       refresh: 'refresh-token',
-      me: { role: 'admin', user_id: 1, profile_id: null },
+      me: { role: 'admin', user_id: 1, profile_id: null, username: 'admin' },
     });
   });
 
@@ -29,7 +29,7 @@ describe('authService storage', () => {
     await storeAuthSession({
       access: 'access-token',
       refresh: 'refresh-token',
-      me: { role: 'customer', user_id: 2, profile_id: 10 },
+      me: { role: 'customer', user_id: 2, profile_id: 10, username: 'demo.customer' },
     });
     await clearAuthSession();
     await expect(loadAuthSession()).resolves.toBeNull();

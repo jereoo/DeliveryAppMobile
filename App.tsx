@@ -240,6 +240,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [userType, setUserType] = useState<UserRole | null>(null);
+  const [loggedInUsername, setLoggedInUsername] = useState<string | null>(null);
   const [driverCrudMode, setDriverCrudMode] = useState<'list' | 'create' | 'edit'>('list');
   const [selectedDriver, setSelectedDriver] = useState<any>(null);
   const [driverFormState, setDriverFormState] = useState<any>({ name: '', phone_number: '', license_number: '' });
@@ -370,6 +371,7 @@ export default function App() {
     await authLogout();
     setAuthToken(null);
     setUserType(null);
+    setLoggedInUsername(null);
     setCurrentScreen('main');
   };
 
@@ -390,6 +392,7 @@ export default function App() {
 
       setAuthToken(result.access);
       setUserType(result.me.role);
+      setLoggedInUsername(result.me.username ?? null);
       setCurrentScreen('dashboard');
       setLoginForm({ username: '', password: '' });
       Alert.alert('Success', 'Logged in successfully!');
@@ -1223,6 +1226,7 @@ export default function App() {
         }
         setAuthToken(session.access);
         setUserType(session.me.role);
+        setLoggedInUsername(session.me.username ?? null);
         setCurrentScreen('dashboard');
       } catch (error) {
         console.error('Failed to restore auth session:', error);
@@ -1607,10 +1611,14 @@ export default function App() {
       <ScrollView style={styles.container}>
         <View style={styles.content}>
           <Text style={styles.title}>📊 Dashboard</Text>
-          <Text style={styles.subtitle}>Welcome, {typeof userType === 'string' ? userType.toUpperCase() : ''} User!</Text>
+          <Text style={styles.subtitle}>
+            Welcome, {loggedInUsername || 'User'}!
+          </Text>
 
           <View style={styles.statusContainer}>
-            <Text style={styles.statusLabel}>Status: Logged In</Text>
+            <Text style={styles.statusLabel}>
+              Status: Logged In{loggedInUsername ? ` (${loggedInUsername})` : ''}
+            </Text>
             <Text style={styles.networkLabel}>User Type: {userType}</Text>
           </View>
 
