@@ -1,7 +1,7 @@
 # DeliveryApp — Project Status
 
 **Date:** August 12, 2026  
-**Report type:** Prod retest — admin list search/filters + admin Add Delivery (Phase 4H post-deploy)  
+**Report type:** Prod retest — admin list search/filters, Add Delivery, driver vehicle replace + compliance  
 **Environments:** Vercel `deliveryapp-mobile.vercel.app` · Heroku `truck-buddy`
 
 ---
@@ -14,6 +14,7 @@
 | **Admin list text search** | 🟢 **Done** — prod verified Aug 12, 2026 |
 | **Admin Add Delivery (Aug 5 fixes)** | 🟢 **Done** — prod verified Aug 12, 2026 (UI + API) |
 | **Phase 4H post-deploy table (items 1–4)** | 🟢 **Done** — prod verified Aug 12, 2026 |
+| **Driver My Vehicle replace + compliance after replace** | 🟢 **Done** — prod verified Aug 12, 2026 |
 
 ---
 
@@ -54,6 +55,21 @@ status=Pending, created_at=2026-08-12T04:13:58Z
 
 **Fixes verified:** Mobile `36751b7`, `38a62cb` · Backend `9f421dc`
 
+### Driver My Vehicle replace + compliance (Vercel + Heroku)
+
+**Account:** `demo.driver` / `DemoPass1234!` · **New vehicle:** Chevrolet Silverado 1500 (plate VA458L)
+
+| Step | Driver | Admin |
+|------|--------|-------|
+| Replace vehicle (catalog) | ✅ New vehicle identity saved | ✅ **Manage Vehicles** — new truck, resubmit/checklist, “No documents on file” |
+| Before upload | ✅ Missing registration + insurance message | ✅ Inbox empty (no `LegalDocument` rows yet — **expected**) |
+| Upload registration + insurance | ✅ Both **PENDING** | ✅ **Compliance inbox** — 2 rows (Demo Driver · VA458L) |
+| Admin approve both docs | ✅ **VERIFIED** · “All required documents verified” | ✅ Inbox cleared for those rows |
+
+**Design note:** Compliance **inbox** = uploaded docs awaiting review. Pre-upload gaps are visible on **Manage Vehicles** (reactivation checklist), not inbox.
+
+**Mobile commits:** `5353a0b`–`680b00c` (+ `9174cd8`, `ddf0b7b` catalog/labels)
+
 ### Admin auth note (non-blocking)
 
 During a long QA session, **Add Delivery** failed with `Given token not valid for any token type` while list search still worked. **Cause:** list search is client-side on cached data; **POST** needs a live JWT. Access tokens expire after **15 minutes** and `makeAuthenticatedRequest` does not auto-refresh on 401. **Workaround:** logout → login. **Follow-up backlog:** token refresh on 401 in `App.tsx`.
@@ -71,9 +87,8 @@ During a long QA session, **Add Delivery** failed with `Given token not valid fo
 
 | Item | Status |
 |------|--------|
-| Driver My Vehicle replace flow | 🟡 Todo — prod QA |
-| Compliance upload after vehicle replace | 🟡 Todo — prod QA |
 | JWT auto-refresh on 401 (long sessions) | Backlog — UX improvement |
+| Admin **Approve vehicle** after replaced truck docs verified | Optional — not retested this session |
 | Heroku `EMAIL_*` SMTP config | Blocked — final domain |
 | Phase 4G staff RBAC | Backlog |
 

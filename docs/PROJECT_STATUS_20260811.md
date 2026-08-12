@@ -78,8 +78,8 @@ Hard-refresh Vercel after deploy completes.
 |------|--------|
 | Admin list search + filters prod retest | 🟢 Done — Aug 12, 2026 |
 | Admin Add Delivery prod retest (Aug 5) | 🟢 Done — Aug 12, 2026 |
-| Driver My Vehicle replace flow | Todo — prod QA |
-| Compliance upload after vehicle replace | Todo — prod QA |
+| Driver My Vehicle replace flow | 🟢 Done — Aug 12, 2026 |
+| Compliance upload after vehicle replace | 🟢 Done — Aug 12, 2026 |
 | Heroku `EMAIL_*` SMTP config | Todo — blocked on final domain |
 | Phase 4G staff RBAC | Backlog |
 

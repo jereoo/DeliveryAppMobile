@@ -2,8 +2,8 @@
 
 **Last updated:** August 12, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟡 Phase 1–4C **complete**; Phase 4D **in progress** — admin UI + nightly cron **Done**; compliance resubmit → approve **prod verified**; expiry **email not live** (no final domain yet); driver vehicle replace UX **still in QA**; **Phase 4H** **Done** (incl. admin Add Delivery — **prod verified Aug 12**); admin list **sort/filter + search** **Done** — **prod verified Aug 12** (`584fca4`, `ec30659`, `1f175df`, `3b43107`)  
-**Current focus:** Prod-test driver My Vehicle replace + compliance upload after replace. Email reminders **blocked** until final domain chosen. JWT auto-refresh on 401 (long admin sessions) — backlog UX. Phase 4G (staff RBAC) **backlog**.  
+**Overall status:** 🟡 Phase 1–4C **complete**; Phase 4D **in progress** — admin UI + nightly cron **Done**; compliance resubmit → approve **prod verified**; driver **My Vehicle replace + upload after replace** **prod verified Aug 12**; expiry **email not live** (no final domain yet); **Phase 4H** **Done** (incl. admin Add Delivery — **prod verified Aug 12**); admin list **sort/filter + search** **Done** — **prod verified Aug 12**  
+**Current focus:** Email reminders **blocked** until final domain chosen. JWT auto-refresh on 401 (long admin sessions) — backlog UX. Phase 4G (staff RBAC) **backlog**. Optional: admin **Approve vehicle** after docs verified on replaced truck.  
 **Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
 **Latest status report:** `docs/PROJECT_STATUS_20260812.md` + `docs/PROJECT_LOG.md`  
@@ -42,9 +42,9 @@
 
 **Prod verified (July 31, 2026):** Compliance resubmit after reject → admin approve — driver **PENDING → VERIFIED** (UC-13 / UC-06) ✅
 
-**Prod verified (Aug 12, 2026):** Admin list search + filters (all four entity lists) ✅ · Admin **Add Delivery** with same-as-customer toggles (Vercel UI + API `POST /deliveries/` id=35, `demo.customer`) ✅ — see `PROJECT_STATUS_20260812.md`
+**Prod verified (Aug 12, 2026):** Admin list search + filters (all four entity lists) ✅ · Admin **Add Delivery** with same-as-customer toggles (Vercel UI + API `POST /deliveries/` id=35, `demo.customer`) ✅ · Driver **My Vehicle replace** + compliance upload on new truck + admin inbox approve (`demo.driver` → Chevrolet Silverado, VA458L) ✅ — see `PROJECT_STATUS_20260812.md`
 
-**Not verified yet:** Driver My Vehicle replace flow · compliance upload after vehicle replace (`5353a0b`, `96a8142`, `680b00c`)
+**Admin surfaces (vehicle replace):** **Manage Vehicles** → vehicle detail shows resubmit/checklist before docs exist; **Compliance ops inbox** lists **uploaded** PENDING docs only (not missing-doc placeholders).
 
 ---
 
@@ -474,7 +474,7 @@ Document lists as good practice; **not required** for BC Class 5 local delivery 
 - **Admin list sort/filter parity (all manage screens)** — **Done** (`584fca4`) — prod verified Aug 12, 2026
 - **Admin list text search** — **Done** (Aug 11) — prod verified Aug 12, 2026 — `AdminListSearchField` on customers, drivers, vehicles, deliveries
 - **Compliance resubmit → admin approve** — **Done** — prod verified July 31, 2026 (UC-13 / UC-06; `5353a0b`–`680b00c` + approve-after-resubmit fix)
-- **Driver My Vehicle replace + upload after replace** — **In QA** (`5353a0b`, `96a8142`, `680b00c`) — replace vehicle, upload compliance on new truck, profile field labels, catalog capacity auto-fill (`9174cd8`, `ddf0b7b`)
+- **Driver My Vehicle replace + upload after replace** — **Done** — prod verified Aug 12, 2026 (`5353a0b`, `96a8142`, `680b00c`) — replace via catalog; driver uploads registration + insurance on new vehicle; admin **Manage Vehicles** for pre-upload gates; **Compliance inbox** for PENDING doc approve → VERIFIED
 - **Form & screen field parity (Phase 4H)** — **Done** — shipped Aug 4–5, 2026; post-deploy admin delivery + address autocomplete fixes **prod verified Aug 12, 2026** — see Phase 4H post-deploy table · `PROJECT_STATUS_20260812.md`
 
 ### UX & design consistency *(ongoing — product standard)*

@@ -59,6 +59,22 @@ Long sessions may hit JWT expiry (15 min) on write APIs while client-side list f
 
 ---
 
+## August 12, 2026 — Prod retest: driver vehicle replace + compliance upload
+
+**Environments:** Vercel web · Heroku `truck-buddy` · `demo.driver`
+
+### Verified
+
+- Driver **replace vehicle** (catalog → Chevrolet Silverado, VA458L)
+- Admin **Manage Vehicles** — resubmit note, reactivation checklist before upload
+- Driver uploads **registration + insurance** → **PENDING** on both sides
+- Admin **Compliance inbox** shows uploaded PENDING docs (not missing-doc placeholders)
+- Admin **approve** both → driver **VERIFIED: 3, Pending: 0**
+
+**Report:** `docs/PROJECT_STATUS_20260812.md`
+
+---
+
 ## August 11, 2026 — Admin list sort/filter parity (all manage screens)
 
 **Environments:** DeliveryAppMobile → Vercel `deliveryapp-mobile.vercel.app`
@@ -161,11 +177,6 @@ Documented requirement: **all screens should follow consistent design/UX pattern
 **Use cases:** UC-13 (re-submit document) · UC-06 (review & verify)
 
 **Status report:** `docs/PROJECT_STATUS_20260731.md`
-
-### Still open (vehicle lifecycle QA)
-
-- Driver My Vehicle replace flow
-- Compliance upload after vehicle replace
 
 ---
 
