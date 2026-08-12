@@ -70,6 +70,7 @@ Long sessions may hit JWT expiry (15 min) on write APIs while client-side list f
 - Driver uploads **registration + insurance** → **PENDING** on both sides
 - Admin **Compliance inbox** shows uploaded PENDING docs (not missing-doc placeholders)
 - Admin **approve** both → driver **VERIFIED: 3, Pending: 0**
+- Admin **approve vehicle** **VA458L** → **Approved** + **Active**
 
 **Report:** `docs/PROJECT_STATUS_20260812.md`
 

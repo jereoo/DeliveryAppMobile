@@ -3,7 +3,7 @@
 **Last updated:** August 12, 2026  
 **Team size:** 1–3  
 **Overall status:** 🟡 Phase 1–4C **complete**; Phase 4D **in progress** — admin UI + nightly cron **Done**; compliance resubmit → approve **prod verified**; driver **My Vehicle replace + upload after replace** **prod verified Aug 12**; expiry **email not live** (no final domain yet); **Phase 4H** **Done** (incl. admin Add Delivery — **prod verified Aug 12**); admin list **sort/filter + search** **Done** — **prod verified Aug 12**  
-**Current focus:** Email reminders **blocked** until final domain chosen. JWT auto-refresh on 401 (long admin sessions) — backlog UX. Phase 4G (staff RBAC) **backlog**. Optional: admin **Approve vehicle** after docs verified on replaced truck.  
+**Current focus:** JWT auto-refresh on 401 (long admin sessions) — **next implement**. Email reminders **blocked** until final domain chosen. Phase 4G (staff RBAC) **backlog**.  
 **Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
 **Latest status report:** `docs/PROJECT_STATUS_20260812.md` + `docs/PROJECT_LOG.md`  
@@ -42,7 +42,7 @@
 
 **Prod verified (July 31, 2026):** Compliance resubmit after reject → admin approve — driver **PENDING → VERIFIED** (UC-13 / UC-06) ✅
 
-**Prod verified (Aug 12, 2026):** Admin list search + filters ✅ · Admin **Add Delivery** ✅ · Driver **My Vehicle replace** + compliance upload/approve ✅ · Dashboard shows **logged-in username** on welcome + status (`86801b5` mobile, `847f82a` backend `/api/me/`) ✅ — see `PROJECT_STATUS_20260812.md`
+**Prod verified (Aug 12, 2026):** Admin list search + filters ✅ · Admin **Add Delivery** ✅ · Driver **My Vehicle replace** + compliance upload/approve ✅ · Admin **Approve vehicle** after doc verify (Silverado **VA458L** — Approved + Active) ✅ · Dashboard **logged-in username** ✅ — see `PROJECT_STATUS_20260812.md`
 
 **Admin surfaces (vehicle replace):** **Manage Vehicles** → vehicle detail shows resubmit/checklist before docs exist; **Compliance ops inbox** lists **uploaded** PENDING docs only (not missing-doc placeholders).
 

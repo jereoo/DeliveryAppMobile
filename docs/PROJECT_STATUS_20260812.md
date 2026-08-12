@@ -15,7 +15,8 @@
 | **Admin Add Delivery (Aug 5 fixes)** | 🟢 **Done** — prod verified Aug 12, 2026 (UI + API) |
 | **Phase 4H post-deploy table (items 1–4)** | 🟢 **Done** — prod verified Aug 12, 2026 |
 | **Driver My Vehicle replace + compliance after replace** | 🟢 **Done** — prod verified Aug 12, 2026 |
-| **Dashboard logged-in username** | 🟢 **Done** — prod verified Aug 12, 2026 (`86801b5`, `847f82a`) |
+| **Dashboard logged-in username** | 🟢 **Done** — prod verified Aug 12, 2026 |
+| **Admin approve vehicle (post-replace)** | 🟢 **Done** — VA458L prod verified Aug 12, 2026 |
 
 ---
 
@@ -81,6 +82,15 @@ status=Pending, created_at=2026-08-12T04:13:58Z
 
 **Commits:** Mobile `86801b5` · Backend `847f82a`
 
+### Admin approve vehicle after replace (Vercel)
+
+| Check | Result |
+|-------|--------|
+| Vehicle **VA458L** (Chevrolet Silverado 1500) after doc verify | ✅ |
+| **Approval: Approved** · **Operational: Active** | ✅ Prod verified |
+
+Completes replace → upload → approve docs → **approve vehicle** lifecycle for `demo.driver`.
+
 ### Admin auth note (non-blocking)
 
 During a long QA session, **Add Delivery** failed with `Given token not valid for any token type` while list search still worked. **Cause:** list search is client-side on cached data; **POST** needs a live JWT. Access tokens expire after **15 minutes** and `makeAuthenticatedRequest` does not auto-refresh on 401. **Workaround:** logout → login. **Follow-up backlog:** token refresh on 401 in `App.tsx`.
@@ -98,8 +108,7 @@ During a long QA session, **Add Delivery** failed with `Given token not valid fo
 
 | Item | Status |
 |------|--------|
-| JWT auto-refresh on 401 (long sessions) | Backlog — UX improvement |
-| Admin **Approve vehicle** after replaced truck docs verified | Optional — not retested this session |
+| JWT auto-refresh on 401 (long sessions) | **Next** — implement |
 | Heroku `EMAIL_*` SMTP config | Blocked — final domain |
 | Phase 4G staff RBAC | Backlog |
 
