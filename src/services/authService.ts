@@ -105,7 +105,7 @@ export async function fetchMe(accessToken: string): Promise<MeResponse> {
   return response.json();
 }
 
-export async function refreshAccessToken(refreshToken: string): Promise<string> {
+export async function refreshAccessToken(refreshToken: string): Promise<AuthTokens> {
   const endpoints = await getApiEndpoints();
   const response = await fetch(endpoints.TOKEN_REFRESH, {
     method: 'POST',
@@ -122,7 +122,31 @@ export async function refreshAccessToken(refreshToken: string): Promise<string> 
     throw new Error('Refresh response did not include an access token.');
   }
 
-  return data.access as string;
+  return {
+    access: data.access as string,
+    refresh: (data.refresh as string | undefined) ?? refreshToken,
+  };
+}
+
+/** Refresh access token from AsyncStorage; persists rotated refresh token when returned. */
+export async function refreshStoredAccessToken(): Promise<string | null> {
+  const session = await loadAuthSession();
+  if (!session?.refresh) {
+    return null;
+  }
+
+  try {
+    const tokens = await refreshAccessToken(session.refresh);
+    await storeAuthSession({
+      access: tokens.access,
+      refresh: tokens.refresh,
+      me: session.me,
+    });
+    return tokens.access;
+  } catch {
+    await clearAuthSession();
+    return null;
+  }
 }
 
 export async function login(credentials: LoginCredentials): Promise<LoginResult> {
@@ -159,9 +183,9 @@ export async function restoreAuthSession(): Promise<StoredAuthSession | null> {
     return restored;
   } catch {
     try {
-      const access = await refreshAccessToken(session.refresh);
-      const me = await fetchMe(access);
-      const restored = { access, refresh: session.refresh, me };
+      const tokens = await refreshAccessToken(session.refresh);
+      const me = await fetchMe(tokens.access);
+      const restored = { access: tokens.access, refresh: tokens.refresh, me };
       await storeAuthSession(restored);
       return restored;
     } catch {

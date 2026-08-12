@@ -28,9 +28,11 @@ import { theme, styles } from './src/theme';
 import {
   login as authLogin,
   logout as authLogout,
+  refreshStoredAccessToken,
   restoreAuthSession,
   type UserRole,
 } from './src/services/authService';
+import { addressValidationService } from './src/services/addressValidation';
 import {
   buildCustomerAdminPayload,
   createCustomerByApi,
@@ -340,16 +342,22 @@ export default function App() {
   // API FUNCTIONS
   // ========================================
 
-  const makeAuthenticatedRequest = async (endpoint: string, options: Record<string, any> = {}) => {
+  const makeAuthenticatedRequest = async (
+    endpoint: string,
+    options: Record<string, any> = {},
+    tokenOverride?: string,
+    allowRefresh = true,
+  ): Promise<Response> => {
+    const token = tokenOverride ?? authToken;
     const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
     const headers: any = {
       ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
-      ...((typeof authToken === 'string' && authToken) ? { 'Authorization': `Bearer ${authToken}` } : {}),
+      ...((typeof token === 'string' && token) ? { 'Authorization': `Bearer ${token}` } : {}),
       ...(options.headers || {})
     };
 
     console.log(`🔗 API Request: ${API_BASE}${endpoint}`);
-    console.log(`🔑 Auth Token: ${authToken ? `${authToken.substring(0, 20)}...` : 'NULL/UNDEFINED'}`);
+    console.log(`🔑 Auth Token: ${token ? `${token.substring(0, 20)}...` : 'NULL/UNDEFINED'}`);
     console.log(`🔑 Auth Header: ${headers.Authorization ? 'Present' : 'Missing'}`);
     console.log(`👤 User Type: ${userType}`);
 
@@ -362,6 +370,20 @@ export default function App() {
     if (!response.ok) {
       const errorText = await response.clone().text();
       console.log(`❌ Error Response: ${errorText}`);
+    }
+
+    if (response.status === 401 && allowRefresh) {
+      const newAccess = await refreshStoredAccessToken();
+      if (newAccess) {
+        setAuthToken(newAccess);
+        await addressValidationService.refreshToken();
+        return makeAuthenticatedRequest(endpoint, options, newAccess, false);
+      }
+      await authLogout();
+      setAuthToken(null);
+      setUserType(null);
+      setLoggedInUsername(null);
+      setCurrentScreen('main');
     }
 
     return response;
