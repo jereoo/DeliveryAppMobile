@@ -93,6 +93,8 @@ Long sessions may hit JWT expiry (15 min) on write APIs while client-side list f
 
 ---
 
+## August 11, 2026 — Admin list sort/filter parity (all manage screens)
+
 **Environments:** DeliveryAppMobile → Vercel `deliveryapp-mobile.vercel.app`
 
 ### Problem
