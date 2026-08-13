@@ -3,7 +3,7 @@
 **Last updated:** August 12, 2026  
 **Team size:** 1–3  
 **Overall status:** 🟡 Phase 1–4C **complete**; Phase 4D **in progress** — admin UI + nightly cron **Done**; compliance resubmit → approve **prod verified**; driver **My Vehicle replace + upload after replace** **prod verified Aug 12**; expiry **email not live** (no final domain yet); **Phase 4H** **Done** (incl. admin Add Delivery — **prod verified Aug 12**); admin list **sort/filter + search** **Done** — **prod verified Aug 12**  
-**Current focus:** JWT auto-refresh on 401 (long admin sessions) — **next implement**. Email reminders **blocked** until final domain chosen. Phase 4G (staff RBAC) **backlog**.  
+**Current focus:** Email reminders **blocked** until final domain chosen. JWT auto-refresh on 401 **Done** (prod verified Aug 12). Phase 4G (staff RBAC) **backlog**.  
 **Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
 **Latest status report:** `docs/PROJECT_STATUS_20260812.md` + `docs/PROJECT_LOG.md`  

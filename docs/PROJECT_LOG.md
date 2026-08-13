@@ -51,9 +51,25 @@ Admin **Customers** and **Drivers** had dropdown filters but no quick text searc
 - Admin **Add Delivery** — customer picker, same-as-customer toggles, create success (Vercel)
 - API `POST /api/deliveries/` with `same_pickup_as_customer` / `same_dropoff_as_customer` → delivery **#35** for `demo.customer`
 
-### Note
+**Report:** `docs/PROJECT_STATUS_20260812.md`
 
-Long sessions may hit JWT expiry (15 min) on write APIs while client-side list filters still work — logout/login workaround; token refresh on 401 is backlog.
+---
+
+## August 12, 2026 — JWT auto-refresh on 401 (prod verified)
+
+**Environments:** Vercel `deliveryapp-mobile.vercel.app` · Heroku `truck-buddy`
+
+### Shipped
+
+| Commit | Repo | Change |
+|--------|------|--------|
+| `6edb8f2` | Mobile | `makeAuthenticatedRequest` refresh + retry; `refreshStoredAccessToken`; rotated refresh persistence |
+
+### Prod verified (`demo.driver`)
+
+- Invalid access on reload → session restored (refresh token rotation)
+- Simulated 401 on GET (Edit Profile) → data loads; new access token in storage
+- Simulated 401 on PATCH (Save Profile) → save succeeds; user stays logged in
 
 **Report:** `docs/PROJECT_STATUS_20260812.md`
 
