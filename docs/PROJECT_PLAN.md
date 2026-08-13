@@ -1,12 +1,12 @@
 # DeliveryApp — Project Plan
 
-**Last updated:** August 12, 2026  
+**Last updated:** August 13, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟡 Phase 1–4C **complete**; Phase 4D **in progress** — admin UI + nightly cron **Done**; compliance resubmit → approve **prod verified**; driver **My Vehicle replace + upload after replace** **prod verified Aug 12**; expiry **email not live** (no final domain yet); **Phase 4H** **Done** (incl. admin Add Delivery — **prod verified Aug 12**); admin list **sort/filter + search** **Done** — **prod verified Aug 12**  
-**Current focus:** Email reminders **blocked** until final domain chosen. JWT auto-refresh on 401 **Done** (prod verified Aug 12). Phase 4G (staff RBAC) **backlog**.  
+**Overall status:** 🟡 Phase 1–4C **complete**; Phase 4D **in progress** — admin UI + nightly cron **Done**; compliance resubmit → approve **prod verified**; driver **My Vehicle replace + upload after replace** **prod verified Aug 12**; expiry **email not live** (no final domain yet); **Phase 4H** **Done** (incl. admin Add Delivery — **prod verified Aug 12**); admin list **sort/filter + search** **Done** — **prod verified Aug 12**; **Phase 4G** staff RBAC **Done** — **prod verified Aug 13** (`d470089`, `9b296ec`)  
+**Current focus:** Email reminders **blocked** until final domain chosen. Phase 4G Slice 5 backlog (staff audit log, invite-by-email).  
 **Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
-**Latest status report:** `docs/PROJECT_STATUS_20260812.md` + `docs/PROJECT_LOG.md`  
+**Latest status report:** `docs/PROJECT_STATUS_20260812.md` + `docs/PROJECT_LOG.md` + `docs/AI_SESSION_END_REPORT.md` (Phase 4G prod test Aug 13)  
 **Architecture:** `docs/ARCHITECTURE.md` + `.cursor/rules/layered-architecture.mdc`  
 **Business use cases:** [`docs/USE_CASES.md`](USE_CASES.md) → `DeliveryApp/project-docs/USE_CASES.md` (auth, compliance, dispatch)  
 **Development process:** [`docs/DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md) — plan → build → test → done  
@@ -77,13 +77,13 @@ See `docs/ARCHITECTURE.md` for layered architecture rules and v1.0 feature gate.
 **Next (v1.0):** Permission classes for vehicle access; more service extractions from `App.tsx`.
 
 **Not in v1.0 (today):** Organization models, Dispatcher role/UI, multi-tenant querysets.  
-**Planned v1.0+ (Phase 4G):** Staff registration/login and admin-managed roles/permissions (see below).
+**Planned v1.0+ (Phase 4G):** Staff registration/login and admin-managed roles/permissions — **Done** (Aug 13 prod verified).
 
 ---
 
-## Staff accounts & RBAC — requirements *(Phase 4G — backlog)*
+## Staff accounts & RBAC — requirements *(Phase 4G — Done, prod verified Aug 13)*
 
-**Problem today:** Admin access relies on `ensure_admin` bootstrap and a login heuristic (customer → driver → staff). There is no staff onboarding flow, no staff-specific registration, and no UI to manage staff roles or fine-grained permissions.
+**Problem today:** ~~Admin access relies on `ensure_admin` bootstrap and a login heuristic~~ **Resolved:** Staff roles via `StaffProfile`, explicit `/api/me/` permissions, permission-gated mobile nav, Super Admin **Manage Staff** screen.
 
 **Goal:** Let the business owner add operational staff (dispatch, compliance review, read-only reporting) without sharing the superuser password, with auditable role assignments.
 
@@ -91,20 +91,20 @@ See `docs/ARCHITECTURE.md` for layered architecture rules and v1.0 feature gate.
 
 | # | Requirement | Status | Priority |
 |---|-------------|--------|----------|
-| 1 | **No public staff self-registration** — staff accounts are created by an existing admin (or invite flow), not via the driver/customer register screens | Todo | High |
-| 2 | Admin API + UI to **create staff user** (username, email, password, first_name, last_name) | Todo | High |
+| 1 | **No public staff self-registration** — staff accounts are created by an existing admin (or invite flow), not via the driver/customer register screens | Done | High |
+| 2 | Admin API + UI to **create staff user** (username, email, password, first_name, last_name) | Done | High |
 | 3 | Optional **invite-by-email** flow: admin sends invite link/token; staff sets password on first login | Todo | Medium |
-| 4 | Staff creation sets `is_staff=True`; **never** auto-grant `is_superuser` unless Super Admin role selected | Todo | High |
-| 5 | Deactivate staff (`is_active=False`) without deleting audit history | Todo | High |
-| 6 | Staff profile fields: phone (optional), job title (optional) | Todo | Low |
+| 4 | Staff creation sets `is_staff=True`; **never** auto-grant `is_superuser` unless Super Admin role selected | Done | High |
+| 5 | Deactivate staff (`is_active=False`) without deleting audit history | Done | High |
+| 6 | Staff profile fields: phone (optional), job title (optional) | Done | Low |
 
 ### Staff login
 
 | # | Requirement | Status | Priority |
 |---|-------------|--------|----------|
-| 1 | Staff use the same JWT login (`POST /api/token/`) as other users | Todo | High |
-| 2 | Replace client-side role **guesswork** with explicit **`GET /api/me/`** (or `/api/staff/me/`) returning `role`, `permissions`, and allowed screens | Todo | High |
-| 3 | Mobile/web **Staff dashboard** route — menu items filtered by permissions (not full admin menu for every staff user) | Todo | High |
+| 1 | Staff use the same JWT login (`POST /api/token/`) as other users | Done | High |
+| 2 | Replace client-side role **guesswork** with explicit **`GET /api/me/`** (or `/api/staff/me/`) returning `role`, `permissions`, and allowed screens | Done | High |
+| 3 | Mobile/web **Staff dashboard** route — menu items filtered by permissions (not full admin menu for every staff user) | Done | High |
 | 4 | Block staff login to driver/customer-only flows when user has no linked driver/customer profile | Todo | Medium |
 | 5 | Password reset / change-password flow for staff (reuse Django auth or API endpoint) | Todo | Medium |
 
@@ -112,14 +112,14 @@ See `docs/ARCHITECTURE.md` for layered architecture rules and v1.0 feature gate.
 
 | # | Requirement | Status | Priority |
 |---|-------------|--------|----------|
-| 1 | Admin UI: **list all staff** (active + inactive), search by name/email | Todo | High |
-| 2 | Admin UI: **edit staff role** and save; API `PATCH /api/staff/{id}/` or equivalent | Todo | High |
-| 3 | **v1.0 role set** (minimum): `Super Admin`, `Operations Admin`, `Compliance Reviewer`, `Read Only` | Todo | High |
-| 4 | **Permission matrix** enforced on backend (DRF permission classes), not UI-only hiding | Todo | High |
-| 5 | Map roles → permissions (examples): approve/reject drivers; verify/reject compliance docs; assign deliveries; CRUD vehicles/drivers/customers; manage staff users | Todo | High |
-| 6 | Only **Super Admin** may create/edit/deactivate other staff or change roles | Todo | High |
-| 7 | Compliance Reviewer: verify/reject documents **without** delivery assignment or staff management | Todo | Medium |
-| 8 | Read Only: view drivers, vehicles, deliveries, compliance status — **no writes** | Todo | Medium |
+| 1 | Admin UI: **list all staff** (active + inactive), search by name/email | Done | High |
+| 2 | Admin UI: **edit staff role** and save; API `PATCH /api/staff/{id}/` or equivalent | Done | High |
+| 3 | **v1.0 role set** (minimum): `Super Admin`, `Operations Admin`, `Compliance Reviewer`, `Read Only` | Done | High |
+| 4 | **Permission matrix** enforced on backend (DRF permission classes), not UI-only hiding | Done | High |
+| 5 | Map roles → permissions (examples): approve/reject drivers; verify/reject compliance docs; assign deliveries; CRUD vehicles/drivers/customers; manage staff users | Done | High |
+| 6 | Only **Super Admin** may create/edit/deactivate other staff or change roles | Done | High |
+| 7 | Compliance Reviewer: verify/reject documents **without** delivery assignment or staff management | Done | Medium |
+| 8 | Read Only: view drivers, vehicles, deliveries, compliance status — **no writes** | Done | Medium |
 | 9 | Audit log: who changed a staff user’s role and when (append-only admin event log) | Todo | Medium |
 
 **Suggested permission areas (backend constants):**
@@ -145,10 +145,12 @@ See `docs/ARCHITECTURE.md` for layered architecture rules and v1.0 feature gate.
 
 ### Phase 4G exit criteria
 
-- Admin can create a staff user, assign a role, and that user can log in and see only permitted menus.
-- Non–Super Admin cannot create staff or elevate privileges.
-- Driver/customer registration and login unchanged.
-- Tests cover role enforcement on at least: compliance verify, delivery assign, staff CRUD.
+- Admin can create a staff user, assign a role, and that user can log in and see only permitted menus. **Done** — prod verified Aug 13 on Vercel + Heroku (`production-staff-rbac-test.ps1` 20/20).
+- Non–Super Admin cannot create staff or elevate privileges. **Done**
+- Driver/customer registration and login unchanged. **Done**
+- Tests cover role enforcement on at least: compliance verify, delivery assign, staff CRUD. **Done** — backend `test_staff_rbac_enforcement.py` + prod script.
+
+**Prod QA accounts:** `prod.test.readonly`, `prod.test.reviewer`, `prod.test.ops` (password `ProdStaffTest1!`) — created during Aug 13 prod test.
 
 **Not in Phase 4G:** Multi-tenant org staff (Phase 5), Dispatcher role (Phase 5), SSO/SAML.
 
@@ -318,21 +320,29 @@ From BC requirements doc: admin visibility + expiry reminders. **MVP-recommended
 
 Catalog enforced on **driver registration** (`vehicle_model_spec_id` required). Admin/driver vehicle edit still uses catalog-backed make/model from spec.
 
-### Phase 4G — Staff accounts & RBAC *(backlog — see requirements section above)*
+### Phase 4G — Staff accounts & RBAC *(Done — prod verified Aug 13)*
 
 | Item | Status | Priority |
 |------|--------|----------|
-| Staff registration (admin-created accounts; optional invite) | Todo | High |
-| Staff login + explicit `/api/me/` role payload | Todo | High |
-| Admin UI: list / create / deactivate staff | Todo | High |
-| Admin UI: assign roles (`Super Admin`, `Operations Admin`, `Compliance Reviewer`, `Read Only`) | Todo | High |
-| Backend permission matrix + DRF enforcement | Todo | High |
-| Staff dashboard with permission-filtered navigation | Todo | High |
+| Slice 1: `StaffProfile`, Option A `/api/me/`, `ensure_admin` backfill | Done | High |
+| Slice 2: Super Admin `GET/POST/PATCH /api/staff/` | Done | High |
+| Slice 3: Backend permission matrix on operational APIs | Done | High |
+| Slice 4: Mobile staff role, permission-gated nav, Manage Staff screen | Done | High |
+| Prod regression script (`scripts/production-staff-rbac-test.ps1`) | Done | High |
+| Staff registration (admin-created accounts; optional invite) | Done | High |
+| Staff login + explicit `/api/me/` role payload | Done | High |
+| Admin UI: list / create / deactivate staff | Done | High |
+| Admin UI: assign roles (`Super Admin`, `Operations Admin`, `Compliance Reviewer`, `Read Only`) | Done | High |
+| Backend permission matrix + DRF enforcement | Done | High |
+| Staff dashboard with permission-filtered navigation | Done | High |
 | Staff role change audit log | Todo | Medium |
 | Staff password reset flow | Todo | Medium |
+| Invite-by-email staff onboarding | Todo | Medium |
 
-**Depends on:** Phase 4D admin surfaces (compliance inbox) for Compliance Reviewer role to be useful.  
-**Blocks:** Scaling ops beyond a single shared admin password.
+**Evidence:** Backend `2a1fbba`–`9b296ec`; mobile `d470089`; prod test 20/20 + Vercel UI Aug 13.
+
+**Depends on:** Phase 4D admin surfaces (compliance inbox) for Compliance Reviewer role to be useful. **Met.**  
+**Blocks:** ~~Scaling ops beyond a single shared admin password.~~ **Resolved** for v1.0 single-fleet ops.
 
 ### Phase 4F — Trust & safety *(post-MVP / v1.1 — optional)*
 
