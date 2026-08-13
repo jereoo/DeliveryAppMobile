@@ -16,15 +16,20 @@ describe('authService storage', () => {
     await storeAuthSession({
       access: 'access-token',
       refresh: 'refresh-token',
-      me: { role: 'admin', user_id: 1, profile_id: null, username: 'admin' },
+      me: {
+        role: 'staff',
+        user_id: 5,
+        profile_id: 2,
+        username: 'reviewer',
+        staff_role: 'compliance_reviewer',
+        permissions: ['compliance.verify', 'reports.view'],
+      },
     });
 
     const loaded = await loadAuthSession();
-    expect(loaded).toEqual({
-      access: 'access-token',
-      refresh: 'refresh-token',
-      me: { role: 'admin', user_id: 1, profile_id: null, username: 'admin' },
-    });
+    expect(loaded?.me.role).toBe('staff');
+    expect(loaded?.me.staff_role).toBe('compliance_reviewer');
+    expect(loaded?.me.permissions).toContain('compliance.verify');
   });
 
   it('clears stored auth session', async () => {

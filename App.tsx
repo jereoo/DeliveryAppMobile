@@ -30,6 +30,7 @@ import {
   logout as authLogout,
   refreshStoredAccessToken,
   restoreAuthSession,
+  type MeResponse,
   type UserRole,
 } from './src/services/authService';
 import { addressValidationService } from './src/services/addressValidation';
@@ -69,6 +70,7 @@ import {
   AdminDeliveriesScreen,
   AdminDriversScreen,
   AdminDriverVehiclesScreen,
+  AdminStaffScreen,
   AdminVehiclesScreen,
   CustomerProfileEditScreen,
   DeliveryRequestScreen,
@@ -78,6 +80,18 @@ import {
   MyDeliveriesScreen,
   RegisterAsDriverScreen,
 } from './src/screens';
+import {
+  canAccessAdminScreen,
+  hasStaffPermission,
+  isOperationalUser,
+  PERM_DELIVERIES_VIEW,
+  PERM_DRIVERS_VIEW,
+  PERM_REPORTS_VIEW,
+  PERM_RESOURCES_VIEW,
+  PERM_VEHICLES_VIEW,
+  STAFF_ROLE_LABELS,
+  type AdminScreenId,
+} from './src/services/staffPermissions';
 import { formatPhone10, getPhoneDigits } from './src/utils/phoneFormatting';
 import { checkBackendHealth, getApiDebugInfo, getApiUrl } from './src/config/api';
 import type { ComplianceSummary, DispatchEligibility, FleetComplianceSummary, VehicleComplianceStatus } from './src/services/complianceService';
@@ -243,6 +257,8 @@ export default function App() {
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [userType, setUserType] = useState<UserRole | null>(null);
   const [loggedInUsername, setLoggedInUsername] = useState<string | null>(null);
+  const [staffRole, setStaffRole] = useState<string | null>(null);
+  const [staffPermissions, setStaffPermissions] = useState<string[]>([]);
   const [driverCrudMode, setDriverCrudMode] = useState<'list' | 'create' | 'edit'>('list');
   const [selectedDriver, setSelectedDriver] = useState<any>(null);
   const [driverFormState, setDriverFormState] = useState<any>({ name: '', phone_number: '', license_number: '' });
@@ -316,6 +332,24 @@ export default function App() {
     password: ''
   });
 
+  const syncMeToState = (me: MeResponse) => {
+    setUserType(me.role);
+    setLoggedInUsername(me.username ?? null);
+    setStaffRole(me.staff_role ?? null);
+    setStaffPermissions(me.permissions ?? []);
+  };
+
+  const clearAuthState = () => {
+    setAuthToken(null);
+    setUserType(null);
+    setLoggedInUsername(null);
+    setStaffRole(null);
+    setStaffPermissions([]);
+  };
+
+  const canAccessScreen = (screen: AdminScreenId) =>
+    canAccessAdminScreen(userType, staffPermissions, screen);
+
   // ========================================
   // NETWORK & BACKEND FUNCTIONS
   // ========================================
@@ -380,9 +414,7 @@ export default function App() {
         return makeAuthenticatedRequest(endpoint, options, newAccess, false);
       }
       await authLogout();
-      setAuthToken(null);
-      setUserType(null);
-      setLoggedInUsername(null);
+      clearAuthState();
       setCurrentScreen('main');
     }
 
@@ -391,9 +423,7 @@ export default function App() {
 
   const handleLogout = async () => {
     await authLogout();
-    setAuthToken(null);
-    setUserType(null);
-    setLoggedInUsername(null);
+    clearAuthState();
     setCurrentScreen('main');
   };
 
@@ -413,8 +443,7 @@ export default function App() {
       });
 
       setAuthToken(result.access);
-      setUserType(result.me.role);
-      setLoggedInUsername(result.me.username ?? null);
+      syncMeToState(result.me);
       setCurrentScreen('dashboard');
       setLoginForm({ username: '', password: '' });
       Alert.alert('Success', 'Logged in successfully!');
@@ -480,7 +509,36 @@ export default function App() {
     setLoading(true);
     try {
       // Load all data based on user type
-      if (userType === 'admin' || userType === 'driver') {
+      if (isOperationalUser(userType)) {
+        const isSuperAdmin = userType === 'admin';
+        const perms = staffPermissions;
+        const tasks: Promise<void>[] = [];
+        if (isSuperAdmin || hasStaffPermission(perms, PERM_DELIVERIES_VIEW)) {
+          tasks.push(loadDeliveries());
+        }
+        if (isSuperAdmin || hasStaffPermission(perms, PERM_RESOURCES_VIEW)) {
+          tasks.push(loadCustomers());
+        }
+        if (isSuperAdmin || hasStaffPermission(perms, PERM_DRIVERS_VIEW)) {
+          tasks.push(loadDrivers());
+        }
+        if (isSuperAdmin || hasStaffPermission(perms, PERM_VEHICLES_VIEW)) {
+          tasks.push(loadVehicles());
+        }
+        if (isSuperAdmin || hasStaffPermission(perms, PERM_DELIVERIES_VIEW)) {
+          tasks.push(loadAssignments());
+        }
+        if (isSuperAdmin || hasStaffPermission(perms, PERM_DRIVERS_VIEW)) {
+          tasks.push(loadDriverVehicles());
+        }
+        if (userType === 'driver') {
+          tasks.push(loadDriverMyVehicle(), loadDriverCompliance());
+        }
+        if (isSuperAdmin || hasStaffPermission(perms, PERM_REPORTS_VIEW)) {
+          tasks.push(loadFleetComplianceSummary());
+        }
+        await Promise.all(tasks);
+      } else if (userType === 'driver') {
         await Promise.all([
           loadDeliveries(),
           loadCustomers(),
@@ -488,8 +546,8 @@ export default function App() {
           loadVehicles(),
           loadAssignments(),
           loadDriverVehicles(),
-          ...(userType === 'driver' ? [loadDriverMyVehicle(), loadDriverCompliance()] : []),
-          ...(userType === 'admin' ? [loadFleetComplianceSummary()] : []),
+          loadDriverMyVehicle(),
+          loadDriverCompliance(),
         ]);
       } else if (userType === 'customer') {
         await loadMyDeliveries();
@@ -1247,8 +1305,7 @@ export default function App() {
           return;
         }
         setAuthToken(session.access);
-        setUserType(session.me.role);
-        setLoggedInUsername(session.me.username ?? null);
+        syncMeToState(session.me);
         setCurrentScreen('dashboard');
       } catch (error) {
         console.error('Failed to restore auth session:', error);
@@ -1277,46 +1334,61 @@ export default function App() {
 
   // CIO MARCH 2026: Guard admin-only screens - redirect non-admins to dashboard
   useEffect(() => {
-    const adminScreens = ['admin_customers', 'admin_vehicles', 'admin_deliveries', 'admin_drivers', 'admin_driver_vehicles', 'admin_compliance'];
-    if (adminScreens.includes(currentScreen) && userType !== 'admin' && userType !== null) {
+    const adminScreens: AdminScreenId[] = [
+      'admin_customers',
+      'admin_vehicles',
+      'admin_deliveries',
+      'admin_drivers',
+      'admin_driver_vehicles',
+      'admin_compliance',
+      'admin_staff',
+    ];
+    if (adminScreens.includes(currentScreen as AdminScreenId)
+      && !canAccessAdminScreen(userType, staffPermissions, currentScreen as AdminScreenId)) {
       setCurrentScreen('dashboard');
     }
-  }, [currentScreen, userType]);
+  }, [currentScreen, userType, staffPermissions]);
 
   // ========================================
   // RENDER FUNCTIONS
 
   // Admin Customers Screen
-  if (currentScreen === 'admin_customers' && userType === 'admin') {
+  if (currentScreen === 'admin_customers' && canAccessScreen('admin_customers')) {
     return <AdminCustomersScreen onBack={() => setCurrentScreen('dashboard')} customers={customers} loadCustomers={loadCustomers} createCustomer={createCustomer} updateCustomer={updateCustomer} deleteCustomer={deleteCustomer} />;
   }
 
-  // Admin Vehicles Screen
-  if (currentScreen === 'admin_vehicles' && userType === 'admin') {
+  if (currentScreen === 'admin_vehicles' && canAccessScreen('admin_vehicles')) {
     return <AdminVehiclesScreen onBack={() => setCurrentScreen('dashboard')} API_BASE={API_BASE} vehicles={vehicles} loadVehicles={loadVehicles} makeAuthenticatedRequest={makeAuthenticatedRequest} createVehicle={createVehicle} updateVehicle={updateVehicle} deleteVehicle={deleteVehicle} deactivateVehicle={deactivateVehicle} reactivateVehicle={reactivateVehicle} />;
   }
 
-  if (currentScreen === 'admin_deliveries' && userType === 'admin') {
+  if (currentScreen === 'admin_deliveries' && canAccessScreen('admin_deliveries')) {
     return <AdminDeliveriesScreen onBack={() => setCurrentScreen('dashboard')} deliveries={deliveries} customers={customers} drivers={drivers} assignments={assignments} loadDeliveries={loadDeliveries} loadAssignments={loadAssignments} makeAuthenticatedRequest={makeAuthenticatedRequest} createDelivery={createDelivery} updateDelivery={updateDelivery} deleteDelivery={deleteDelivery} />;
   }
 
-  if (currentScreen === 'admin_drivers' && userType === 'admin') {
+  if (currentScreen === 'admin_drivers' && canAccessScreen('admin_drivers')) {
     return <AdminDriversScreen onBack={() => setCurrentScreen('dashboard')} API_BASE={API_BASE} drivers={drivers} loadDrivers={loadDrivers} makeAuthenticatedRequest={makeAuthenticatedRequest} createDriver={createDriver} updateDriver={updateDriver} deleteDriver={deleteDriver} />;
   }
 
-  // Admin Driver-Vehicles Screen
-  if (currentScreen === 'admin_driver_vehicles' && userType === 'admin') {
+  if (currentScreen === 'admin_driver_vehicles' && canAccessScreen('admin_driver_vehicles')) {
     return <AdminDriverVehiclesScreen onBack={() => setCurrentScreen('dashboard')} driverVehicles={driverVehicles} drivers={drivers} vehicles={vehicles} loadDriverVehicles={loadDriverVehicles} loadDrivers={loadDrivers} loadVehicles={loadVehicles} createDriverVehicle={createDriverVehicle} updateDriverVehicle={updateDriverVehicle} deleteDriverVehicle={deleteDriverVehicle} />;
   }
 
-  // Admin Compliance Ops (Phase 4D)
-  if (currentScreen === 'admin_compliance' && userType === 'admin') {
+  if (currentScreen === 'admin_compliance' && canAccessScreen('admin_compliance')) {
     return (
       <AdminComplianceScreen
         onBack={() => setCurrentScreen('dashboard')}
         request={makeAuthenticatedRequest}
         theme={theme}
         styles={styles}
+      />
+    );
+  }
+
+  if (currentScreen === 'admin_staff' && canAccessScreen('admin_staff')) {
+    return (
+      <AdminStaffScreen
+        onBack={() => setCurrentScreen('dashboard')}
+        makeAuthenticatedRequest={makeAuthenticatedRequest}
       />
     );
   }
@@ -1641,7 +1713,10 @@ export default function App() {
             <Text style={styles.statusLabel}>
               Status: Logged In{loggedInUsername ? ` (${loggedInUsername})` : ''}
             </Text>
-            <Text style={styles.networkLabel}>User Type: {userType}</Text>
+            <Text style={styles.networkLabel}>
+              User Type: {userType}
+              {staffRole ? ` · ${STAFF_ROLE_LABELS[staffRole] ?? staffRole}` : ''}
+            </Text>
           </View>
 
           {/* Customer Dashboard */}
@@ -1732,11 +1807,13 @@ export default function App() {
 
           {/* Admin Dashboard */}
           {/* Admin Dashboard (ScrollView only for dashboard, not CRUD screens) */}
-          {userType === 'admin' && !adminScreen && (
+          {isOperationalUser(userType) && !adminScreen && (
             <ScrollView style={styles.container}>
               <View style={styles.content}>
-                <Text style={styles.sectionTitle}>🛠️ Admin Management</Text>
-                {fleetComplianceSummary ? (
+                <Text style={styles.sectionTitle}>
+                  {userType === 'staff' ? '🛠️ Staff Operations' : '🛠️ Admin Management'}
+                </Text>
+                {fleetComplianceSummary && canAccessScreen('admin_compliance') ? (
                   <View style={[styles.itemContainer, { marginBottom: 16 }]}>
                     <Text style={styles.sectionTitle}>📋 Compliance overview</Text>
                     <Text style={{ color: theme.text }}>
@@ -1751,24 +1828,52 @@ export default function App() {
                     </Text>
                   </View>
                 ) : null}
-                <View style={styles.buttonContainer}>
-                  <Button title="📋 Compliance inbox" onPress={() => setCurrentScreen('admin_compliance')} />
-                </View>
-                <View style={styles.buttonContainer}>
-                  <Button title="👥 Manage Customers" onPress={() => setCurrentScreen('admin_customers')} />
-                </View>
-                <View style={styles.buttonContainer}>
-                  <Button title="🚚 Manage Drivers" onPress={() => setCurrentScreen('admin_drivers')} />
-                </View>
-                <View style={styles.buttonContainer}>
-                  <Button title="🚛 Manage Vehicles" onPress={() => setCurrentScreen('admin_vehicles')} />
-                </View>
-                <View style={styles.buttonContainer}>
-                  <Button title="📦 Manage Deliveries" onPress={() => setCurrentScreen('admin_deliveries')} />
-                </View>
-                <View style={styles.buttonContainer}>
-                  <Button title="🔗 Driver Vehicles" onPress={() => setCurrentScreen('admin_driver_vehicles')} />
-                </View>
+                {canAccessScreen('admin_compliance') ? (
+                  <View style={styles.buttonContainer}>
+                    <Button title="📋 Compliance inbox" onPress={() => setCurrentScreen('admin_compliance')} />
+                  </View>
+                ) : null}
+                {canAccessScreen('admin_customers') ? (
+                  <View style={styles.buttonContainer}>
+                    <Button title="👥 Manage Customers" onPress={() => setCurrentScreen('admin_customers')} />
+                  </View>
+                ) : null}
+                {canAccessScreen('admin_drivers') ? (
+                  <View style={styles.buttonContainer}>
+                    <Button title="🚚 Manage Drivers" onPress={() => setCurrentScreen('admin_drivers')} />
+                  </View>
+                ) : null}
+                {canAccessScreen('admin_vehicles') ? (
+                  <View style={styles.buttonContainer}>
+                    <Button title="🚛 Manage Vehicles" onPress={() => setCurrentScreen('admin_vehicles')} />
+                  </View>
+                ) : null}
+                {canAccessScreen('admin_deliveries') ? (
+                  <View style={styles.buttonContainer}>
+                    <Button title="📦 Manage Deliveries" onPress={() => setCurrentScreen('admin_deliveries')} />
+                  </View>
+                ) : null}
+                {canAccessScreen('admin_driver_vehicles') ? (
+                  <View style={styles.buttonContainer}>
+                    <Button title="🔗 Driver Vehicles" onPress={() => setCurrentScreen('admin_driver_vehicles')} />
+                  </View>
+                ) : null}
+                {canAccessScreen('admin_staff') ? (
+                  <View style={styles.buttonContainer}>
+                    <Button title="👤 Manage Staff" onPress={() => setCurrentScreen('admin_staff')} />
+                  </View>
+                ) : null}
+                {!canAccessScreen('admin_compliance')
+                  && !canAccessScreen('admin_customers')
+                  && !canAccessScreen('admin_drivers')
+                  && !canAccessScreen('admin_vehicles')
+                  && !canAccessScreen('admin_deliveries')
+                  && !canAccessScreen('admin_driver_vehicles')
+                  && !canAccessScreen('admin_staff') ? (
+                    <Text style={{ color: theme.textMuted, marginBottom: 12 }}>
+                      No operations assigned to this account. Contact a Super Admin.
+                    </Text>
+                  ) : null}
                 <View style={styles.buttonContainer}>
                   <Button title="🔄" onPress={loadData} />
                 </View>

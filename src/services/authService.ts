@@ -5,13 +5,21 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getApiEndpoints, getApiUrl } from '../config/api';
 
-export type UserRole = 'admin' | 'customer' | 'driver';
+export type UserRole = 'admin' | 'staff' | 'customer' | 'driver';
+
+export type StaffRoleCode =
+  | 'super_admin'
+  | 'operations_admin'
+  | 'compliance_reviewer'
+  | 'read_only';
 
 export interface MeResponse {
   role: UserRole;
   user_id: number;
   profile_id: number | null;
   username?: string;
+  staff_role?: StaffRoleCode | string;
+  permissions?: string[];
 }
 
 export interface LoginCredentials {

@@ -1,117 +1,68 @@
-# AI Session End Report — DeliveryApp / TruckBuddy
+# AI Session End Report — Phase 4G Slice 4 (Mobile)
 
-**Purpose:** Standard **closing format** for the agent (and a **human checklist** for you) at the end of every session.
-
-**Agent:** Paste this structure filled in as your **last message** when work stops.  
-**Human:** Use the checklist below to verify before commit/deploy.
+**Date:** 2026-08-13  
+**Agent:** Cursor (Composer)
 
 ---
 
-## Agent report template (copy structure)
-
-```markdown
 ## Session summary
-- **Task:** [what was requested]
-- **Mode:** [implement | review-only | prod-test | docs-only | debug]
-- **Outcome:** [completed | partial | blocked | review-only]
+- **Task:** Phase 4G Slice 4 — mobile staff role, permission-gated nav, Manage Staff screen
+- **Mode:** implement
+- **Outcome:** completed (local); prod role testing not run this session
 
 ## What changed
 | Repo | Files / area | Summary |
 |------|----------------|---------|
-| Backend | | |
-| Mobile | | |
-| Docs | | |
+| Backend | — | No changes (Slices 1–3 already on Heroku) |
+| Mobile | `src/services/authService.ts` | `UserRole` adds `staff`; `MeResponse` adds `staff_role`, `permissions` |
+| Mobile | `src/services/staffPermissions.ts` | Permission codes, `canAccessAdminScreen`, `isOperationalUser`, role labels |
+| Mobile | `src/services/staffService.ts` | `GET/POST/PATCH` via `/api/staff/` |
+| Mobile | `src/screens/AdminStaffScreen.tsx` | List/search/create/edit staff users (Super Admin) |
+| Mobile | `App.tsx` | Staff session state, permission-gated dashboard + admin routes, Manage Staff entry |
+| Mobile | `src/screens/index.ts` | Export `AdminStaffScreen` |
+| Mobile | `src/__tests__/staffPermissions.test.ts` | RBAC helper unit tests |
+| Mobile | `src/__tests__/authService.test.ts` | Session storage covers staff `me` payload |
+| Docs | `docs/AI_SESSION_END_REPORT.md` | This report |
 
 ## Tests
 | Suite | Command | Before | After | Notes |
 |-------|---------|--------|-------|-------|
-| Backend | | | | |
-| Mobile | | | | |
-| Prod smoke | | n/a | | if run |
+| Mobile | `npm run test:ci` | n/a (prior session) | **84/84 pass** | 15 suites, ~10s |
+| Backend | — | — | — | Not in scope |
+| Prod smoke | Staff roles on Vercel | n/a | **Not run** | Needs deploy + test accounts |
 
 ## PROJECT_PLAN alignment
 | Plan item | Previous status | New status | Evidence |
 |-----------|-----------------|------------|----------|
-| | | Done / In testing / Todo / Blocked | commit, prod test, or reason |
+| Phase 4G — Staff RBAC (backend) | Done | Done | Heroku `9b296ec`, migrate + `ensure_admin` verified |
+| Phase 4G Slice 4 — Mobile staff UX | In progress | **In testing** | Local impl + tests green; uncommitted |
 
 ## Definition of Done (DEVELOPMENT_PROCESS §4)
-- [ ] Acceptance criteria met (list which)
-- [ ] Layered architecture / DEVELOPMENT_STANDARDS followed
-- [ ] Tests pass (or failure explained)
-- [ ] No unrelated scope / no Phase 5 code
-- [ ] Plan/doc updated if status changed
-- [ ] **Not** committed (unless you asked) — ready for your review
+- [x] Acceptance criteria met — staff role in session, permission-gated nav, Manage Staff screen
+- [x] Layered architecture — services own API + permission logic; screens/components thin
+- [x] Tests pass — `npm run test:ci` green
+- [x] No unrelated scope / no Phase 5 code
+- [ ] Plan/doc updated — `PROJECT_PLAN.md` pending prod verify
+- [ ] **Not committed** — ready for your review (per git safety rules)
+
+## Permission → screen mapping (implemented)
+| Screen | Permission(s) |
+|--------|----------------|
+| Compliance inbox | `reports.view` or `compliance.view` |
+| Customers | `resources.view` |
+| Drivers | `drivers.view` |
+| Vehicles | `vehicles.view` |
+| Deliveries | `deliveries.view` |
+| Driver vehicles | `drivers.view` or `resources.view` |
+| Manage Staff | `staff.manage` (Super Admin) |
+
+Super Admin (`role: admin` from `/api/me/`) sees all menus. Other staff see subset per `permissions`.
 
 ## Blockers / risks
-- [None] or list
+- Prod staff-role QA requires commit/push to Vercel and creating test staff users on Heroku
+- Write actions on admin screens are not yet read-only in UI for staff without write permissions (backend returns 403)
 
 ## Recommended next session (one item only)
-- **Task:** [single PROJECT_PLAN row or UC-xx]
-- **Suggested mode:** [implement | prod-test | …]
-- **Starter prompt hint:** [one line you can paste next time]
-```
-
----
-
-## Human review checklist (after agent reports)
-
-Run this **before you commit or deploy**:
-
-### 1. Diff review
-- [ ] Changes match the **one task** from the session starter
-- [ ] No surprise files (`.env`, credentials, unrelated refactors)
-- [ ] Diff size feels reasonable for the task
-
-### 2. Tests
-- [ ] Agent reported test commands you trust (not skipped)
-- [ ] If UI changed: `npm run test:ci` green (or you ran it)
-- [ ] If API changed: relevant pytest subset green (see DEVELOPMENT_PROCESS §6)
-
-### 3. Plan & docs
-- [ ] `PROJECT_PLAN.md` status matches reality (not marked Done while still “In testing”)
-- [ ] Blockers still blocked (e.g. email until domain exists)
-
-### 4. Prod (when shipping)
-- [ ] Deploy only if you **intended** to ship (`main` → Heroku/Vercel)
-- [ ] Smoke: admin path and/or driver path per `DeliveryApp/project-docs/PRODUCTION_SMOKE_TEST.md`
-- [ ] Update `PROJECT_STATUS_YYYYMMDD.md` after prod verify
-
-### 5. Git
-- [ ] You review diff in Cursor or `git diff`
-- [ ] **You** commit (agent does not unless you asked)
-- [ ] Push: if SSL error on Windows, try `git -c http.sslBackend=schannel push origin main`
-
----
-
-## Status vocabulary (use consistently)
-
-| Status | Meaning |
-|--------|---------|
-| **Done** | DoD met + prod verified if user-facing |
-| **In testing** / **await prod retest** | Code merged or local; human QA not finished |
-| **Todo** | Not started |
-| **Blocked** | Waiting on external decision (domain, business rule, etc.) |
-| **Backlog** | Deferred (e.g. Phase 4G, Phase 5) |
-
-Do **not** use **Done** for blocked or in-testing work.
-
----
-
-## Example (short)
-
-```markdown
-## Session summary
-- **Task:** Prod-retest admin delivery create (Phase 4H)
-- **Mode:** prod-test
-- **Outcome:** partial — create works; filter search needs retest after deploy
-
-## Tests
-- Mobile test:ci — 45 passed (no code change this session)
-
-## PROJECT_PLAN alignment
-- Admin Add Delivery — In testing → still In testing (one edge case open)
-
-## Recommended next session
-- **Task:** Finish prod retest admin list search boxes
-- **Mode:** prod-test
-```
+- **Task:** Prod-test Phase 4G Slice 4 — deploy mobile, verify Compliance Reviewer / Read Only / Operations Admin menus and API 403s
+- **Suggested mode:** prod-test
+- **Starter prompt hint:** `Prod-test Phase 4G mobile staff RBAC on Vercel; commit/push if not done. Repos: mobile. End with AI_SESSION_END_REPORT.md.`
