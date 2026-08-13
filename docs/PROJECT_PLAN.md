@@ -6,7 +6,7 @@
 **Current focus:** Email reminders **blocked** until final domain chosen. Phase 4G Slice 5 backlog (staff audit log, invite-by-email).  
 **Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
-**Latest status report:** `docs/PROJECT_STATUS_20260812.md` + `docs/PROJECT_LOG.md` + `docs/AI_SESSION_END_REPORT.md` (Phase 4G prod test Aug 13)  
+**Latest status report:** `docs/PROJECT_STATUS_20260813.md` + `docs/PROJECT_LOG.md` + `docs/AI_SESSION_END_REPORT.md`  
 **Architecture:** `docs/ARCHITECTURE.md` + `.cursor/rules/layered-architecture.mdc`  
 **Business use cases:** [`docs/USE_CASES.md`](USE_CASES.md) → `DeliveryApp/project-docs/USE_CASES.md` (auth, compliance, dispatch)  
 **Development process:** [`docs/DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md) — plan → build → test → done  

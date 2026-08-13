@@ -1,4 +1,4 @@
-# AI Session End Report — Phase 4G Slice 4 Prod Test
+# AI Session End Report — Phase 4G Complete
 
 **Date:** 2026-08-13  
 **Agent:** Cursor (Composer)
@@ -6,18 +6,27 @@
 ---
 
 ## Session summary
-- **Task:** Prod-test staff roles on Vercel (Compliance Reviewer, Read Only, Operations Admin, Super Admin Manage Staff)
-- **Mode:** prod-test
-- **Outcome:** **completed** — API 20/20 pass; Vercel UI verified for all four roles
+- **Task:** Phase 4G staff RBAC — implement Slice 4, prod-test, commit/push, document
+- **Mode:** implement + prod-test + docs
+- **Outcome:** **completed**
 
 ## What changed
 | Repo | Files / area | Summary |
 |------|----------------|---------|
-| Backend | `scripts/production-staff-rbac-test.ps1` | New automated prod staff RBAC script (fixed scoping + nav matrix types) |
-| Mobile | — | No code changes (deploy `d470089` already live) |
-| Docs | `docs/AI_SESSION_END_REPORT.md` | This report |
+| Backend | `2a1fbba`–`9b296ec` | StaffProfile, `/api/staff/`, permission matrix (prior sessions) |
+| Backend | `9de07af` — `scripts/production-staff-rbac-test.ps1` | Prod staff RBAC regression script |
+| Mobile | `d470089` | Staff role, permission-gated nav, Manage Staff screen |
+| Mobile | `3d6738c` | `PROJECT_PLAN.md` Phase 4G Done |
+| Mobile | `docs/PROJECT_STATUS_20260813.md`, `PROJECT_LOG.md`, this report | Post-prod documentation |
 
-## Prod test accounts (created on Heroku)
+## Commits (all pushed to `origin/main`)
+| Repo | Commit | Summary |
+|------|--------|---------|
+| DeliveryAppBackend | `9de07af` | Prod staff RBAC smoke script |
+| DeliveryAppMobile | `d470089` | Mobile Slice 4 implementation |
+| DeliveryAppMobile | `3d6738c` | Mark Phase 4G Done in plan |
+
+## Prod test accounts (Heroku)
 | Username | Role | Password |
 |----------|------|----------|
 | `prod.test.readonly` | Read Only | `ProdStaffTest1!` |
@@ -28,43 +37,37 @@
 ## Tests
 | Suite | Command | Result | Notes |
 |-------|---------|--------|-------|
-| Staff RBAC API | `production-staff-rbac-test.ps1` | **20/20 pass** | Health, bundle, `/api/me/`, nav matrix, 403 writes |
-| Vercel UI | Browser on deliveryapp-mobile.vercel.app | **Pass** | Permission-gated nav per role; Manage Staff Super Admin only |
+| Mobile | `npm run test:ci` | **84/84 pass** | Pre-commit at `d470089` |
+| Staff RBAC prod | `production-staff-rbac-test.ps1` | **20/20 pass** | Human + agent verified Aug 13 |
+| Vercel UI | Browser / session inject | **Pass** | All four roles; Manage Staff Super Admin only |
 
-### API results (Heroku)
-- Super Admin: `role=admin`, `staff_role=super_admin`, `GET /api/staff/` 200
-- Read Only: `role=staff`, list drivers 200, create customer **403**, `GET /api/staff/` **403**
-- Compliance Reviewer: same pattern; nav matrix pass
-- Operations Admin: list drivers 200; no `staff.manage`
-
-### Vercel UI results
-| Role | Section title | Menus shown | Manage Staff |
-|------|---------------|-------------|--------------|
-| Super Admin (`admin`) | Admin Management | All 6 ops + Manage Staff | **Yes** — screen loads (search, Add staff user) |
-| Read Only | Staff Operations | Compliance, Customers, Drivers, Vehicles, Deliveries, Driver Vehicles | **No** |
-| Compliance Reviewer | Staff Operations | Same 6 view menus | **No** |
-| Operations Admin | Staff Operations | Same 6 view menus | **No** |
-
-Deploy verified: JS bundle contains `Manage Staff`, `staff.manage`, `Staff Operations`, `canAccessAdminScreen`.
+Run prod script:
+```powershell
+cd C:\Users\360WEB\DeliveryAppBackend
+$env:ADMIN_PASSWORD = "<Heroku ADMIN_PASSWORD>"
+.\scripts\production-staff-rbac-test.ps1
+```
 
 ## PROJECT_PLAN alignment
 | Plan item | Previous status | New status | Evidence |
 |-----------|-----------------|------------|----------|
-| Phase 4G Slice 4 — Mobile staff UX | In testing | **Done (prod verified)** | Vercel `d470089` + prod script 20/20 + UI checks |
+| Phase 4G — Staff RBAC | Backlog | **Done** | `PROJECT_PLAN.md`, `PROJECT_STATUS_20260813.md` |
+| Phase 4G Slice 4 — Mobile | In testing | **Done (prod verified)** | `d470089`, Vercel UI + script 20/20 |
 
-## Definition of Done
-- [x] Staff roles login and `/api/me/` correct on prod
-- [x] Permission-gated nav on Vercel
-- [x] Manage Staff Super Admin only
-- [x] Backend 403 for unauthorized writes (read-only staff)
-- [ ] `PROJECT_PLAN.md` row update (optional follow-up commit)
-- [ ] `production-staff-rbac-test.ps1` not committed yet
+## Definition of Done (DEVELOPMENT_PROCESS §4)
+- [x] Acceptance criteria met — staff roles, permission nav, Manage Staff, backend 403s
+- [x] Layered architecture — services + permission classes + thin UI
+- [x] Tests pass — mobile 84/84; prod script 20/20
+- [x] No unrelated scope / no Phase 5 code
+- [x] Plan/doc updated — `PROJECT_PLAN.md`, `PROJECT_STATUS_20260813.md`, `PROJECT_LOG.md`
+- [x] Committed and pushed — backend `9de07af`, mobile `d470089` + `3d6738c`
 
 ## Blockers / risks
-- Write buttons still visible on admin screens for read-only staff (backend 403s apply)
-- Test staff users left on prod (`prod.test.*`) — safe to keep for regression or deactivate via Manage Staff
+- Write buttons visible for read-only staff on some admin screens (backend 403s apply)
+- `prod.test.*` accounts remain on prod for regression (deactivate via Manage Staff if undesired)
+- Email reminders still blocked until domain exists
 
-## Recommended next session
-- **Task:** Commit backend prod test script; mark Phase 4G Slice 4 Done in `PROJECT_PLAN.md`
-- **Mode:** docs-only or implement (read-only UI hints for staff without write perms)
-- **Starter prompt:** `Mark Phase 4G Slice 4 Done in PROJECT_PLAN; commit production-staff-rbac-test.ps1.`
+## Recommended next session (one item only)
+- **Task:** Phase 4G Slice 5 backlog — staff role-change audit log, or read-only UI polish
+- **Suggested mode:** implement or backlog grooming
+- **Starter prompt:** `Phase 4G Slice 5 staff audit log — scope and implement. Repos: backend.`

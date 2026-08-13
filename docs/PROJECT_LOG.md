@@ -4,6 +4,30 @@ Chronological decisions and implementation notes. Latest status reports: `PROJEC
 
 ---
 
+## August 13, 2026 — Phase 4G staff RBAC (prod verified)
+
+**Environments:** Vercel `deliveryapp-mobile.vercel.app` · Heroku `truck-buddy`
+
+### Shipped
+
+| Slice | Repo | Commit | Change |
+|-------|------|--------|--------|
+| 1 | Backend | `2a1fbba` | `StaffProfile`, Option A `/api/me/`, `ensure_admin` backfill |
+| 2 | Backend | `357a44e` | Super Admin `GET/POST/PATCH /api/staff/` |
+| 3 | Backend | `9b296ec` | Permission matrix on operational APIs |
+| 4 | Mobile | `d470089` | Staff role session, permission-gated nav, Manage Staff screen |
+| Prod script | Backend | `9de07af` | `scripts/production-staff-rbac-test.ps1` |
+
+### Prod verified
+
+- **API:** `production-staff-rbac-test.ps1` — **20/20 pass** (Super Admin, Read Only, Compliance Reviewer, Operations Admin)
+- **UI:** Vercel — Manage Staff Super Admin only; staff see **Staff Operations** subset per permissions
+- **QA accounts:** `prod.test.readonly`, `prod.test.reviewer`, `prod.test.ops` / `ProdStaffTest1!`
+
+**Docs:** `docs/PROJECT_PLAN.md` (Phase 4G Done) · `docs/PROJECT_STATUS_20260813.md` · commit `3d6738c`
+
+---
+
 ## August 11, 2026 — Admin list search boxes (customers, drivers, vehicles, deliveries)
 
 **Environments:** DeliveryAppMobile → Vercel `deliveryapp-mobile.vercel.app`
