@@ -1,12 +1,13 @@
 # DeliveryApp — Project Plan
 
-**Last updated:** August 13, 2026  
+**Last updated:** September 14, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟡 Phase 1–4C **complete**; Phase 4D **in progress** — admin UI + nightly cron **Done**; compliance resubmit → approve **prod verified**; driver **My Vehicle replace + upload after replace** **prod verified Aug 12**; expiry **email not live** (no final domain yet); **Phase 4H** **Done** (incl. admin Add Delivery — **prod verified Aug 12**); admin list **sort/filter + search** **Done** — **prod verified Aug 12**; **Phase 4G** staff RBAC **Done** — **prod verified Aug 13** (`d470089`, `9b296ec`)  
-**Current focus:** Email reminders **blocked** until final domain chosen. Phase 4G Slice 5 backlog (staff audit log, invite-by-email).  
+**Overall status:** 🟡 Phase 1–4C **complete**; Phase 4D **in progress** — admin UI + nightly cron **Done**; compliance resubmit → approve **prod verified**; driver **My Vehicle replace + upload after replace** **prod verified Aug 12**; **production web** **BuyNHaul.com** on Vercel **prod verified Sep 14**; expiry **email not live** (SMTP **Todo** on `buynhaul.com`); **Phase 4H** **Done**; admin list **sort/filter + search** **Done**; **Phase 4G** staff RBAC **Done** — **prod verified Aug 13**  
+**Current focus:** **Email (SendGrid + Heroku `EMAIL_*`)** on **buynhaul.com**. Phase 4G Slice 5 backlog (staff audit log, invite-by-email).  
+**Production domain ops:** [`docs/PRODUCTION_DOMAIN_AND_EMAIL.md`](PRODUCTION_DOMAIN_AND_EMAIL.md)  
 **Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
-**Latest status report:** `docs/PROJECT_STATUS_20260813.md` + `docs/PROJECT_LOG.md` + `docs/AI_SESSION_END_REPORT.md`  
+**Latest status report:** `docs/PROJECT_STATUS_20260914.md` + `docs/PROJECT_LOG.md`  
 **Architecture:** `docs/ARCHITECTURE.md` + `.cursor/rules/layered-architecture.mdc`  
 **Business use cases:** [`docs/USE_CASES.md`](USE_CASES.md) → `DeliveryApp/project-docs/USE_CASES.md` (auth, compliance, dispatch)  
 **Development process:** [`docs/DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md) — plan → build → test → done  
@@ -18,7 +19,10 @@
 
 | Topic | Current setup |
 |-------|----------------|
-| **Primary database** | **Heroku Postgres** on app `truck-buddy` — all migrations, seeds, and QA run here (app not public yet) |
+| **Production web** | **https://www.buynhaul.com** (Vercel); apex **308** → www; legacy `deliveryapp-mobile.vercel.app` |
+| **Production API** | **https://truck-buddy-f14f250ae8b3.herokuapp.com/api** (Heroku app `truck-buddy`) |
+| **Heroku CORS** | `CORS_ORIGINS` includes Vercel + `https://www.buynhaul.com`, `https://buynhaul.com` — see [`PRODUCTION_DOMAIN_AND_EMAIL.md`](PRODUCTION_DOMAIN_AND_EMAIL.md) |
+| **Primary database** | **Heroku Postgres** on app `truck-buddy` — all migrations, seeds, and QA run here |
 | **Local PostgreSQL** | `delivery_app` @ localhost exists but **not in use**; refresh/sync **TBD** |
 | **Workspace** | Open `C:\Users\360WEB\DeliveryApp.code-workspace` (3 roots: docs, backend, mobile) |
 | **DB admin** | pgAdmin → Heroku Postgres connection |
@@ -288,7 +292,7 @@ From BC requirements doc: admin visibility + expiry reminders. **MVP-recommended
 | Admin compliance inbox (pending approvals across all drivers) | **Done** — API (`1e37511`) + mobile `AdminComplianceScreen` inbox tab (`262df0d`, prod verified) | High |
 | Admin list: drivers/vehicles with **expired** or **expiring soon** docs | **Done** — API + mobile expiring tab (prod verified) | High |
 | Compliance summary on admin home (counts: pending / expired / active) | **Done** — API + admin dashboard overview + compliance screen (`262df0d`) | Medium |
-| Email reminders: 30 / 14 / 0 days before document expiry | **Not done** — code shipped (`send_compliance_expiry_reminders`); **blocked:** no final domain name for sender email; until then reminders log to console only (Heroku `EMAIL_*` setup deferred) | High |
+| Email reminders: 30 / 14 / 0 days before document expiry | **Todo (ops)** — code **Done** (`send_compliance_expiry_reminders`); domain **BuyNHaul.com** chosen; configure **SendGrid + SPF/DKIM** on GoDaddy + Heroku `EMAIL_*` / `DEFAULT_FROM_EMAIL=compliance@buynhaul.com` — see [`PRODUCTION_DOMAIN_AND_EMAIL.md`](PRODUCTION_DOMAIN_AND_EMAIL.md) | High |
 | Driver dashboard: explicit expiry dates per doc type | Partial — driver compliance card shows counts + expiry on verified docs; full per-type list Todo | Medium |
 | Schedule nightly `run_compliance_daily_jobs` | **Done** — GitHub Actions `compliance-daily-jobs.yml` (06:00 UTC); verified run `30509255544` (`ffdaae7`) | High |
 

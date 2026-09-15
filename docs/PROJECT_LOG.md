@@ -4,6 +4,37 @@ Chronological decisions and implementation notes. Latest status reports: `PROJEC
 
 ---
 
+## September 14, 2026 — BuyNHaul.com production domain (Vercel + GoDaddy + Heroku CORS)
+
+**Environments:** https://www.buynhaul.com · Heroku `truck-buddy`
+
+### Domain choice
+
+- **Primary:** **BuyNHaul.com** (among RuckTruk.com, TrukNGO.COM, LorryBuddy.com — others parked).
+
+### Shipped (ops — no app code deploy required for domain)
+
+| Layer | Change |
+|-------|--------|
+| **Vercel** | `www.buynhaul.com` → Production; `buynhaul.com` → 308 → www |
+| **GoDaddy DNS** | CNAME `www` → Vercel DNS target; A `@` → Vercel apex IP |
+| **Heroku** | `CORS_ORIGINS` extended with `https://www.buynhaul.com`, `https://buynhaul.com` |
+
+### Prod verified
+
+- App loads on BuyNHaul (incognito after DNS propagation).
+- **Login** works after CORS update (`demo.customer` — Edit My Profile).
+
+### Todo
+
+- **SendGrid (or equivalent) + GoDaddy SPF/DKIM** → Heroku `EMAIL_*`, `DEFAULT_FROM_EMAIL=compliance@buynhaul.com`.
+- Unpublish GoDaddy Website Builder placeholder if it reappears for some clients.
+- Optional: in-app rebrand DeliveryApp → BuyNHaul.
+
+**Docs:** [`docs/PRODUCTION_DOMAIN_AND_EMAIL.md`](PRODUCTION_DOMAIN_AND_EMAIL.md) · `docs/PROJECT_STATUS_20260914.md`
+
+---
+
 ## August 13, 2026 — Phase 4G staff RBAC (prod verified)
 
 **Environments:** Vercel `deliveryapp-mobile.vercel.app` · Heroku `truck-buddy`
