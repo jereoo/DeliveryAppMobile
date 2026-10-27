@@ -1,7 +1,7 @@
 # Production domain — BuyNHaul.com
 
-**Last updated:** September 14, 2026  
-**Status:** Custom domain **live** on Vercel; login **prod verified** after Heroku CORS update. **Email (SMTP) — Todo.**
+**Last updated:** October 26, 2026  
+**Status:** Custom domain **live** on Vercel; login **prod verified** after Heroku CORS update. **Email (SMTP) — live** via Mailgun (`mg.buynhaul.com`, From `compliance@buynhaul.com`).
 
 ---
 
@@ -85,33 +85,38 @@ No DNS change on Heroku for v1. Postgres and dynos unchanged.
 
 ---
 
-## Email setup — **Todo**
+## Email setup — **Live (October 26, 2026)**
 
-Compliance expiry reminders are **implemented in code** but **not sending** until SMTP is configured. Without `EMAIL_*`, Django uses the **console** backend (Heroku logs only).
+Compliance expiry reminders **send via SMTP** when Heroku `EMAIL_*` is set. **Prod verified:** Heroku `send_mail` with **From** `compliance@buynhaul.com`.
 
-**Planned sender domain:** `buynhaul.com`  
-**Suggested From address:** `compliance@buynhaul.com` (or `noreply@buynhaul.com`)
+**Mailgun sending domain:** `mg.buynhaul.com` (SPF + DKIM + tracking verified in Mailgun).  
+**Customer-facing From:** `compliance@buynhaul.com` (`DEFAULT_FROM_EMAIL` on `truck-buddy`).  
+**SMTP auth user:** full address on `mg.buynhaul.com` (created under Mailgun → domain → **SMTP credentials**).
 
 ### Checklist
 
 | # | Task | Status |
 |---|------|--------|
-| 1 | Create **SendGrid** (or Mailgun / SES) account | Todo |
-| 2 | Add **SPF + DKIM** DNS records on GoDaddy (provider-supplied) | Todo |
-| 3 | Set Heroku config vars on `truck-buddy` | Todo |
-| 4 | Dry-run then live `run_compliance_daily_jobs` | Todo |
-| 5 | Optional: update GoDaddy **_dmarc** when production mail is stable | Todo |
+| 1 | **Mailgun** account + sandbox smoke test | Done |
+| 2 | **SPF + DKIM** for `mg.buynhaul.com` on GoDaddy (Mailgun connect) | Done |
+| 3 | Heroku `EMAIL_*` + `DEFAULT_FROM_EMAIL` on `truck-buddy` | Done |
+| 4 | Production `send_mail` test | Done — Oct 26, 2026 |
+| 5 | Dry-run then live `run_compliance_daily_jobs` | **Next** |
+| 6 | Optional: `_dmarc.mg`, inbound **MX** on `mg` | Todo (not required for outbound) |
 
 **Heroku vars** (see `DeliveryAppBackend/docs/PHASE_4D_COMPLIANCE_OPS.md`):
 
 ```bash
 heroku config:set EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend -a truck-buddy
-heroku config:set EMAIL_HOST=smtp.sendgrid.net -a truck-buddy
-heroku config:set EMAIL_HOST_USER=apikey -a truck-buddy
-heroku config:set EMAIL_HOST_PASSWORD=<SendGrid API key> -a truck-buddy
+heroku config:set EMAIL_HOST=smtp.mailgun.org -a truck-buddy
+heroku config:set EMAIL_PORT=587 -a truck-buddy
 heroku config:set EMAIL_USE_TLS=True -a truck-buddy
+heroku config:set EMAIL_HOST_USER=<Mailgun SMTP login @mg.buynhaul.com> -a truck-buddy
+heroku config:set EMAIL_HOST_PASSWORD=<Mailgun SMTP password> -a truck-buddy
 heroku config:set DEFAULT_FROM_EMAIL=compliance@buynhaul.com -a truck-buddy
 ```
+
+Django does **not** read `MAILGUN_API_KEY` / `MAILGUN_DOMAIN` unless added to code later; v1 uses SMTP only.
 
 **What email does today (v1):** Driver compliance **expiry reminders** at 30 / 14 / 0 days (to the driver’s registered email). No registration welcome, doc-upload-to-admin, or customer notification emails yet.
 

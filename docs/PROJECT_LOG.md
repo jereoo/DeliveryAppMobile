@@ -4,6 +4,31 @@ Chronological decisions and implementation notes. Latest status reports: `PROJEC
 
 ---
 
+## October 26, 2026 — Production email live (Mailgun + Heroku)
+
+**Environments:** Heroku `truck-buddy` · sending domain `mg.buynhaul.com` · From `compliance@buynhaul.com`
+
+### Shipped (ops — config only)
+
+| Layer | Change |
+|-------|--------|
+| **Mailgun** | Account + sandbox test; custom domain **`mg.buynhaul.com`**; SPF/DKIM/tracking DNS verified |
+| **GoDaddy** | Mailgun automatic DNS connect for `mg` records (Vercel `www`/apex unchanged) |
+| **Heroku** | `EMAIL_BACKEND` SMTP; `EMAIL_HOST=smtp.mailgun.org`; port 587 TLS; SMTP user `@mg.buynhaul.com`; `DEFAULT_FROM_EMAIL=compliance@buynhaul.com` |
+
+### Prod verified
+
+- Sandbox `send_mail` (Oct 25) → authorized recipient.
+- Production `send_mail` (Oct 26) → `engineering1@360software.ca`, **From** `compliance@buynhaul.com`.
+
+### Next
+
+- Run `run_compliance_daily_jobs --dry-run` then live on Heroku; monitor Mailgun logs + GitHub **Compliance Daily Jobs** workflow.
+
+**Docs:** `docs/PROJECT_STATUS_20261026.md` · [`docs/PRODUCTION_DOMAIN_AND_EMAIL.md`](PRODUCTION_DOMAIN_AND_EMAIL.md)
+
+---
+
 ## September 14, 2026 — BuyNHaul.com production domain (Vercel + GoDaddy + Heroku CORS)
 
 **Environments:** https://www.buynhaul.com · Heroku `truck-buddy`

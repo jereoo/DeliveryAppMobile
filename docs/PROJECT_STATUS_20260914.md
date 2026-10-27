@@ -14,7 +14,7 @@
 | **Vercel custom domain (www + apex redirect)** | Done — Valid Configuration |
 | **GoDaddy DNS → Vercel** | Done |
 | **Heroku `CORS_ORIGINS` for BuyNHaul** | Done — login prod verified |
-| **Compliance expiry email (SMTP)** | **Todo** — SendGrid + DNS on `buynhaul.com` |
+| **Compliance expiry email (SMTP)** | **Done** — see `PROJECT_STATUS_20261026.md` (Mailgun) |
 
 ---
 
