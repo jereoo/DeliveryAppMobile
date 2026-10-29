@@ -4,6 +4,21 @@ Chronological decisions and implementation notes. Latest status reports: `PROJEC
 
 ---
 
+## October 29, 2026 — Phase 4D nightly jobs prod verified (Heroku)
+
+**Environments:** Heroku `truck-buddy` · as-of date **2026-10-29**
+
+### Prod verified
+
+- `python manage.py run_compliance_daily_jobs --dry-run` — completed; 0 expire / 0 reminders (no matching documents).
+- `python manage.py run_compliance_daily_jobs` (live) — completed; 0 marked EXPIRED / 0 reminders sent.
+
+**Phase 4D ops:** complete (SMTP Oct 26 + job runs Oct 29). Reminders will send when verified docs hit 30 / 14 / 0-day expiry windows.
+
+**Docs:** `docs/PROJECT_STATUS_20261029.md`
+
+---
+
 ## October 26, 2026 — Production email live (Mailgun + Heroku)
 
 **Environments:** Heroku `truck-buddy` · sending domain `mg.buynhaul.com` · From `compliance@buynhaul.com`
@@ -20,10 +35,6 @@ Chronological decisions and implementation notes. Latest status reports: `PROJEC
 
 - Sandbox `send_mail` (Oct 25) → authorized recipient.
 - Production `send_mail` (Oct 26) → `engineering1@360software.ca`, **From** `compliance@buynhaul.com`.
-
-### Next
-
-- Run `run_compliance_daily_jobs --dry-run` then live on Heroku; monitor Mailgun logs + GitHub **Compliance Daily Jobs** workflow.
 
 **Docs:** `docs/PROJECT_STATUS_20261026.md` · [`docs/PRODUCTION_DOMAIN_AND_EMAIL.md`](PRODUCTION_DOMAIN_AND_EMAIL.md)
 

@@ -1,6 +1,6 @@
 # Production domain — BuyNHaul.com
 
-**Last updated:** October 26, 2026  
+**Last updated:** October 29, 2026  
 **Status:** Custom domain **live** on Vercel; login **prod verified** after Heroku CORS update. **Email (SMTP) — live** via Mailgun (`mg.buynhaul.com`, From `compliance@buynhaul.com`).
 
 ---
@@ -101,7 +101,7 @@ Compliance expiry reminders **send via SMTP** when Heroku `EMAIL_*` is set. **Pr
 | 2 | **SPF + DKIM** for `mg.buynhaul.com` on GoDaddy (Mailgun connect) | Done |
 | 3 | Heroku `EMAIL_*` + `DEFAULT_FROM_EMAIL` on `truck-buddy` | Done |
 | 4 | Production `send_mail` test | Done — Oct 26, 2026 |
-| 5 | Dry-run then live `run_compliance_daily_jobs` | **Next** |
+| 5 | Dry-run then live `run_compliance_daily_jobs` | Done — Oct 29, 2026 (0 counts; job OK) |
 | 6 | Optional: `_dmarc.mg`, inbound **MX** on `mg` | Todo (not required for outbound) |
 
 **Heroku vars** (see `DeliveryAppBackend/docs/PHASE_4D_COMPLIANCE_OPS.md`):

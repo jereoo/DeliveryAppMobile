@@ -15,7 +15,7 @@
 | **Heroku `EMAIL_*` + SMTP backend** | Done — `smtp.mailgun.org`, SMTP user on `mg.buynhaul.com` |
 | **`DEFAULT_FROM_EMAIL=compliance@buynhaul.com`** | Done — **prod verified** (inbox test) |
 | **Sandbox SMTP path** | Done (Oct 25) — authorized recipient test before cutover |
-| **`run_compliance_daily_jobs` dry-run / live on Heroku** | **Next** — SMTP ready; confirm job output + optional live send |
+| **`run_compliance_daily_jobs` dry-run / live on Heroku** | Done — **prod verified Oct 29** — see `PROJECT_STATUS_20261029.md` |
 | **GitHub Actions nightly cron** | Done (code) — sends real mail when job runs and drivers match reminder rules |
 
 ---
@@ -37,17 +37,6 @@
 **Heroku app slug:** `truck-buddy` (internal; customer brand remains BuyNHaul / `buynhaul.com`).
 
 **Reference:** [`docs/PRODUCTION_DOMAIN_AND_EMAIL.md`](PRODUCTION_DOMAIN_AND_EMAIL.md) · `DeliveryAppBackend/docs/PHASE_4D_COMPLIANCE_OPS.md`
-
----
-
-## Recommended next (ops)
-
-| Step | Action |
-|------|--------|
-| 1 | Heroku **Run console** (bash, not `manage.py shell`): `python manage.py run_compliance_daily_jobs --dry-run` |
-| 2 | If dry-run looks correct: `python manage.py run_compliance_daily_jobs` (or wait for 06:00 UTC GitHub workflow) |
-| 3 | Mailgun **Sending → Logs** after first scheduled/live reminder batch |
-| 4 | Optional: `_dmarc.mg` + inbound MX only if receiving mail at `@mg.buynhaul.com` |
 
 ---
 

@@ -1,13 +1,13 @@
 # DeliveryApp — Project Plan
 
-**Last updated:** October 26, 2026  
+**Last updated:** October 29, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟢 Phase 1–4C **complete**; Phase 4D **nearly complete** — admin UI + nightly cron **Done**; compliance resubmit → approve **prod verified**; driver **My Vehicle replace + upload after replace** **prod verified Aug 12**; **production web** **BuyNHaul.com** on Vercel **prod verified Sep 14**; expiry **email SMTP live** (Mailgun **`mg.buynhaul.com`**, From **`compliance@buynhaul.com`**, **prod verified Oct 26**); **Phase 4H** **Done**; admin list **sort/filter + search** **Done**; **Phase 4G** staff RBAC **Done** — **prod verified Aug 13**  
-**Current focus:** Confirm **`run_compliance_daily_jobs`** dry-run/live on Heroku + Mailgun logs. Phase 4G Slice 5 backlog (staff audit log, invite-by-email).  
+**Overall status:** 🟢 Phase 1–4C **complete**; Phase 4D **complete** — admin UI + nightly cron + Mailgun SMTP + Heroku job runs **prod verified Oct 29**; compliance resubmit → approve **prod verified**; driver **My Vehicle replace + upload after replace** **prod verified Aug 12**; **production web** **BuyNHaul.com** on Vercel **prod verified Sep 14**; expiry **email** (Mailgun **`mg.buynhaul.com`**, From **`compliance@buynhaul.com`**); **Phase 4H** **Done**; admin list **sort/filter + search** **Done**; **Phase 4G** staff RBAC **Done** — **prod verified Aug 13**  
+**Current focus:** **Phase 4G Slice 5** backlog (staff audit log, invite-by-email). Monitor Mailgun when first expiry reminders fire in prod.  
 **Production domain ops:** [`docs/PRODUCTION_DOMAIN_AND_EMAIL.md`](PRODUCTION_DOMAIN_AND_EMAIL.md)  
 **Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
-**Latest status report:** `docs/PROJECT_STATUS_20261026.md` + `docs/PROJECT_LOG.md`  
+**Latest status report:** `docs/PROJECT_STATUS_20261029.md` + `docs/PROJECT_LOG.md`  
 **Architecture:** `docs/ARCHITECTURE.md` + `.cursor/rules/layered-architecture.mdc`  
 **Business use cases:** [`docs/USE_CASES.md`](USE_CASES.md) → `DeliveryApp/project-docs/USE_CASES.md` (auth, compliance, dispatch)  
 **Development process:** [`docs/DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md) — plan → build → test → done  
@@ -292,7 +292,7 @@ From BC requirements doc: admin visibility + expiry reminders. **MVP-recommended
 | Admin compliance inbox (pending approvals across all drivers) | **Done** — API (`1e37511`) + mobile `AdminComplianceScreen` inbox tab (`262df0d`, prod verified) | High |
 | Admin list: drivers/vehicles with **expired** or **expiring soon** docs | **Done** — API + mobile expiring tab (prod verified) | High |
 | Compliance summary on admin home (counts: pending / expired / active) | **Done** — API + admin dashboard overview + compliance screen (`262df0d`) | Medium |
-| Email reminders: 30 / 14 / 0 days before document expiry | **Done (ops SMTP)** — Mailgun + Heroku **prod verified Oct 26**; confirm nightly **`run_compliance_daily_jobs`** dry-run/live — see [`PRODUCTION_DOMAIN_AND_EMAIL.md`](PRODUCTION_DOMAIN_AND_EMAIL.md) | High |
+| Email reminders: 30 / 14 / 0 days before document expiry | **Done** — SMTP Oct 26; **`run_compliance_daily_jobs`** dry-run + live **prod verified Oct 29** — see [`PRODUCTION_DOMAIN_AND_EMAIL.md`](PRODUCTION_DOMAIN_AND_EMAIL.md) | High |
 | Driver dashboard: explicit expiry dates per doc type | Partial — driver compliance card shows counts + expiry on verified docs; full per-type list Todo | Medium |
 | Schedule nightly `run_compliance_daily_jobs` | **Done** — GitHub Actions `compliance-daily-jobs.yml` (06:00 UTC); verified run `30509255544` (`ffdaae7`) | High |
 
