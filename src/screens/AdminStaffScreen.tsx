@@ -15,8 +15,11 @@ import {
 } from '../services/staffPermissions';
 import {
   createStaffUser,
+  fetchStaffAuditEvents,
   fetchStaffUsers,
+  sendStaffInvite,
   updateStaffUser,
+  type StaffAuditEventRecord,
   type StaffUserRecord,
 } from '../services/staffService';
 import type { AuthenticatedRequest } from './types';
@@ -31,7 +34,8 @@ export function AdminStaffScreen({
   onBack,
   makeAuthenticatedRequest,
 }: AdminStaffScreenProps) {
-  const [mode, setMode] = useState<'list' | 'create' | 'edit'>('list');
+  const [mode, setMode] = useState<'list' | 'create' | 'edit' | 'audit' | 'invite'>('list');
+  const [auditEvents, setAuditEvents] = useState<StaffAuditEventRecord[]>([]);
   const [staffUsers, setStaffUsers] = useState<StaffUserRecord[]>([]);
   const [selected, setSelected] = useState<StaffUserRecord | null>(null);
   const [search, setSearch] = useState('');
@@ -130,6 +134,43 @@ export function AdminStaffScreen({
     }
   };
 
+  const loadAudit = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const rows = await fetchStaffAuditEvents(makeAuthenticatedRequest);
+      setAuditEvents(rows);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load audit log.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submitInvite = async () => {
+    if (!form.email.trim()) {
+      setError('Email is required for an invite.');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      await sendStaffInvite(makeAuthenticatedRequest, {
+        email: form.email.trim(),
+        staff_role: form.staff_role,
+        first_name: form.first_name.trim(),
+        last_name: form.last_name.trim(),
+      });
+      Alert.alert('Invite sent', `Invitation email sent to ${form.email.trim()}.`);
+      setMode('list');
+      resetCreateForm();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invite failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const submitEdit = async () => {
     if (!selected) {
       return;
@@ -153,6 +194,81 @@ export function AdminStaffScreen({
       setLoading(false);
     }
   };
+
+  if (mode === 'audit') {
+    return (
+      <ScrollView style={styles.container}>
+        <View style={styles.content}>
+          <Button title="← Back" onPress={() => { setMode('list'); setError(null); }} />
+          <Text style={styles.title}>Staff audit log</Text>
+          {loading ? <ActivityIndicator size="large" color={theme.primary} /> : null}
+          {error ? <Text style={{ color: theme.error, marginVertical: 8 }}>{error}</Text> : null}
+          {auditEvents.map((row) => (
+            <View key={row.id} style={[styles.itemContainer, { marginBottom: 12 }]}>
+              <Text style={styles.itemTitle}>{row.event_type.replace(/_/g, ' ')}</Text>
+              <Text style={{ color: theme.textMuted, fontSize: 12 }}>{row.created_at}</Text>
+              <Text style={{ color: theme.text, marginTop: 4 }}>
+                {row.actor_username ? `By ${row.actor_username}` : 'By system'}
+                {row.target_username ? ` · ${row.target_username}` : ''}
+                {row.target_email ? ` · ${row.target_email}` : ''}
+              </Text>
+              {(row.old_role || row.new_role) ? (
+                <Text style={{ color: theme.textMuted, marginTop: 4 }}>
+                  {row.old_role ? `${row.old_role} → ` : ''}{row.new_role}
+                </Text>
+              ) : null}
+            </View>
+          ))}
+          {!loading && auditEvents.length === 0 ? (
+            <Text style={{ color: theme.textMuted }}>No audit events yet.</Text>
+          ) : null}
+        </View>
+      </ScrollView>
+    );
+  }
+
+  if (mode === 'invite') {
+    return (
+      <ScrollView style={styles.container}>
+        <View style={styles.content}>
+          <Button title="← Back" onPress={() => { setMode('list'); setError(null); }} />
+          <Text style={styles.title}>Invite staff by email</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            value={form.email}
+            onChangeText={(text) => setForm({ ...form, email: text })}
+            autoCapitalize="none"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="First name (optional)"
+            value={form.first_name}
+            onChangeText={(text) => setForm({ ...form, first_name: text })}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Last name (optional)"
+            value={form.last_name}
+            onChangeText={(text) => setForm({ ...form, last_name: text })}
+          />
+          <Text style={{ color: theme.text, marginBottom: 8 }}>Role</Text>
+          {STAFF_ROLE_OPTIONS.map((opt) => (
+            <View key={opt.value} style={styles.buttonContainer}>
+              <Button
+                title={`${form.staff_role === opt.value ? '✓ ' : ''}${opt.label}`}
+                onPress={() => setForm({ ...form, staff_role: opt.value })}
+              />
+            </View>
+          ))}
+          {error ? <Text style={{ color: theme.error, marginVertical: 8 }}>{error}</Text> : null}
+          <View style={styles.buttonContainer}>
+            <Button title={loading ? 'Sending...' : 'Send invite email'} onPress={submitInvite} disabled={loading} />
+          </View>
+        </View>
+      </ScrollView>
+    );
+  }
 
   if (mode === 'create' || mode === 'edit') {
     return (
@@ -260,6 +376,12 @@ export function AdminStaffScreen({
         </View>
         <View style={styles.buttonContainer}>
           <Button title="➕ Add staff user" onPress={() => { resetCreateForm(); setMode('create'); }} />
+        </View>
+        <View style={styles.buttonContainer}>
+          <Button title="✉️ Invite by email" onPress={() => { resetCreateForm(); setMode('invite'); }} />
+        </View>
+        <View style={styles.buttonContainer}>
+          <Button title="📋 Audit log" onPress={() => { setMode('audit'); loadAudit(); }} />
         </View>
         {loading ? <ActivityIndicator size="large" color={theme.primary} /> : null}
         {error ? <Text style={{ color: theme.error, marginVertical: 8 }}>{error}</Text> : null}

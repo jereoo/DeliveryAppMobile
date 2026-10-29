@@ -11,3 +11,4 @@ export { DriverVehicleEditScreen } from './DriverVehicleEditScreen';
 export { DriverComplianceScreen } from './DriverComplianceScreen';
 export { AdminDriverVehiclesScreen } from './AdminDriverVehiclesScreen';
 export { RegisterAsDriverScreen } from './RegisterAsDriverScreen';
+export { StaffInviteAcceptScreen } from './StaffInviteAcceptScreen';

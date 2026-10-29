@@ -79,6 +79,7 @@ import {
   DriverVehicleEditScreen,
   MyDeliveriesScreen,
   RegisterAsDriverScreen,
+  StaffInviteAcceptScreen,
 } from './src/screens';
 import {
   canAccessAdminScreen,
@@ -288,6 +289,7 @@ export default function App() {
   const [fleetComplianceSummary, setFleetComplianceSummary] = useState<FleetComplianceSummary | null>(null);
   const [driversLoading, setDriversLoading] = useState(false);
   const [adminScreen, setAdminScreen] = useState<string | null>(null); // e.g. 'driver_vehicles'
+  const [staffInviteToken, setStaffInviteToken] = useState<string | null>(null);
 
   // Form states
   const [customerForm, setCustomerForm] = useState({
@@ -1296,6 +1298,18 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') {
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('staff_invite');
+    if (token) {
+      setStaffInviteToken(token);
+      setCurrentScreen('staff_invite_accept');
+    }
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
 
     const restoreSession = async () => {
@@ -1422,6 +1436,22 @@ export default function App() {
   // Register as Driver Screen
   if (currentScreen === 'register_driver') {
     return <RegisterAsDriverScreen onBack={() => setCurrentScreen('main')} API_BASE={API_BASE} />;
+  }
+
+  if (currentScreen === 'staff_invite_accept' && staffInviteToken && API_BASE) {
+    return (
+      <StaffInviteAcceptScreen
+        apiBase={API_BASE}
+        token={staffInviteToken}
+        onDone={() => {
+          setStaffInviteToken(null);
+          setCurrentScreen('main');
+          if (Platform.OS === 'web' && typeof window !== 'undefined') {
+            window.history.replaceState({}, '', window.location.pathname);
+          }
+        }}
+      />
+    );
   }
   // ========================================
 

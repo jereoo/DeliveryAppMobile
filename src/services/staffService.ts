@@ -99,3 +99,91 @@ export async function updateStaffUser(
   }
   return response.json();
 }
+
+export interface StaffAuditEventRecord {
+  id: number;
+  created_at: string;
+  event_type: string;
+  actor_username: string;
+  target_username: string;
+  target_email: string;
+  old_role: string;
+  new_role: string;
+  detail: string;
+}
+
+export interface StaffInviteCreatePayload {
+  email: string;
+  staff_role: string;
+  first_name?: string;
+  last_name?: string;
+}
+
+export interface StaffInviteValidateResult {
+  valid: boolean;
+  email?: string;
+  staff_role?: string;
+  first_name?: string;
+  last_name?: string;
+  expires_at?: string;
+}
+
+export async function fetchStaffAuditEvents(
+  request: AuthenticatedRequest,
+): Promise<StaffAuditEventRecord[]> {
+  const response = await request('/staff-audit-events/');
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+  return response.json();
+}
+
+export async function sendStaffInvite(
+  request: AuthenticatedRequest,
+  payload: StaffInviteCreatePayload,
+): Promise<void> {
+  const response = await request('/staff-invites/', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+}
+
+export async function validateStaffInvite(
+  apiBase: string,
+  token: string,
+): Promise<StaffInviteValidateResult> {
+  const base = apiBase.replace(/\/+$/, '');
+  const response = await fetch(
+    `${base}/staff-invites/public/?token=${encodeURIComponent(token)}`,
+  );
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(typeof data?.token === 'string' ? data.token : 'Invalid invite.');
+  }
+  return data;
+}
+
+export async function acceptStaffInvite(
+  apiBase: string,
+  payload: {
+    token: string;
+    username: string;
+    password: string;
+    first_name?: string;
+    last_name?: string;
+  },
+): Promise<{ username: string; staff_role: string }> {
+  const base = apiBase.replace(/\/+$/, '');
+  const response = await fetch(`${base}/staff-invites/public/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+  return response.json();
+}
