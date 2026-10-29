@@ -3,7 +3,7 @@
 **Last updated:** October 29, 2026  
 **Team size:** 1–3  
 **Overall status:** 🟢 Phase 1–4C **complete**; Phase 4D **complete** — admin UI + nightly cron + Mailgun SMTP + Heroku job runs **prod verified Oct 29**; compliance resubmit → approve **prod verified**; driver **My Vehicle replace + upload after replace** **prod verified Aug 12**; **production web** **BuyNHaul.com** on Vercel **prod verified Sep 14**; expiry **email** (Mailgun **`mg.buynhaul.com`**, From **`compliance@buynhaul.com`**); **Phase 4H** **Done**; admin list **sort/filter + search** **Done**; **Phase 4G** staff RBAC **Done** — **prod verified Aug 13**  
-**Current focus:** **Phase 4G Slice 5** backlog (staff audit log, invite-by-email). Monitor Mailgun when first expiry reminders fire in prod.  
+**Current focus:** Deploy **Phase 4G Slice 5** (Heroku migrate `0012` + Vercel). Optional: staff password reset flow.  
 **Production domain ops:** [`docs/PRODUCTION_DOMAIN_AND_EMAIL.md`](PRODUCTION_DOMAIN_AND_EMAIL.md)  
 **Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
@@ -97,7 +97,7 @@ See `docs/ARCHITECTURE.md` for layered architecture rules and v1.0 feature gate.
 |---|-------------|--------|----------|
 | 1 | **No public staff self-registration** — staff accounts are created by an existing admin (or invite flow), not via the driver/customer register screens | Done | High |
 | 2 | Admin API + UI to **create staff user** (username, email, password, first_name, last_name) | Done | High |
-| 3 | Optional **invite-by-email** flow: admin sends invite link/token; staff sets password on first login | Todo | Medium |
+| 3 | Optional **invite-by-email** flow: admin sends invite link/token; staff sets password on first login | Done (Slice 5 — deploy + prod test) | Medium |
 | 4 | Staff creation sets `is_staff=True`; **never** auto-grant `is_superuser` unless Super Admin role selected | Done | High |
 | 5 | Deactivate staff (`is_active=False`) without deleting audit history | Done | High |
 | 6 | Staff profile fields: phone (optional), job title (optional) | Done | Low |
@@ -124,7 +124,7 @@ See `docs/ARCHITECTURE.md` for layered architecture rules and v1.0 feature gate.
 | 6 | Only **Super Admin** may create/edit/deactivate other staff or change roles | Done | High |
 | 7 | Compliance Reviewer: verify/reject documents **without** delivery assignment or staff management | Done | Medium |
 | 8 | Read Only: view drivers, vehicles, deliveries, compliance status — **no writes** | Done | Medium |
-| 9 | Audit log: who changed a staff user’s role and when (append-only admin event log) | Todo | Medium |
+| 9 | Audit log: who changed a staff user’s role and when (append-only admin event log) | Done (Slice 5 — deploy + prod test) | Medium |
 
 **Suggested permission areas (backend constants):**
 
@@ -339,9 +339,9 @@ Catalog enforced on **driver registration** (`vehicle_model_spec_id` required). 
 | Admin UI: assign roles (`Super Admin`, `Operations Admin`, `Compliance Reviewer`, `Read Only`) | Done | High |
 | Backend permission matrix + DRF enforcement | Done | High |
 | Staff dashboard with permission-filtered navigation | Done | High |
-| Staff role change audit log | Todo | Medium |
+| Staff role change audit log | Done — backend `59ba53c`, mobile `c84a187` | Medium |
 | Staff password reset flow | Todo | Medium |
-| Invite-by-email staff onboarding | Todo | Medium |
+| Invite-by-email staff onboarding | Done — `/?staff_invite=TOKEN` on BuyNHaul web | Medium |
 
 **Evidence:** Backend `2a1fbba`–`9b296ec`; mobile `d470089`; prod test 20/20 + Vercel UI Aug 13.
 
