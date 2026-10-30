@@ -22,6 +22,7 @@ import {
   type StaffAuditEventRecord,
   type StaffUserRecord,
 } from '../services/staffService';
+import { AUTH_COPY } from '../content/authMicrocopy';
 import type { AuthenticatedRequest } from './types';
 import { theme, styles } from '../theme';
 
@@ -102,12 +103,12 @@ export function AdminStaffScreen({
   };
 
   const submitCreate = async () => {
-    if (!form.username.trim() || !form.email.trim() || !form.password.trim()) {
-      setError('Username, email, and password are required.');
+    if (!form.username.trim() || !form.email.trim()) {
+      setError('Username and email are required.');
       return;
     }
-    if (form.password.length < 8) {
-      setError('Password must be at least 8 characters.');
+    if (form.password.trim() && form.password.length < 8) {
+      setError('Password must be at least 8 characters when provided.');
       return;
     }
     setLoading(true);
@@ -116,14 +117,19 @@ export function AdminStaffScreen({
       await createStaffUser(makeAuthenticatedRequest, {
         username: form.username.trim(),
         email: form.email.trim(),
-        password: form.password,
+        password: form.password.trim() || undefined,
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim(),
         staff_role: form.staff_role,
         job_title: form.job_title.trim(),
         phone_number: form.phone_number.trim(),
       });
-      Alert.alert('Success', 'Staff user created.');
+      Alert.alert(
+        'Success',
+        form.password.trim()
+          ? 'Staff user created.'
+          : 'Staff user created. A temporary password was emailed.',
+      );
       resetCreateForm();
       setMode('list');
       await loadStaff(search);
@@ -233,6 +239,9 @@ export function AdminStaffScreen({
         <View style={styles.content}>
           <Button title="← Back" onPress={() => { setMode('list'); setError(null); }} />
           <Text style={styles.title}>Invite staff by email</Text>
+          <Text style={{ color: theme.textMuted, marginBottom: 12 }}>
+            {AUTH_COPY.adminInviteStaffHelper}
+          </Text>
           <TextInput
             style={styles.input}
             placeholder="Email"
@@ -278,6 +287,9 @@ export function AdminStaffScreen({
           <Text style={styles.title}>{mode === 'create' ? 'Add staff user' : 'Edit staff user'}</Text>
           {mode === 'create' ? (
             <>
+              <Text style={{ color: theme.textMuted, marginBottom: 12 }}>
+                {AUTH_COPY.adminCreateStaffHelper}
+              </Text>
               <TextInput
                 style={styles.input}
                 placeholder="Username"
@@ -293,7 +305,7 @@ export function AdminStaffScreen({
               />
               <TextInput
                 style={styles.input}
-                placeholder="Password (min 8 chars)"
+                placeholder="Password (optional — email temp password if blank)"
                 value={form.password}
                 onChangeText={(text) => setForm({ ...form, password: text })}
                 secureTextEntry

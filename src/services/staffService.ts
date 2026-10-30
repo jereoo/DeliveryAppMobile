@@ -22,7 +22,7 @@ export interface StaffUserRecord {
 export interface StaffUserCreatePayload {
   username: string;
   email: string;
-  password: string;
+  password?: string;
   first_name: string;
   last_name: string;
   staff_role: string;
@@ -75,9 +75,13 @@ export async function createStaffUser(
   request: AuthenticatedRequest,
   payload: StaffUserCreatePayload,
 ): Promise<StaffUserRecord> {
+  const body: Record<string, unknown> = { ...payload };
+  if (!payload.password?.trim()) {
+    delete body.password;
+  }
   const response = await request('/staff/', {
     method: 'POST',
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   });
   if (!response.ok) {
     throw new Error(await parseError(response));

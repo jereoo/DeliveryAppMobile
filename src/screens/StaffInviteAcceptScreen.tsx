@@ -12,8 +12,11 @@ import {
   acceptStaffInvite,
   validateStaffInvite,
 } from '../services/staffService';
+import { AUTH_COPY } from '../content/authMicrocopy';
 import { STAFF_ROLE_LABELS } from '../services/staffPermissions';
 import { theme, styles } from '../theme';
+
+const copy = AUTH_COPY.staffInviteAccept;
 
 export interface StaffInviteAcceptScreenProps {
   apiBase: string;
@@ -110,7 +113,8 @@ export function StaffInviteAcceptScreen({
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Staff invitation</Text>
+        <Text style={styles.title}>{copy.header}</Text>
+        <Text style={{ color: theme.textMuted, marginBottom: 12 }}>{copy.subtext}</Text>
         {email ? (
           <Text style={{ color: theme.textMuted, marginBottom: 12 }}>
             {email}
@@ -119,14 +123,14 @@ export function StaffInviteAcceptScreen({
         ) : null}
         <TextInput
           style={styles.input}
-          placeholder="Username"
+          placeholder={copy.usernameLabel}
           value={form.username}
           onChangeText={(text) => setForm({ ...form, username: text })}
           autoCapitalize="none"
         />
         <TextInput
           style={styles.input}
-          placeholder="Password (min 8 chars)"
+          placeholder={copy.passwordLabel}
           value={form.password}
           onChangeText={(text) => setForm({ ...form, password: text })}
           secureTextEntry
@@ -145,7 +149,7 @@ export function StaffInviteAcceptScreen({
         />
         {error ? <Text style={{ color: theme.error, marginVertical: 8 }}>{error}</Text> : null}
         <View style={styles.buttonContainer}>
-          <Button title={loading ? 'Saving...' : 'Create account'} onPress={submit} disabled={loading} />
+          <Button title={loading ? 'Saving...' : copy.cta} onPress={submit} disabled={loading} />
         </View>
         <View style={styles.buttonContainer}>
           <Button title="Back to login" onPress={onDone} />

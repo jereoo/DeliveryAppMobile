@@ -80,7 +80,12 @@ import {
   MyDeliveriesScreen,
   RegisterAsDriverScreen,
   StaffInviteAcceptScreen,
+  ForceChangePasswordScreen,
+  ForgotPasswordScreen,
+  PasswordResetScreen,
+  ChangePasswordScreen,
 } from './src/screens';
+import { AUTH_COPY } from './src/content/authMicrocopy';
 import {
   canAccessAdminScreen,
   hasStaffPermission,
@@ -290,6 +295,8 @@ export default function App() {
   const [driversLoading, setDriversLoading] = useState(false);
   const [adminScreen, setAdminScreen] = useState<string | null>(null); // e.g. 'driver_vehicles'
   const [staffInviteToken, setStaffInviteToken] = useState<string | null>(null);
+  const [passwordResetToken, setPasswordResetToken] = useState<string | null>(null);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
 
   // Form states
   const [customerForm, setCustomerForm] = useState({
@@ -339,6 +346,7 @@ export default function App() {
     setLoggedInUsername(me.username ?? null);
     setStaffRole(me.staff_role ?? null);
     setStaffPermissions(me.permissions ?? []);
+    setMustChangePassword(Boolean(me.must_change_password));
   };
 
   const clearAuthState = () => {
@@ -347,6 +355,15 @@ export default function App() {
     setLoggedInUsername(null);
     setStaffRole(null);
     setStaffPermissions([]);
+    setMustChangePassword(false);
+  };
+
+  const routeAfterAuth = (me: MeResponse) => {
+    if (me.must_change_password) {
+      setCurrentScreen('force_change_password');
+    } else {
+      setCurrentScreen('dashboard');
+    }
   };
 
   const canAccessScreen = (screen: AdminScreenId) =>
@@ -446,7 +463,7 @@ export default function App() {
 
       setAuthToken(result.access);
       syncMeToState(result.me);
-      setCurrentScreen('dashboard');
+      routeAfterAuth(result.me);
       setLoginForm({ username: '', password: '' });
       Alert.alert('Success', 'Logged in successfully!');
     } catch (error) {
@@ -1302,10 +1319,14 @@ export default function App() {
       return;
     }
     const params = new URLSearchParams(window.location.search);
-    const token = params.get('staff_invite');
-    if (token) {
-      setStaffInviteToken(token);
+    const inviteToken = params.get('staff_invite');
+    const resetToken = params.get('password_reset');
+    if (inviteToken) {
+      setStaffInviteToken(inviteToken);
       setCurrentScreen('staff_invite_accept');
+    } else if (resetToken) {
+      setPasswordResetToken(resetToken);
+      setCurrentScreen('password_reset');
     }
   }, []);
 
@@ -1320,7 +1341,7 @@ export default function App() {
         }
         setAuthToken(session.access);
         syncMeToState(session.me);
-        setCurrentScreen('dashboard');
+        routeAfterAuth(session.me);
       } catch (error) {
         console.error('Failed to restore auth session:', error);
       }
@@ -1438,6 +1459,49 @@ export default function App() {
     return <RegisterAsDriverScreen onBack={() => setCurrentScreen('main')} API_BASE={API_BASE} />;
   }
 
+  if (currentScreen === 'password_reset' && passwordResetToken) {
+    return (
+      <PasswordResetScreen
+        token={passwordResetToken}
+        onDone={() => {
+          setPasswordResetToken(null);
+          setCurrentScreen('login');
+          if (Platform.OS === 'web' && typeof window !== 'undefined') {
+            window.history.replaceState({}, '', window.location.pathname);
+          }
+        }}
+      />
+    );
+  }
+
+  if (currentScreen === 'forgot_password') {
+    return (
+      <ForgotPasswordScreen onBack={() => setCurrentScreen('login')} />
+    );
+  }
+
+  if (currentScreen === 'force_change_password' && authToken) {
+    return (
+      <ForceChangePasswordScreen
+        authToken={authToken}
+        makeAuthenticatedRequest={makeAuthenticatedRequest}
+        onPasswordUpdated={(me) => {
+          syncMeToState(me);
+          setCurrentScreen('dashboard');
+        }}
+      />
+    );
+  }
+
+  if (currentScreen === 'change_password' && authToken) {
+    return (
+      <ChangePasswordScreen
+        onBack={() => setCurrentScreen('dashboard')}
+        makeAuthenticatedRequest={makeAuthenticatedRequest}
+      />
+    );
+  }
+
   if (currentScreen === 'staff_invite_accept' && staffInviteToken && API_BASE) {
     return (
       <StaffInviteAcceptScreen
@@ -1545,6 +1609,13 @@ export default function App() {
 
           <View style={styles.buttonContainer}>
             <Button title="Login" onPress={login} disabled={loading} />
+          </View>
+
+          <View style={styles.buttonContainer}>
+            <Button
+              title={AUTH_COPY.forgotPassword.link}
+              onPress={() => setCurrentScreen('forgot_password')}
+            />
           </View>
 
           <View style={styles.buttonContainer}>
@@ -1729,6 +1800,18 @@ export default function App() {
     );
   }
 
+  if (currentScreen === 'dashboard' && mustChangePassword && authToken) {
+    return (
+      <ForceChangePasswordScreen
+        authToken={authToken}
+        makeAuthenticatedRequest={makeAuthenticatedRequest}
+        onPasswordUpdated={(me) => {
+          syncMeToState(me);
+        }}
+      />
+    );
+  }
+
   // Dashboard Screen (Post-Login)
   if (currentScreen === 'dashboard') {
     return (
@@ -1761,6 +1844,9 @@ export default function App() {
               </View>
               <View style={styles.buttonContainer}>
                 <Button title="📋 My Deliveries" onPress={() => setCurrentScreen('my_deliveries')} />
+              </View>
+              <View style={styles.buttonContainer}>
+                <Button title="🔒 Change Password" onPress={() => setCurrentScreen('change_password')} />
               </View>
               <View style={styles.buttonContainer}>
                 <Button title="🚪 Logout" onPress={handleLogout} />
@@ -1828,6 +1914,9 @@ export default function App() {
               </View>
               <View style={styles.buttonContainer}>
                 <Button title="🔄" onPress={loadData} />
+              </View>
+              <View style={styles.buttonContainer}>
+                <Button title="🔒 Change Password" onPress={() => setCurrentScreen('change_password')} />
               </View>
               <View style={styles.buttonContainer}>
                 <Button title="🚪 Logout" onPress={handleLogout} />
@@ -1906,6 +1995,9 @@ export default function App() {
                   ) : null}
                 <View style={styles.buttonContainer}>
                   <Button title="🔄" onPress={loadData} />
+                </View>
+                <View style={styles.buttonContainer}>
+                  <Button title="🔒 Change Password" onPress={() => setCurrentScreen('change_password')} />
                 </View>
                 <View style={styles.buttonContainer}>
                   <Button title="🚪 Logout" onPress={handleLogout} />

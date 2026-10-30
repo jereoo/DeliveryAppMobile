@@ -20,6 +20,7 @@ export interface MeResponse {
   username?: string;
   staff_role?: StaffRoleCode | string;
   permissions?: string[];
+  must_change_password?: boolean;
 }
 
 export interface LoginCredentials {
