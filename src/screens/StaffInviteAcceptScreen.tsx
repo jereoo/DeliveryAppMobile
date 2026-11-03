@@ -31,11 +31,12 @@ export function StaffInviteAcceptScreen({
 }: StaffInviteAcceptScreenProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [assignedUsername, setAssignedUsername] = useState('');
   const [email, setEmail] = useState('');
   const [staffRole, setStaffRole] = useState('');
   const [form, setForm] = useState({
-    username: '',
     password: '',
+    confirm_password: '',
     first_name: '',
     last_name: '',
   });
@@ -52,6 +53,7 @@ export function StaffInviteAcceptScreen({
           setError('This invite link is not valid.');
           return;
         }
+        setAssignedUsername(result.username ?? '');
         setEmail(result.email ?? '');
         setStaffRole(result.staff_role ?? '');
         setForm((prev) => ({
@@ -75,12 +77,20 @@ export function StaffInviteAcceptScreen({
   }, [apiBase, token]);
 
   const submit = async () => {
-    if (!form.username.trim() || !form.password.trim()) {
-      setError('Username and password are required.');
+    if (!assignedUsername.trim()) {
+      setError('This invite is missing an assigned username. Contact your administrator.');
+      return;
+    }
+    if (!form.password.trim() || !form.confirm_password.trim()) {
+      setError('Password and confirmation are required.');
       return;
     }
     if (form.password.length < 8) {
       setError('Password must be at least 8 characters.');
+      return;
+    }
+    if (form.password !== form.confirm_password) {
+      setError('Passwords do not match.');
       return;
     }
     setLoading(true);
@@ -88,12 +98,15 @@ export function StaffInviteAcceptScreen({
     try {
       await acceptStaffInvite(apiBase, {
         token,
-        username: form.username.trim(),
         password: form.password,
+        confirm_password: form.confirm_password,
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim(),
       });
-      Alert.alert('Account ready', 'You can log in with your new staff account.');
+      Alert.alert(
+        'Account ready',
+        `You can log in as ${assignedUsername} with the password you just set.`,
+      );
       onDone();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Accept failed.');
@@ -102,7 +115,7 @@ export function StaffInviteAcceptScreen({
     }
   };
 
-  if (loading && !email) {
+  if (loading && !email && !error) {
     return (
       <View style={[styles.container, styles.center]}>
         <ActivityIndicator size="large" color={theme.primary} />
@@ -121,18 +134,26 @@ export function StaffInviteAcceptScreen({
             {staffRole ? ` · ${STAFF_ROLE_LABELS[staffRole] ?? staffRole}` : ''}
           </Text>
         ) : null}
-        <TextInput
-          style={styles.input}
-          placeholder={copy.usernameLabel}
-          value={form.username}
-          onChangeText={(text) => setForm({ ...form, username: text })}
-          autoCapitalize="none"
-        />
+        {assignedUsername ? (
+          <View style={{ marginBottom: 12 }}>
+            <Text style={{ color: theme.textMuted, marginBottom: 4 }}>{copy.usernameLabel}</Text>
+            <Text style={{ color: theme.text, fontSize: 16, fontWeight: '600' }}>
+              {assignedUsername}
+            </Text>
+          </View>
+        ) : null}
         <TextInput
           style={styles.input}
           placeholder={copy.passwordLabel}
           value={form.password}
           onChangeText={(text) => setForm({ ...form, password: text })}
+          secureTextEntry
+        />
+        <TextInput
+          style={styles.input}
+          placeholder={copy.confirmPasswordLabel}
+          value={form.confirm_password}
+          onChangeText={(text) => setForm({ ...form, confirm_password: text })}
           secureTextEntry
         />
         <TextInput

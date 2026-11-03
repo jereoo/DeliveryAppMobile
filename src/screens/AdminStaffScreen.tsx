@@ -154,6 +154,10 @@ export function AdminStaffScreen({
   };
 
   const submitInvite = async () => {
+    if (!form.username.trim()) {
+      setError('Username is required for an invite.');
+      return;
+    }
     if (!form.email.trim()) {
       setError('Email is required for an invite.');
       return;
@@ -162,6 +166,7 @@ export function AdminStaffScreen({
     setError(null);
     try {
       await sendStaffInvite(makeAuthenticatedRequest, {
+        username: form.username.trim(),
         email: form.email.trim(),
         staff_role: form.staff_role,
         first_name: form.first_name.trim(),
@@ -242,6 +247,13 @@ export function AdminStaffScreen({
           <Text style={{ color: theme.textMuted, marginBottom: 12 }}>
             {AUTH_COPY.adminInviteStaffHelper}
           </Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Username (assigned to invitee)"
+            value={form.username}
+            onChangeText={(text) => setForm({ ...form, username: text })}
+            autoCapitalize="none"
+          />
           <TextInput
             style={styles.input}
             placeholder="Email"

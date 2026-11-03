@@ -12,3 +12,7 @@ export { DriverComplianceScreen } from './DriverComplianceScreen';
 export { AdminDriverVehiclesScreen } from './AdminDriverVehiclesScreen';
 export { RegisterAsDriverScreen } from './RegisterAsDriverScreen';
 export { StaffInviteAcceptScreen } from './StaffInviteAcceptScreen';
+export { ForceChangePasswordScreen } from './ForceChangePasswordScreen';
+export { ForgotPasswordScreen } from './ForgotPasswordScreen';
+export { PasswordResetScreen } from './PasswordResetScreen';
+export { ChangePasswordScreen } from './ChangePasswordScreen';

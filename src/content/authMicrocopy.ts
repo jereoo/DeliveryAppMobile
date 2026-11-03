@@ -4,7 +4,7 @@ export const AUTH_COPY = {
   adminCreateStaffHelper:
     'Create user profile. A temporary password will be auto-generated and sent via email. The user will be required to update it upon their first login.',
   adminInviteStaffHelper:
-    'Send an email invitation. The recipient opens the link to choose a username and password (valid for 7 days).',
+    'Assign a username and send an email invitation. The recipient opens the link to set their password (valid for 7 days).',
   firstLoginPassword: {
     header: 'Update Your Password',
     subtext:
@@ -43,9 +43,10 @@ export const AUTH_COPY = {
   staffInviteAccept: {
     header: 'Set up your staff account',
     subtext:
-      'Choose a username and password for BuyNHaul. You will use these credentials to sign in.',
-    usernameLabel: 'Username',
+      'Your username was assigned by your administrator. Choose a password to finish setting up your account.',
+    usernameLabel: 'Username (assigned)',
     passwordLabel: 'Password (min 8 characters)',
+    confirmPasswordLabel: 'Confirm password',
     cta: 'Create account',
   },
 } as const;

@@ -117,6 +117,7 @@ export interface StaffAuditEventRecord {
 }
 
 export interface StaffInviteCreatePayload {
+  username: string;
   email: string;
   staff_role: string;
   first_name?: string;
@@ -125,6 +126,7 @@ export interface StaffInviteCreatePayload {
 
 export interface StaffInviteValidateResult {
   valid: boolean;
+  username?: string;
   email?: string;
   staff_role?: string;
   first_name?: string;
@@ -174,8 +176,8 @@ export async function acceptStaffInvite(
   apiBase: string,
   payload: {
     token: string;
-    username: string;
     password: string;
+    confirm_password: string;
     first_name?: string;
     last_name?: string;
   },
