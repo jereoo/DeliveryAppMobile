@@ -38,7 +38,7 @@ Sent 0 (30-day), 0 (14-day), 0 (expiry-day) reminder(s) as of 2026-10-29.
 
 | Item | Status |
 |------|--------|
-| **Phase 4G Slice 5** — staff audit log, invite-by-email | **Next** (backlog) |
+| **Phase 4G Slice 5** — staff audit log, invite-by-email | **Done** — see `PROJECT_STATUS_20261103.md` |
 | Monitor Mailgun logs when first non-zero reminder batch runs | Ongoing |
 | Optional: `_dmarc.mg`, inbound MX on `mg` | Optional |
 

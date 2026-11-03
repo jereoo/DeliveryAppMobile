@@ -1,13 +1,13 @@
 # DeliveryApp — Project Plan
 
-**Last updated:** October 29, 2026  
+**Last updated:** November 3, 2026  
 **Team size:** 1–3  
-**Overall status:** 🟢 Phase 1–4C **complete**; Phase 4D **complete** — admin UI + nightly cron + Mailgun SMTP + Heroku job runs **prod verified Oct 29**; compliance resubmit → approve **prod verified**; driver **My Vehicle replace + upload after replace** **prod verified Aug 12**; **production web** **BuyNHaul.com** on Vercel **prod verified Sep 14**; expiry **email** (Mailgun **`mg.buynhaul.com`**, From **`compliance@buynhaul.com`**); **Phase 4H** **Done**; admin list **sort/filter + search** **Done**; **Phase 4G** staff RBAC **Done** — **prod verified Aug 13**  
-**Current focus:** Deploy **Phase 4G Slice 5** (Heroku migrate `0012` + Vercel). Optional: staff password reset flow.  
+**Overall status:** 🟢 Phase 1–4C **complete**; Phase 4D **complete** (prod verified Oct 29); **Phase 4G** staff RBAC + **invite-by-email** **complete** — core RBAC **prod verified Aug 13**; Slice 5 audit/invite + password auth **deployed Oct 30**; invite flow (admin username, confirm password, Read Only UAT) **prod verified Nov 3**; **Phase 4H** **Done**; **BuyNHaul.com** prod web **Sep 14**  
+**Current focus:** Remaining **Phase 4G** polish (staff vs driver/customer route guard); **Phase 4E** profile gaps; monitor **4D** expiry emails when prod data hits windows; optional **4F** trust & safety; fix **backend CI** full-suite failures when blocking releases.  
 **Production domain ops:** [`docs/PRODUCTION_DOMAIN_AND_EMAIL.md`](PRODUCTION_DOMAIN_AND_EMAIL.md)  
 **Requirements review:** [`docs/COMPLIANCE_REQUIREMENTS_REVIEW.md`](COMPLIANCE_REQUIREMENTS_REVIEW.md) (BC local delivery / pickup truck MVP)  
 **Tracking:** [GitHub Issues](https://github.com/jereoo/DeliveryAppBackend/issues) + [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects) (see `.github/SETUP_GITHUB_PROJECT.md`).  
-**Latest status report:** `docs/PROJECT_STATUS_20261029.md` + `docs/PROJECT_LOG.md`  
+**Latest status report:** `docs/PROJECT_STATUS_20261103.md` + `docs/PROJECT_LOG.md`  
 **Architecture:** `docs/ARCHITECTURE.md` + `.cursor/rules/layered-architecture.mdc`  
 **Business use cases:** [`docs/USE_CASES.md`](USE_CASES.md) → `DeliveryApp/project-docs/USE_CASES.md` (auth, compliance, dispatch)  
 **Development process:** [`docs/DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md) — plan → build → test → done  
@@ -97,7 +97,7 @@ See `docs/ARCHITECTURE.md` for layered architecture rules and v1.0 feature gate.
 |---|-------------|--------|----------|
 | 1 | **No public staff self-registration** — staff accounts are created by an existing admin (or invite flow), not via the driver/customer register screens | Done | High |
 | 2 | Admin API + UI to **create staff user** (username, email, password, first_name, last_name) | Done | High |
-| 3 | Optional **invite-by-email** flow: admin sends invite link/token; staff sets password on first login | Done (Slice 5 — deploy + prod test) | Medium |
+| 3 | Optional **invite-by-email** flow: admin sends invite link/token; admin assigns username; staff sets password (with confirmation) | Done — **prod verified Nov 3, 2026** | Medium |
 | 4 | Staff creation sets `is_staff=True`; **never** auto-grant `is_superuser` unless Super Admin role selected | Done | High |
 | 5 | Deactivate staff (`is_active=False`) without deleting audit history | Done | High |
 | 6 | Staff profile fields: phone (optional), job title (optional) | Done | Low |
@@ -110,7 +110,7 @@ See `docs/ARCHITECTURE.md` for layered architecture rules and v1.0 feature gate.
 | 2 | Replace client-side role **guesswork** with explicit **`GET /api/me/`** (or `/api/staff/me/`) returning `role`, `permissions`, and allowed screens | Done | High |
 | 3 | Mobile/web **Staff dashboard** route — menu items filtered by permissions (not full admin menu for every staff user) | Done | High |
 | 4 | Block staff login to driver/customer-only flows when user has no linked driver/customer profile | Todo | Medium |
-| 5 | Password reset / change-password flow for staff (reuse Django auth or API endpoint) | Todo | Medium |
+| 5 | Password reset / change-password flow for staff (reuse Django auth or API endpoint) | Done — API + mobile (`2a893b3` / `66d09ff`); optional full prod UAT on forgot/reset | Medium |
 
 ### Admin — manage staff permissions & roles
 
@@ -340,10 +340,10 @@ Catalog enforced on **driver registration** (`vehicle_model_spec_id` required). 
 | Backend permission matrix + DRF enforcement | Done | High |
 | Staff dashboard with permission-filtered navigation | Done | High |
 | Staff role change audit log | Done — backend `59ba53c`, mobile `c84a187` | Medium |
-| Staff password reset flow | Todo | Medium |
-| Invite-by-email staff onboarding | Done — `/?staff_invite=TOKEN` on BuyNHaul web | Medium |
+| Staff password auth (temp on admin create, change, forgot/reset) | Done — `2a893b3` / `66d09ff` | Medium |
+| Invite-by-email staff onboarding | Done — `/?staff_invite=TOKEN`; admin username + confirm password — **prod verified Nov 3** (`00cc1ea` / `8e4e4b9`) | Medium |
 
-**Evidence:** Backend `2a1fbba`–`9b296ec`; mobile `d470089`; prod test 20/20 + Vercel UI Aug 13.
+**Evidence:** Backend `2a1fbba`–`9b296ec`; mobile `d470089`; prod test 20/20 + Vercel UI Aug 13; invite + Read Only UAT Nov 3 (`PROJECT_STATUS_20261103.md`).
 
 **Depends on:** Phase 4D admin surfaces (compliance inbox) for Compliance Reviewer role to be useful. **Met.**  
 **Blocks:** ~~Scaling ops beyond a single shared admin password.~~ **Resolved** for v1.0 single-fleet ops.

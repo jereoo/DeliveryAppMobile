@@ -4,6 +4,27 @@ Chronological decisions and implementation notes. Latest status reports: `PROJEC
 
 ---
 
+## November 3, 2026 — Staff invite-by-email prod verified (Read Only UAT)
+
+**Environments:** https://www.buynhaul.com · Heroku `truck-buddy` · Mailgun `mg.buynhaul.com`
+
+### Shipped (Oct 30 – Nov 3)
+
+| Layer | Change |
+|-------|--------|
+| **Backend** | Slice 5 audit + invite API (`59ba53c`); temp/forgot/change password (`2a893b3`, `0013`); **admin-assigned username** on invite + **confirm password** on accept (`00cc1ea`, `0014_staff_invite_username`) |
+| **Mobile** | Audit log UI, invite + accept screens (`c84a187`); password auth screens + microcopy (`66d09ff`); invite form username + accept confirm password (`8e4e4b9`) |
+
+### Prod verified
+
+- Invite email from **`compliance@buynhaul.com`** with `staff_invite` link on BuyNHaul web.
+- Invitee completed **password-only** setup (username shown read-only from invite).
+- New staff logged in; **Read Only** role — menus and operations matched RBAC expectations.
+
+**Docs:** `docs/PROJECT_STATUS_20261103.md` · `docs/PROJECT_PLAN.md` (Phase 4G)
+
+---
+
 ## October 29, 2026 — Phase 4D nightly jobs prod verified (Heroku)
 
 **Environments:** Heroku `truck-buddy` · as-of date **2026-10-29**
