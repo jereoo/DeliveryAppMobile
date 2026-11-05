@@ -18,6 +18,8 @@ const emptyForm = {
   phone_number: '',
   license_issuing_region: 'CA-BC',
   license_number: '',
+  emergency_contact_name: '',
+  emergency_contact_phone: '',
   password: '',
   ...emptyAddressFields(),
 };
@@ -45,6 +47,8 @@ export function DriverProfileEditScreen({ onBack, API_BASE, makeAuthenticatedReq
           phone_number: formatPhoneForDisplay(data.phone_number || ''),
           license_issuing_region: data.license_issuing_region || 'CA-BC',
           license_number: data.license_number || '',
+          emergency_contact_name: data.emergency_contact_name || '',
+          emergency_contact_phone: formatPhoneForDisplay(data.emergency_contact_phone || ''),
           password: '',
           address_unit: data.address_unit || '',
           address_street: data.address_street || '',
@@ -71,6 +75,11 @@ export function DriverProfileEditScreen({ onBack, API_BASE, makeAuthenticatedReq
       setError('Phone number must be exactly 10 digits');
       return;
     }
+    const emergencyDigits = getPhoneDigits(formData.emergency_contact_phone);
+    if (emergencyDigits && emergencyDigits.length !== 10) {
+      setError('Emergency contact phone must be exactly 10 digits');
+      return;
+    }
     if (formData.password && formData.password.length < 8) {
       setError('Password must be at least 8 characters');
       return;
@@ -84,6 +93,8 @@ export function DriverProfileEditScreen({ onBack, API_BASE, makeAuthenticatedReq
         phone_number: phoneDigits,
         license_issuing_region: formData.license_issuing_region,
         license_number: formData.license_number,
+        emergency_contact_name: formData.emergency_contact_name.trim(),
+        emergency_contact_phone: emergencyDigits,
         address_unit: formData.address_unit,
         address_street: formData.address_street,
         address_city: formData.address_city,
@@ -156,6 +167,26 @@ export function DriverProfileEditScreen({ onBack, API_BASE, makeAuthenticatedReq
                 keyboardType="phone-pad"
                 maxLength={14}
               />
+              <Text style={styles.sectionTitle}>Emergency contact (optional)</Text>
+              <Text style={styles.label}>Contact name</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.emergency_contact_name}
+                onChangeText={(t) => setFormData({ ...formData, emergency_contact_name: t })}
+                placeholderTextColor={theme.placeholder}
+                placeholder="Name"
+              />
+              <Text style={styles.label}>Contact phone (10 digits)</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.emergency_contact_phone}
+                onChangeText={(t) => setFormData({ ...formData, emergency_contact_phone: formatPhone10(t) })}
+                placeholderTextColor={theme.placeholder}
+                placeholder="(555) 555-5555"
+                keyboardType="phone-pad"
+                maxLength={14}
+              />
+
               <Text style={styles.label}>License</Text>
               <DriverLicenseFields
                 licenseIssuingRegion={formData.license_issuing_region}

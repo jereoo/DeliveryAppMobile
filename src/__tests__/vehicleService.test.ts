@@ -22,6 +22,7 @@ describe('vehicleService', () => {
       vehicle_vin: '1TESTVIN00000001',
       vehicle_capacity: 3500,
       vehicle_capacity_unit: 'lb',
+      vehicle_colour: '',
     });
   });
 

@@ -48,6 +48,7 @@ export function DriverVehicleOnboardingForm({
     vehicle_vin: initialValues?.vehicle_vin ?? '',
     vehicle_capacity: initialValues?.vehicle_capacity ?? 0,
     vehicle_capacity_unit: initialValues?.vehicle_capacity_unit ?? 'lb' as 'kg' | 'lb',
+    vehicle_colour: initialValues?.vehicle_colour ?? '',
   });
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -90,6 +91,7 @@ export function DriverVehicleOnboardingForm({
       vehicle_vin: formData.vehicle_vin,
       vehicle_capacity: formData.vehicle_capacity,
       vehicle_capacity_unit: formData.vehicle_capacity_unit,
+      vehicle_colour: formData.vehicle_colour.trim(),
     };
   };
 
@@ -161,6 +163,15 @@ export function DriverVehicleOnboardingForm({
         onChangeText={(text) => setFormData((prev) => ({ ...prev, vehicle_license_plate: text.toUpperCase() }))}
         autoCapitalize="characters"
         editable={!lockVinAndPlate}
+      />
+
+      <Text style={styles.label}>Colour (optional)</Text>
+      <TextInput
+        style={styles.input}
+        placeholderTextColor={theme.placeholder}
+        placeholder="e.g., Blue, White"
+        value={formData.vehicle_colour}
+        onChangeText={(text) => setFormData((prev) => ({ ...prev, vehicle_colour: text }))}
       />
 
       <Text style={styles.label}>VIN *</Text>

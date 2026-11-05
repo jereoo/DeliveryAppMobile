@@ -88,6 +88,7 @@ import {
 import { AUTH_COPY } from './src/content/authMicrocopy';
 import {
   canAccessAdminScreen,
+  canAccessParticipantScreen,
   hasStaffPermission,
   isOperationalUser,
   PERM_DELIVERIES_VIEW,
@@ -1384,6 +1385,15 @@ export default function App() {
     }
   }, [currentScreen, userType, staffPermissions]);
 
+  useEffect(() => {
+    if (
+      authToken
+      && !canAccessParticipantScreen(userType, currentScreen)
+    ) {
+      setCurrentScreen('dashboard');
+    }
+  }, [authToken, currentScreen, userType]);
+
   // ========================================
   // RENDER FUNCTIONS
 
@@ -1429,12 +1439,12 @@ export default function App() {
   }
 
   // Delivery Request Screen (customer + driver)
-  if (currentScreen === 'delivery_request') {
+  if (currentScreen === 'delivery_request' && canAccessParticipantScreen(userType, 'delivery_request')) {
     return <DeliveryRequestScreen onBack={() => setCurrentScreen('dashboard')} API_BASE={API_BASE} authToken={authToken} makeAuthenticatedRequest={makeAuthenticatedRequest} />;
   }
 
   // My Deliveries Screen
-  if (currentScreen === 'my_deliveries') {
+  if (currentScreen === 'my_deliveries' && canAccessParticipantScreen(userType, 'my_deliveries')) {
     return <MyDeliveriesScreen onBack={() => setCurrentScreen('dashboard')} deliveries={deliveries} loadMyDeliveries={loadMyDeliveries} makeAuthenticatedRequest={makeAuthenticatedRequest} userType={userType} />;
   }
 
@@ -1455,7 +1465,7 @@ export default function App() {
   }
 
   // Register as Driver Screen
-  if (currentScreen === 'register_driver') {
+  if (currentScreen === 'register_driver' && canAccessParticipantScreen(userType, 'register_driver')) {
     return <RegisterAsDriverScreen onBack={() => setCurrentScreen('main')} API_BASE={API_BASE} />;
   }
 

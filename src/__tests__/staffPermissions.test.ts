@@ -1,5 +1,6 @@
 import {
   canAccessAdminScreen,
+  canAccessParticipantScreen,
   hasStaffPermission,
   isOperationalUser,
   PERM_COMPLIANCE_VERIFY,
@@ -43,5 +44,16 @@ describe('staffPermissions', () => {
     expect(hasStaffPermission(reviewerPerms, PERM_DELIVERIES_ASSIGN)).toBe(false);
     expect(hasStaffPermission(reviewerPerms, PERM_REPORTS_VIEW)).toBe(true);
     expect(hasStaffPermission(reviewerPerms, PERM_RESOURCES_VIEW)).toBe(true);
+  });
+
+  it('blocks staff from customer and driver participant screens', () => {
+    expect(canAccessParticipantScreen('staff', 'delivery_request')).toBe(false);
+    expect(canAccessParticipantScreen('staff', 'driver_compliance')).toBe(false);
+    expect(canAccessParticipantScreen('staff', 'customer_register')).toBe(false);
+    expect(canAccessParticipantScreen('driver', 'delivery_request')).toBe(true);
+    expect(canAccessParticipantScreen('driver', 'customer_register')).toBe(false);
+    expect(canAccessParticipantScreen('customer', 'delivery_request')).toBe(true);
+    expect(canAccessParticipantScreen('customer', 'register_driver')).toBe(false);
+    expect(canAccessParticipantScreen(null, 'customer_register')).toBe(true);
   });
 });

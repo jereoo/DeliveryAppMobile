@@ -32,6 +32,8 @@ export interface AdminDriversScreenProps {
       first_name: '',
       last_name: '',
       phone_number: '',
+      emergency_contact_name: '',
+      emergency_contact_phone: '',
       license_issuing_region: 'CA-BC',
       license_number: '',
       active: true,
@@ -123,12 +125,18 @@ export interface AdminDriversScreenProps {
         setError('Phone number must be exactly 10 digits');
         return;
       }
+      const emergencyDigits = getPhoneDigits(formData.emergency_contact_phone);
+      if (emergencyDigits && emergencyDigits.length !== 10) {
+        setError('Emergency contact phone must be exactly 10 digits');
+        return;
+      }
 
       setLocalLoading(true);
       try {
         const payload = {
           ...formData,
           phone_number: phoneDigits,
+          emergency_contact_phone: emergencyDigits,
         };
         await createDriver(payload);
         await loadDrivers();
@@ -151,10 +159,19 @@ export interface AdminDriversScreenProps {
         setError('Phone number must be exactly 10 digits');
         return;
       }
+      const emergencyDigits = getPhoneDigits(formData.emergency_contact_phone);
+      if (emergencyDigits && emergencyDigits.length !== 10) {
+        setError('Emergency contact phone must be exactly 10 digits');
+        return;
+      }
 
       setLocalLoading(true);
       try {
-        const payload = { ...formData, phone_number: getPhoneDigits(formData.phone_number) };
+        const payload = {
+          ...formData,
+          phone_number: phoneDigits,
+          emergency_contact_phone: emergencyDigits,
+        };
         await updateDriver(selectedDriver.id, payload);
         setMode('list');
         resetForm();
@@ -199,6 +216,8 @@ export interface AdminDriversScreenProps {
         first_name: driver.first_name || '',
         last_name: driver.last_name || '',
         phone_number: formatPhoneForDisplay(driver.phone_number || ''),
+        emergency_contact_name: driver.emergency_contact_name || '',
+        emergency_contact_phone: formatPhoneForDisplay(driver.emergency_contact_phone || ''),
         license_issuing_region: driver.license_issuing_region || 'CA-BC',
         license_number: driver.license_number || '',
         active: driver.active ?? true,
@@ -308,6 +327,25 @@ export interface AdminDriversScreenProps {
               maxLength={14}
             />
 
+            <Text style={styles.label}>Emergency contact name (optional)</Text>
+            <TextInput
+              style={styles.input}
+              placeholderTextColor={theme.placeholder}
+              placeholder="Contact name"
+              value={formData.emergency_contact_name}
+              onChangeText={(text) => setFormData(prev => ({ ...prev, emergency_contact_name: text }))}
+            />
+            <Text style={styles.label}>Emergency contact phone (optional)</Text>
+            <TextInput
+              style={styles.input}
+              placeholderTextColor={theme.placeholder}
+              placeholder="(555) 555-5555"
+              value={formData.emergency_contact_phone}
+              onChangeText={(text) => setFormData(prev => ({ ...prev, emergency_contact_phone: formatPhone10(text) }))}
+              keyboardType="phone-pad"
+              maxLength={14}
+            />
+
             <DriverLicenseFields
               licenseIssuingRegion={formData.license_issuing_region}
               licenseNumber={formData.license_number}
@@ -370,6 +408,14 @@ export interface AdminDriversScreenProps {
             <Text style={styles.itemTitle}>{selectedDriver.first_name} {selectedDriver.last_name}</Text>
             <Text style={{ color: theme.text }}>License: {selectedDriver.license_number}</Text>
             {selectedDriver.phone_number && <Text style={{ color: theme.text }}>Phone: {formatPhoneForDisplay(selectedDriver.phone_number)}</Text>}
+            {selectedDriver.emergency_contact_name ? (
+              <Text style={{ color: theme.text }}>
+                Emergency: {selectedDriver.emergency_contact_name}
+                {selectedDriver.emergency_contact_phone
+                  ? ` · ${formatPhoneForDisplay(selectedDriver.emergency_contact_phone)}`
+                  : ''}
+              </Text>
+            ) : null}
             <Text style={{ color: theme.text }}>
               Account: {selectedDriver.active ? 'Active' : 'Inactive'}
             </Text>

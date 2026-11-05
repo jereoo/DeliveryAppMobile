@@ -54,6 +54,50 @@ export function isOperationalUser(userType: UserRole | null): boolean {
   return userType === 'admin' || userType === 'staff';
 }
 
+/** Screens for customers/drivers — staff must not use these while logged in. */
+export const STAFF_BLOCKED_PARTICIPANT_SCREENS = [
+  'customer_register',
+  'register_driver',
+  'delivery_request',
+  'my_deliveries',
+  'customer_profile_edit',
+  'driver_profile_edit',
+  'driver_vehicle_edit',
+  'driver_compliance',
+] as const;
+
+export type ParticipantScreenId = (typeof STAFF_BLOCKED_PARTICIPANT_SCREENS)[number];
+
+export function isParticipantOnlyScreen(screen: string): screen is ParticipantScreenId {
+  return (STAFF_BLOCKED_PARTICIPANT_SCREENS as readonly string[]).includes(screen);
+}
+
+/** Whether the logged-in role may open a customer/driver participant screen. */
+export function canAccessParticipantScreen(
+  userType: UserRole | null,
+  screen: string,
+): boolean {
+  if (!isParticipantOnlyScreen(screen)) {
+    return true;
+  }
+  if (userType === 'staff') {
+    return false;
+  }
+  if (userType === 'customer') {
+    return screen !== 'register_driver'
+      && screen !== 'driver_profile_edit'
+      && screen !== 'driver_vehicle_edit'
+      && screen !== 'driver_compliance';
+  }
+  if (userType === 'driver') {
+    return screen !== 'customer_register' && screen !== 'customer_profile_edit';
+  }
+  if (userType === 'admin') {
+    return true;
+  }
+  return true;
+}
+
 export function hasStaffPermission(
   permissions: string[] | undefined,
   permission: string,

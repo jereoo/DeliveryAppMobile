@@ -167,6 +167,7 @@ export interface DriverVehicleEditScreenProps {
                     vehicle_vin: vehicle.vin,
                     vehicle_capacity: vehicle.capacity,
                     vehicle_capacity_unit: vehicle.capacity_unit,
+                    vehicle_colour: vehicle.colour ?? '',
                   }}
                   lockVinAndPlate={vehicle.registration_verified}
                   submitLabel="Resubmit for approval"
@@ -209,6 +210,12 @@ export interface DriverVehicleEditScreenProps {
                 <Text style={styles.sectionTitle}>Vehicle identity</Text>
                 <Text style={styles.label}>License plate</Text>
                 <TextInput style={[styles.input, { color: theme.text }]} value={vehicle.license_plate} editable={false} />
+                {vehicle.colour ? (
+                  <>
+                    <Text style={styles.label}>Colour</Text>
+                    <TextInput style={[styles.input, { color: theme.text }]} value={vehicle.colour} editable={false} />
+                  </>
+                ) : null}
                 <Text style={styles.label}>Make / model</Text>
                 <TextInput style={[styles.input, { color: theme.text }]} value={`${vehicle.make} ${vehicle.model}`} editable={false} />
                 <Text style={styles.label}>Year</Text>

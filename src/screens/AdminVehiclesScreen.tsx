@@ -31,7 +31,7 @@ export interface AdminVehiclesScreenProps {
     const [mode, setMode] = useState<'list' | 'create' | 'edit' | 'detail'>('list');
     const [selected, setSelected] = useState<any>(null);
     const [form, setForm] = useState<any>({
-      license_plate: '', make: '', model: '', year: 0,
+      license_plate: '', colour: '', make: '', model: '', year: 0,
       vin: '', capacity_unit: 'kg', active: true, vehicle_model_spec_id: null as number | null,
     });
     const [capacityText, setCapacityText] = useState('');
@@ -169,6 +169,7 @@ export interface AdminVehiclesScreenProps {
       setSelected(vehicle);
       setForm({
         license_plate: vehicle.license_plate || '',
+        colour: vehicle.colour || '',
         make: vehicle.make || '',
         model: vehicle.model || '',
         year: vehicle.year || 0,
@@ -393,6 +394,9 @@ export interface AdminVehiclesScreenProps {
             <Text style={styles.label}>License Plate *</Text>
             <TextInput style={styles.input} value={form.license_plate} onChangeText={t => setForm((f: typeof form) => ({ ...f, license_plate: t.toUpperCase() }))} placeholderTextColor={theme.placeholder} placeholder="Enter license plate" autoCapitalize="characters" />
 
+            <Text style={styles.label}>Colour (optional)</Text>
+            <TextInput style={styles.input} value={form.colour} onChangeText={t => setForm((f: typeof form) => ({ ...f, colour: t }))} placeholderTextColor={theme.placeholder} placeholder="e.g., Blue, White" />
+
             <Text style={styles.label}>Make *</Text>
             <TextInput style={styles.input} value={form.make} onChangeText={t => setForm((f: typeof form) => ({ ...f, make: t }))} placeholderTextColor={theme.placeholder} placeholder="e.g., Ford, Toyota" />
 
@@ -465,6 +469,7 @@ export interface AdminVehiclesScreenProps {
             <Text style={styles.title}>Vehicle Detail</Text>
             <Text style={styles.itemTitle}>{selected.make} {selected.model}</Text>
             <Text style={{ color: theme.text }}>License Plate: {selected.license_plate}</Text>
+            {selected.colour ? <Text style={{ color: theme.text }}>Colour: {selected.colour}</Text> : null}
             <Text style={{ color: theme.text }}>Year: {selected.year}</Text>
             <Text style={{ color: theme.text }}>VIN: {selected.vin}</Text>
             <Text style={{ color: theme.text }}>Capacity: {selected.capacity} {selected.capacity_unit || 'kg'}</Text>

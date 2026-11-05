@@ -109,7 +109,7 @@ See `docs/ARCHITECTURE.md` for layered architecture rules and v1.0 feature gate.
 | 1 | Staff use the same JWT login (`POST /api/token/`) as other users | Done | High |
 | 2 | Replace client-side role **guesswork** with explicit **`GET /api/me/`** (or `/api/staff/me/`) returning `role`, `permissions`, and allowed screens | Done | High |
 | 3 | Mobile/web **Staff dashboard** route — menu items filtered by permissions (not full admin menu for every staff user) | Done | High |
-| 4 | Block staff login to driver/customer-only flows when user has no linked driver/customer profile | Todo | Medium |
+| 4 | Block staff login to driver/customer-only flows when user has no linked driver/customer profile | Done — `canAccessParticipantScreen` + App route guard | Medium |
 | 5 | Password reset / change-password flow for staff (reuse Django auth or API endpoint) | Done — API + mobile (`2a893b3` / `66d09ff`); optional full prod UAT on forgot/reset | Medium |
 
 ### Admin — manage staff permissions & roles
@@ -308,8 +308,8 @@ From BC requirements doc: admin visibility + expiry reminders. **MVP-recommended
 | Vehicle **make / model** catalog dropdowns (NA pickup trucks) | **Done** — `VehicleModelSpec` migration `0007`, `/api/vehicle-catalog/`, mobile `VehicleCatalogFields` (`19f8f2d` / `af7b229`) | High |
 | Seed **vehicle make/model reference data** | **Done** — `vehicle_catalog_data.py` + `seed_demo_data` / `seed_driver_vehicle_test_data` | High |
 | Driver self-edit **structured address** block | **Done** — `DriverProfileEditScreen` (unit, street, city, state, postal, country) | High |
-| Vehicle **colour** field (customer/driver identification) | Todo | Medium |
-| Driver **emergency contact** (name + phone) | Todo | Medium |
+| Vehicle **colour** field (customer/driver identification) | Done — migration `0015`, admin/driver/register flows | Medium |
+| Driver **emergency contact** (name + phone) | Done — migration `0015`, admin + driver self-edit | Medium |
 | BC/ICBC-aware consent copy on insurance upload | Todo | Low (copy only) |
 | Optional `license_class` (default Class 5) on driver or licence doc | Todo | Low |
 

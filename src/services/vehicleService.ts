@@ -19,6 +19,7 @@ export type VehicleApprovalStatus = 'PENDING' | 'APPROVED' | 'RESUBMIT' | 'REJEC
 export interface DriverVehicleRecord {
   id: number;
   license_plate: string;
+  colour?: string;
   make: string;
   model: string;
   year: number;
@@ -36,6 +37,7 @@ export interface DriverVehicleRecord {
 
 export interface VehicleUpdateFields {
   license_plate: string;
+  colour?: string;
   make: string;
   model: string;
   year: number;
@@ -57,6 +59,7 @@ export interface VehicleOnboardingFields {
   vehicle_vin: string;
   vehicle_capacity: number;
   vehicle_capacity_unit: 'kg' | 'lb';
+  vehicle_colour?: string;
 }
 
 export const VEHICLE_APPROVAL_LABELS: Record<VehicleApprovalStatus, string> = {
@@ -72,6 +75,7 @@ export function buildVehicleUpdatePayload(
 ): Record<string, unknown> {
   const payload: Record<string, unknown> = {
     license_plate: fields.license_plate,
+    colour: (fields.colour ?? '').trim(),
     make: fields.make,
     model: fields.model,
     year: Number(fields.year),
@@ -101,6 +105,7 @@ export function buildVehicleOnboardingPayload(
     vehicle_vin: fields.vehicle_vin.trim().toUpperCase(),
     vehicle_capacity: fields.vehicle_capacity,
     vehicle_capacity_unit: fields.vehicle_capacity_unit || 'lb',
+    vehicle_colour: (fields.vehicle_colour ?? '').trim(),
   };
 }
 
