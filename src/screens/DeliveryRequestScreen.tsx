@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Button, KeyboardAvoidingView, Platform, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import AddressAutocomplete from '../components/AddressAutocomplete';
+import { fetchCustomerMe } from '../services/customerService';
 import { theme, styles } from '../theme';
 import type { AuthenticatedRequest } from './types';
 
@@ -30,6 +31,25 @@ export function DeliveryRequestScreen({
   });
   const [error, setError] = useState<string | null>(null);
   const [localLoading, setLocalLoading] = useState(false);
+  /** Match backend profile (e.g. demo.customer in Toronto → Canada). */
+  const [addressCountryHint, setAddressCountryHint] = useState<'US' | 'CA'>('US');
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const me = await fetchCustomerMe(makeAuthenticatedRequest);
+        if (!cancelled) {
+          setAddressCountryHint(me?.address_country === 'CA' ? 'CA' : 'US');
+        }
+      } catch {
+        /* keep default US if /customers/me/ fails */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [makeAuthenticatedRequest]);
 
   const handleSubmit = async () => {
     if (!form.dropoff_location && !form.same_dropoff_as_customer) {
@@ -124,7 +144,7 @@ export function DeliveryRequestScreen({
               <AddressAutocomplete
                 placeholder="Pickup location"
                 initialValue={form.pickup_location}
-                countryHint="US"
+                countryHint={addressCountryHint}
                 onAddressSelected={(result) => {
                   setForm({
                     ...form,
@@ -156,7 +176,7 @@ export function DeliveryRequestScreen({
               <AddressAutocomplete
                 placeholder="Dropoff location *"
                 initialValue={form.dropoff_location}
-                countryHint="US"
+                countryHint={addressCountryHint}
                 onAddressSelected={(result) => {
                   setForm({
                     ...form,
